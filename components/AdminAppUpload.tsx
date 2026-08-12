@@ -224,7 +224,7 @@ export function AdminAppUpload({ onAppUploaded }: AdminAppUploadProps) {
         }),
       });
 
-      const data = await response.json();
+      let data; try { data = await response.json(); } catch(e) { throw new Error('Server returned an invalid response: ' + response.statusText); }
 
       if (!response.ok) {
         const msg = data.error || 'Failed to upload app entry.';
@@ -256,7 +256,7 @@ export function AdminAppUpload({ onAppUploaded }: AdminAppUploadProps) {
       }
     } catch (err) {
       console.error('Upload error:', err);
-      const msg = 'Network error while publishing app.';
+      const msg = err instanceof Error ? err.message : 'Network error while publishing app.';
       setFormError(msg);
       showToast(msg, 'error');
     } finally {
