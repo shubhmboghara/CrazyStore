@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('Supabase insert error:', error);
       return NextResponse.json(
-        { error: 'An internal error occurred while saving the app to Supabase.' },
+        { error: error.message || 'An internal error occurred while saving the app to Supabase.', details: error },
         { status: 500 }
       );
     }
@@ -283,7 +283,7 @@ export async function DELETE(req: NextRequest) {
     if (error) {
       console.error('Supabase delete error:', error);
       return NextResponse.json(
-        { error: 'Failed to delete app from Supabase.' },
+        { error: error.message || 'Failed to delete app from Supabase.', details: error },
         { status: 500 }
       );
     }
