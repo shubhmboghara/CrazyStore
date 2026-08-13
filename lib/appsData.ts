@@ -28,6 +28,7 @@ export interface AndroidApp {
   isCustom?: boolean;
   logoUrl?: string;
   bannerUrl?: string;
+  githubUrl?: string;
 }
 
 export const ANDROID_APPS: AndroidApp[] = [

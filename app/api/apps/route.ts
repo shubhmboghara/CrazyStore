@@ -107,22 +107,7 @@ export async function POST(req: NextRequest) {
       ? fullDescription.split('\n\n').map((s: string) => s.trim()).filter(Boolean)
       : Array.isArray(fullDescription) ? fullDescription : [shortDescription];
 
-    const screenshotsArray = Array.isArray(screenshots) && screenshots.length > 0 ? screenshots : [
-      {
-        id: '1',
-        title: `${name.trim()} Dashboard`,
-        subtitle: 'Fluid 120Hz Jetpack Compose layout',
-        accentColor: 'from-purple-900/40 to-indigo-900/20',
-        type: 'feed',
-      },
-      {
-        id: '2',
-        title: 'Features & Controls',
-        subtitle: 'Optimized Kotlin architecture',
-        accentColor: 'from-indigo-900/40 to-violet-900/20',
-        type: 'player',
-      },
-    ];
+    const screenshotsArray = Array.isArray(screenshots) && screenshots.length > 0 ? screenshots : [];
 
     const newAppDoc = {
       slug: generatedSlug,
@@ -180,6 +165,134 @@ export async function POST(req: NextRequest) {
     console.error('Error uploading app:', error);
     return NextResponse.json(
       { error: 'An internal error occurred while saving the app.', details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  const adminKey = req.headers.get('x-admin-key');
+  const expectedPasscode = process.env.ADMIN_PASSCODE || 'Kf$W8Dx0UaSf0shubham@93';
+
+  if (!expectedPasscode) {
+    return NextResponse.json({ error: 'Server configuration error: ADMIN_PASSCODE not set.' }, { status: 500 });
+  }
+
+  if (!adminKey || adminKey !== expectedPasscode) {
+    return NextResponse.json({ error: 'Unauthorized: Invalid admin key' }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const {
+      originalSlug,
+      name,
+      slug: customSlug,
+      tagline,
+      category,
+      version,
+      size,
+      minAndroid,
+      downloadUrl,
+      shortDescription,
+      fullDescription,
+      features,
+      techStack,
+      iconBg,
+      iconSymbol,
+      badge,
+      logoUrl,
+      bannerUrl,
+      githubUrl,
+      screenshots,
+    } = body;
+
+    if (!originalSlug) {
+       return NextResponse.json({ error: 'Original slug is required for updating.' }, { status: 400 });
+    }
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return NextResponse.json({ error: 'App name is required.' }, { status: 400 });
+    }
+
+    const generatedSlug =
+      customSlug && typeof customSlug === 'string' && customSlug.trim()
+        ? customSlug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')
+        : name.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+
+    const techStackArray = typeof techStack === 'string'
+      ? techStack.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : Array.isArray(techStack) ? techStack : [];
+
+    const featuresArray = typeof features === 'string'
+      ? features.split('\n').map((s: string) => s.trim()).filter(Boolean)
+      : Array.isArray(features) ? features : [];
+
+    const fullDescArray = typeof fullDescription === 'string'
+      ? fullDescription.split('\n\n').map((s: string) => s.trim()).filter(Boolean)
+      : Array.isArray(fullDescription) ? fullDescription : [];
+
+    const updatedAppDoc = {
+      slug: generatedSlug,
+      name: name.trim(),
+      tagline: tagline ? tagline.trim() : '',
+      category: category || 'Tools & Utilities',
+      version: version || 'v1.0.0',
+      updatedAt: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      size: size || '15 MB',
+      minAndroid: minAndroid || 'Android 8.0 (API 26)+',
+      iconBg: iconBg || 'from-purple-600 to-indigo-600',
+      iconSymbol: iconSymbol || 'smartphone',
+      badge: badge || 'Kotlin + Compose',
+      logoUrl: logoUrl || '',
+      bannerUrl: bannerUrl || '',
+      githubUrl: githubUrl || '',
+      techStack: techStackArray,
+      downloadUrl: downloadUrl.trim(),
+      shortDescription: shortDescription.trim(),
+      fullDescription: fullDescArray,
+      features: featuresArray,
+    };
+    
+    // Only update screenshots if they are explicitly passed
+    if (screenshots && Array.isArray(screenshots)) {
+        (updatedAppDoc as any).screenshots = screenshots;
+    }
+
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data, error } = await supabase
+      .from('apps')
+      .update(updatedAppDoc)
+      .eq('slug', originalSlug)
+      .select();
+
+    if (error) {
+      console.error('Supabase update error:', error);
+      return NextResponse.json(
+        { error: error.message || 'An internal error occurred while updating the app.', details: error },
+        { status: 500 }
+      );
+    }
+
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { error: 'App not found in database for update.' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        message: 'App updated successfully',
+        app: data[0],
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Error updating app:', error);
+    return NextResponse.json(
+      { error: 'An internal error occurred while updating the app.', details: error.message },
       { status: 500 }
     );
   }

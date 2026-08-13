@@ -50,7 +50,7 @@ export function StarRating({
               onMouseLeave={() => interactive && setHoverRating(null)}
               className={`transition-transform duration-150 ${
                 interactive
-                  ? 'cursor-pointer hover:scale-110 focus:outline-none focus:ring-1 focus:ring-purple-500 rounded'
+                  ? 'cursor-pointer hover:scale-110 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded'
                   : 'cursor-default'
               }`}
               aria-label={`Set rating to ${starValue} stars`}
@@ -60,7 +60,7 @@ export function StarRating({
                   className={`${starSizes[size]} ${
                     isFilled
                       ? 'fill-amber-400 text-amber-400'
-                      : 'text-zinc-400 dark:text-zinc-600'
+                      : 'text-zinc-300 dark:text-zinc-600'
                   }`}
                 />
                 {isHalf && (
@@ -73,13 +73,11 @@ export function StarRating({
           );
         })}
       </div>
-
       {showNumber && (
         <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm ml-1">
           {rating > 0 ? rating.toFixed(1) : 'New'}
         </span>
       )}
-
       {reviewCount !== undefined && (
         <span className="text-zinc-500 dark:text-zinc-400 text-xs font-normal">
           ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})

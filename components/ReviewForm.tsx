@@ -23,19 +23,16 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
     e.preventDefault();
     setErrorMessage(null);
 
-    // Client-side validation
     if (!rating || rating < 1 || rating > 5) {
       setErrorMessage('Please select a star rating between 1 and 5 stars.');
       return;
     }
-
     if (!reviewText.trim() || reviewText.trim().length < 10) {
       setErrorMessage('Review text must be at least 10 characters long.');
       return;
     }
 
     setIsSubmitting(true);
-
     try {
       const response = await fetch('/api/reviews', {
         method: 'POST',
@@ -60,18 +57,15 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
         return;
       }
 
-      // Success
       setSubmittedSuccess(true);
       showToast('Thank you! Your review has been published.', 'success');
       setReviewText('');
       setName('');
       setRating(5);
-
       if (onReviewSubmitted) {
         onReviewSubmitted();
       }
 
-      // Reset success banner after 5 seconds
       setTimeout(() => {
         setSubmittedSuccess(false);
       }, 5000);
@@ -119,7 +113,6 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Rating Field */}
         <div>
           <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
             Your Rating <span className="text-purple-500">*</span>
@@ -137,7 +130,6 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
           </div>
         </div>
 
-        {/* Name Field */}
         <div>
           <label
             htmlFor="review-name-input"
@@ -156,7 +148,6 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
           />
         </div>
 
-        {/* Review Text Field */}
         <div>
           <div className="flex justify-between items-center mb-1">
             <label
@@ -188,12 +179,11 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
           />
         </div>
 
-        {/* Submit Button */}
         <button
           id="submit-review-button"
           type="submit"
           disabled={isSubmitting || reviewText.trim().length < 10}
-          className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-500 dark:disabled:text-zinc-600 text-white font-medium text-sm shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+          className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-500 dark:disabled:text-zinc-600 text-white font-medium text-sm shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           {isSubmitting ? (
             <>
