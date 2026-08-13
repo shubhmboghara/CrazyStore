@@ -21,7 +21,11 @@ import {
   Smartphone,
   Save,
   X,
-  Link as LinkIcon
+  Link as LinkIcon,
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  Sliders
 } from 'lucide-react';
 
 export function AdminAppUpload() {
@@ -131,22 +135,55 @@ export function AdminAppUpload() {
     setBannerFile(null);
   };
 
-  const handleDeleteExistingScreenshot = async (screenshot: any) => {
-    if (!confirm(`Delete screenshot "${screenshot.title || 'Screenshot'}"? It will be removed from ImageKit.`)) return;
+  const handleDeleteExistingScreenshot = async (screenshot: any, index: number) => {
+    const title = screenshot.title || `Preview #${index + 1}`;
+    if (!confirm(`Are you sure you want to delete "${title}"? This will permanently remove the file from ImageKit.`)) return;
 
-    setDeletingScreenshotId(screenshot.id);
+    setDeletingScreenshotId(screenshot.id || String(index));
     try {
-      if (screenshot.imageUrl) {
-        await deleteImageFromImageKit(screenshot.imageUrl);
+      const targetUrl = screenshot.imageUrl || screenshot.url;
+      if (targetUrl) {
+        await deleteImageFromImageKit(targetUrl);
       }
-      setExistingScreenshots((prev) => prev.filter((s) => s.id !== screenshot.id));
-      showToast('Screenshot removed and deleted from ImageKit', 'success');
+      setExistingScreenshots((prev) => prev.filter((_, idx) => idx !== index));
+      showToast(`Preview image #${index + 1} deleted from ImageKit & removed`, 'success');
     } catch (err) {
-      console.error('Error removing screenshot:', err);
-      showToast('Error removing screenshot', 'error');
+      console.error('Error removing preview image:', err);
+      showToast('Error removing preview image', 'error');
     } finally {
       setDeletingScreenshotId(null);
     }
+  };
+
+  const moveExistingPreview = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= existingScreenshots.length) return;
+    setExistingScreenshots((prev) => {
+      const updated = [...prev];
+      const [movedItem] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, movedItem);
+      return updated;
+    });
+    showToast(`Reordered preview to position #${toIndex + 1}`, 'info');
+  };
+
+  const updateExistingPreviewTitle = (index: number, newTitle: string) => {
+    setExistingScreenshots((prev) => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], title: newTitle };
+      }
+      return updated;
+    });
+  };
+
+  const movePendingPreview = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= screenshotFiles.length) return;
+    setScreenshotFiles((prev) => {
+      const updated = [...prev];
+      const [movedFile] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, movedFile);
+      return updated;
+    });
   };
 
   const handleRemovePendingScreenshot = (indexToRemove: number) => {
@@ -302,11 +339,11 @@ export function AdminAppUpload() {
     setLogoUrl(app.logoUrl || '');
     setBannerUrl(app.bannerUrl || '');
     const parsedScreenshots = (app.screenshots || []).map((s: any, idx: number) => ({
-      id: s.id || `screenshot-${idx}-${Date.now()}`,
-      title: s.title || `Screenshot ${idx + 1}`,
-      subtitle: s.subtitle || 'App Screenshot',
+      id: s.id || `preview-${idx}-${Date.now()}`,
+      title: s.title || `Preview #${idx + 1}`,
+      subtitle: s.subtitle || 'App Preview',
       accentColor: s.accentColor || 'from-zinc-900/40 to-zinc-900/20',
-      type: s.type || 'feed',
+      type: s.type || 'preview',
       imageUrl: s.imageUrl || s.url || '',
       url: s.url || s.imageUrl || '',
     })).filter((s: any) => s.imageUrl || s.url);
@@ -346,20 +383,20 @@ export function AdminAppUpload() {
         finalBannerUrl = await uploadFile(bannerFile);
       }
       if (screenshotFiles.length > 0) {
-        const uploadedScreenshots = await Promise.all(
-          screenshotFiles.map(async (file, index) => {
-            const url = await uploadFile(file);
-            return {
-              id: `screenshot-${Date.now()}-${index}`,
-              title: `Screenshot ${existingScreenshots.length + index + 1}`,
-              subtitle: 'App Screenshot',
-              accentColor: 'from-zinc-900/40 to-zinc-900/20',
-              type: 'feed',
-              imageUrl: url,
-              url: url,
-            };
-          })
-        );
+        const uploadedScreenshots: any[] = [];
+        for (let index = 0; index < screenshotFiles.length; index++) {
+          const file = screenshotFiles[index];
+          const url = await uploadFile(file);
+          uploadedScreenshots.push({
+            id: `preview-${Date.now()}-${index}`,
+            title: `Preview #${existingScreenshots.length + index + 1}`,
+            subtitle: 'App Preview',
+            accentColor: 'from-zinc-900/40 to-zinc-900/20',
+            type: 'preview',
+            imageUrl: url,
+            url: url,
+          });
+        }
         screenshotsData = isEditing ? [...existingScreenshots, ...uploadedScreenshots] : uploadedScreenshots;
       }
 
@@ -980,81 +1017,134 @@ export function AdminAppUpload() {
                     </div>
                   </div>
 
-                  {/* Screenshots (Multiple) Management Section */}
-                  <div className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  {/* App Previews (Multiple) Management Section */}
+                  <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
-                        <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                          <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Screenshots Gallery (Multiple)
+                        <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" /> App Previews Showcase Gallery
                         </label>
-                        <p className="text-[11px] text-zinc-500">
-                          Upload phone screenshots. You can remove specific images individually.
+                        <p className="text-[11px] text-zinc-500 mt-0.5">
+                          Upload high-resolution preview images. Reorder images using the arrow controls (← / →) and remove individual previews from ImageKit anytime.
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2">
                         {existingScreenshots.length > 0 && (
-                          <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800/40">
+                          <span className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/40 shadow-xs">
                             {existingScreenshots.length} Live on ImageKit
                           </span>
                         )}
                         {screenshotFiles.length > 0 && (
-                          <span className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[11px] font-bold border border-blue-200 dark:border-blue-800/40">
+                          <span className="px-3 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200 dark:border-blue-800/40 shadow-xs">
                             {screenshotFiles.length} New to Upload
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Saved Screenshots from ImageKit */}
+                    {/* Saved Previews from ImageKit */}
                     {existingScreenshots.length > 0 && (
-                      <div className="space-y-2 pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                            Currently Saved Screenshots ({existingScreenshots.length})
+                      <div className="space-y-3 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <Sliders className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                            Current Preview Sequence ({existingScreenshots.length} images)
                           </span>
                           <span className="text-[10px] text-zinc-400">
-                            Click Delete on any image to permanently remove from ImageKit
+                            Use ← → buttons to adjust display order on the public app page
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {existingScreenshots.map((screenshot, idx) => (
                             <div
                               key={screenshot.id || idx}
-                              className="relative group rounded-xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm aspect-[9/16] flex flex-col"
+                              className="relative group rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all flex flex-col p-3 space-y-3"
                             >
-                              <img
-                                src={screenshot.imageUrl || screenshot.url}
-                                alt={screenshot.title || `Screenshot ${idx + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-
-                              {/* Top Bar with Number & Delete Button */}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/60 opacity-90 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
-                                <div className="flex items-center justify-between">
-                                  <span className="px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-bold backdrop-blur-sm">
+                              {/* Top Bar with Sequence Number & Reorder/Delete */}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-2 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 text-xs font-black border border-purple-200 dark:border-purple-800/40">
                                     #{idx + 1}
                                   </span>
+                                  <span className="text-[11px] font-semibold text-zinc-500">
+                                    {idx === 0 ? 'Primary Cover' : `Order ${idx + 1}`}
+                                  </span>
+                                </div>
 
+                                <div className="flex items-center gap-1">
+                                  {/* Move Left / Up */}
                                   <button
                                     type="button"
-                                    disabled={deletingScreenshotId === screenshot.id}
-                                    onClick={() => handleDeleteExistingScreenshot(screenshot)}
-                                    className="p-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all hover:scale-105"
-                                    title="Delete this screenshot from ImageKit"
+                                    disabled={idx === 0}
+                                    onClick={() => moveExistingPreview(idx, idx - 1)}
+                                    className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    title="Move Left in sequence"
                                   >
-                                    {deletingScreenshotId === screenshot.id ? (
+                                    <ArrowLeft className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Move Right / Down */}
+                                  <button
+                                    type="button"
+                                    disabled={idx === existingScreenshots.length - 1}
+                                    onClick={() => moveExistingPreview(idx, idx + 1)}
+                                    className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    title="Move Right in sequence"
+                                  >
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Delete from ImageKit */}
+                                  <button
+                                    type="button"
+                                    disabled={deletingScreenshotId === (screenshot.id || String(idx))}
+                                    onClick={() => handleDeleteExistingScreenshot(screenshot, idx)}
+                                    className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-600 hover:text-white text-rose-600 dark:text-rose-400 transition-colors ml-1"
+                                    title="Permanently delete this preview image from ImageKit"
+                                  >
+                                    {deletingScreenshotId === (screenshot.id || String(idx)) ? (
                                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                     ) : (
                                       <Trash2 className="w-3.5 h-3.5" />
                                     )}
                                   </button>
                                 </div>
+                              </div>
 
-                                <div className="text-[10px] text-white font-medium truncate drop-shadow">
-                                  {screenshot.title || `Screenshot ${idx + 1}`}
+                              {/* Preview Frame Thumbnail */}
+                              <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80">
+                                <img
+                                  src={screenshot.imageUrl || screenshot.url}
+                                  alt={screenshot.title || `Preview ${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute bottom-2 right-2">
+                                  <a
+                                    href={screenshot.imageUrl || screenshot.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-colors inline-flex"
+                                    title="Open full image"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </a>
                                 </div>
+                              </div>
+
+                              {/* Editable Title/Caption */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                                  Caption / Title
+                                </label>
+                                <input
+                                  type="text"
+                                  value={screenshot.title || ''}
+                                  onChange={(e) => updateExistingPreviewTitle(idx, e.target.value)}
+                                  placeholder={`Preview #${idx + 1}`}
+                                  className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                />
                               </div>
                             </div>
                           ))}
@@ -1064,42 +1154,67 @@ export function AdminAppUpload() {
 
                     {/* Pending Selected Files Preview */}
                     {screenshotFiles.length > 0 && (
-                      <div className="space-y-2 pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                          Pending Uploads ({screenshotFiles.length} selected)
-                        </span>
+                      <div className="space-y-3 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                            New Uploads ({screenshotFiles.length} images queued)
+                          </span>
+                          <span className="text-[10px] text-zinc-400">
+                            Will be uploaded to ImageKit on save
+                          </span>
+                        </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {screenshotFiles.map((file, idx) => (
                             <div
                               key={idx}
-                              className="relative group rounded-xl overflow-hidden bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/60 shadow-sm aspect-[9/16] flex flex-col"
+                              className="relative group rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/60 shadow-sm flex flex-col p-3 space-y-3"
                             >
-                              <img
-                                src={URL.createObjectURL(file)}
-                                alt={`Pending ${file.name}`}
-                                className="w-full h-full object-cover"
-                              />
+                              <div className="flex items-center justify-between">
+                                <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-black border border-blue-200 dark:border-blue-800/40">
+                                  Queued #{existingScreenshots.length + idx + 1}
+                                </span>
 
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/60 p-2 flex flex-col justify-between">
-                                <div className="flex items-center justify-between">
-                                  <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white text-[9px] font-bold">
-                                    New #{idx + 1}
-                                  </span>
-
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={idx === 0}
+                                    onClick={() => movePendingPreview(idx, idx - 1)}
+                                    className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-blue-100 disabled:opacity-30 transition-colors"
+                                    title="Move Left"
+                                  >
+                                    <ArrowLeft className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={idx === screenshotFiles.length - 1}
+                                    onClick={() => movePendingPreview(idx, idx + 1)}
+                                    className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-blue-100 disabled:opacity-30 transition-colors"
+                                    title="Move Right"
+                                  >
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                  </button>
                                   <button
                                     type="button"
                                     onClick={() => handleRemovePendingScreenshot(idx)}
-                                    className="p-1 rounded-md bg-zinc-900/80 hover:bg-rose-600 text-white transition-colors"
-                                    title="Unselect this image"
+                                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition-colors ml-1"
+                                    title="Unselect"
                                   >
                                     <X className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
+                              </div>
 
-                                <span className="text-[9px] text-zinc-200 truncate font-mono">
-                                  {file.name}
-                                </span>
+                              <div className="w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-blue-100 dark:border-blue-900/40">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`Pending ${file.name}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+
+                              <div className="text-[11px] text-zinc-500 font-mono truncate">
+                                {file.name}
                               </div>
                             </div>
                           ))}
@@ -1107,27 +1222,27 @@ export function AdminAppUpload() {
                       </div>
                     )}
 
-                    {/* Add More Screenshots Picker Area */}
-                    <div className="p-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-white/60 dark:bg-zinc-900/40 flex flex-col sm:flex-row items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
-                          <PlusCircle className="w-5 h-5" />
+                    {/* Add More Previews Picker Area */}
+                    <div className="p-5 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white/60 dark:bg-zinc-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5">
+                        <div className="p-3 rounded-2xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 shrink-0">
+                          <PlusCircle className="w-6 h-6" />
                         </div>
                         <div>
                           <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
                             {existingScreenshots.length > 0 || screenshotFiles.length > 0
-                              ? 'Add More Screenshots'
-                              : 'Select Screenshot Images'}
+                              ? 'Add More Preview Images'
+                              : 'Select Preview Images'}
                           </span>
                           <span className="text-[11px] text-zinc-500">
-                            Hold Ctrl/Cmd to select multiple files at once.
+                            Upload PNG, JPEG, or WebP. Hold Ctrl/Cmd to select multiple previews at once.
                           </span>
                         </div>
                       </div>
 
-                      <label className="cursor-pointer px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1.5 shrink-0">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Select Files</span>
+                      <label className="cursor-pointer px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 inline-flex items-center gap-2 shrink-0">
+                        <Upload className="w-4 h-4" />
+                        <span>Select Preview Files</span>
                         <input
                           type="file"
                           accept="image/*"

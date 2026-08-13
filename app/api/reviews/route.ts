@@ -145,6 +145,17 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const adminKey = req.headers.get('x-admin-key');
+  const expectedPasscode = process.env.ADMIN_PASSCODE || 'Kf$W8Dx0UaSf0shubham@93';
+
+  if (!expectedPasscode) {
+    return NextResponse.json({ error: 'Server configuration error: ADMIN_PASSCODE not set.' }, { status: 500 });
+  }
+
+  if (!adminKey || adminKey !== expectedPasscode) {
+    return NextResponse.json({ error: 'Unauthorized: Only Admin can delete reviews' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

@@ -45,16 +45,16 @@ export default function AppDetailPage() {
   const [averageRating, setAverageRating] = useState<number>(5.0);
   const [totalCount, setTotalCount] = useState<number>(0);
 
-  const [activeTab, setActiveTab] = useState<'reviews' | 'overview' | 'tech' | 'screenshots'>('reviews');
+  const [activeTab, setActiveTab] = useState<'reviews' | 'overview' | 'tech' | 'previews'>('reviews');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const validScreenshots = (appData?.screenshots || [])
+  const validPreviews = (appData?.screenshots || [])
     .map((s, idx) => ({
-      id: s.id || `screenshot-${idx}`,
-      title: s.title || `Screenshot ${idx + 1}`,
-      subtitle: s.subtitle || 'App Screenshot',
+      id: s.id || `preview-${idx}`,
+      title: s.title || `Preview #${idx + 1}`,
+      subtitle: s.subtitle || 'App Preview',
       accentColor: s.accentColor || 'from-zinc-900/40 to-zinc-900/20',
-      type: s.type || 'feed',
+      type: s.type || 'preview',
       imageUrl: s.imageUrl || s.url || '',
       url: s.url || s.imageUrl || '',
     }))
@@ -65,15 +65,15 @@ export default function AppDetailPage() {
       if (lightboxIndex === null) return;
       if (e.key === 'Escape') setLightboxIndex(null);
       if (e.key === 'ArrowLeft') {
-        setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validScreenshots.length - 1));
+        setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validPreviews.length - 1));
       }
       if (e.key === 'ArrowRight') {
-        setLightboxIndex((prev) => (prev !== null && prev < validScreenshots.length - 1 ? prev + 1 : 0));
+        setLightboxIndex((prev) => (prev !== null && prev < validPreviews.length - 1 ? prev + 1 : 0));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex, validScreenshots.length]);
+  }, [lightboxIndex, validPreviews.length]);
 
   useEffect(() => {
     async function loadApp() {
@@ -257,61 +257,82 @@ export default function AppDetailPage() {
           </div>
         </section>
 
-        {/* Screenshots Showcase (if uploaded) */}
-        {validScreenshots.length > 0 && (
+        {/* Previews Showcase (if uploaded) */}
+        {validPreviews.length > 0 && (
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
-                    <ImageIcon className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400">
+                    <Smartphone className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                      App Screenshots ({validScreenshots.length})
+                    <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                      App Previews Showcase
+                      <span className="px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 text-xs font-bold border border-purple-200 dark:border-purple-800/40">
+                        {validPreviews.length} {validPreviews.length === 1 ? 'Preview' : 'Previews'}
+                      </span>
                     </h3>
                     <p className="text-xs text-zinc-500">
-                      Click any screenshot to view in full resolution
+                      Explore native application screenshots in sequential order. Click any device to zoom.
                     </p>
                   </div>
                 </div>
 
                 <button
-                  onClick={() => setActiveTab('screenshots')}
-                  className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                  onClick={() => setActiveTab('previews')}
+                  className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 shrink-0"
                 >
-                  View All ({validScreenshots.length}) <ChevronRight className="w-3.5 h-3.5" />
+                  View Grid Gallery <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Horizontal Scrollable Screenshots Carousel */}
+              {/* Horizontal Device Previews Showcase */}
               <div className="relative group">
-                <div className="flex items-center gap-4 overflow-x-auto pb-4 pt-1 px-1 scroll-smooth hide-scrollbar snap-x">
-                  {validScreenshots.map((shot, idx) => (
+                <div
+                  id="previews-scroll-container"
+                  className="flex items-center gap-6 overflow-x-auto pb-6 pt-2 px-2 scroll-smooth hide-scrollbar snap-x"
+                >
+                  {validPreviews.map((preview, idx) => (
                     <div
-                      key={shot.id || idx}
+                      key={preview.id || idx}
                       onClick={() => setLightboxIndex(idx)}
-                      className="shrink-0 w-36 sm:w-48 aspect-[9/16] rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-md hover:shadow-xl hover:border-purple-400 dark:hover:border-purple-600 transition-all duration-300 cursor-pointer relative group/card snap-start"
+                      className="shrink-0 w-44 sm:w-56 aspect-[9/19] rounded-[2.2rem] bg-zinc-900 border-[5px] border-zinc-800 dark:border-zinc-700 shadow-xl hover:shadow-2xl hover:border-purple-500 dark:hover:border-purple-500 transition-all duration-300 cursor-pointer relative group/mockup overflow-hidden snap-start flex flex-col"
                     >
+                      {/* Mobile Notch Indicator */}
+                      <div className="absolute top-2 inset-x-0 flex justify-center z-20 pointer-events-none">
+                        <div className="w-16 h-3.5 bg-black rounded-full flex items-center justify-end px-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-zinc-800"></div>
+                        </div>
+                      </div>
+
+                      {/* Screen Image */}
                       <img
-                        src={shot.imageUrl || shot.url}
-                        alt={shot.title || `Screenshot ${idx + 1}`}
-                        className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-300"
+                        src={preview.imageUrl || preview.url}
+                        alt={preview.title || `Preview ${idx + 1}`}
+                        className="w-full h-full object-cover group-hover/mockup:scale-105 transition-transform duration-300"
                       />
-                      
+
+                      {/* Sequence Badge */}
+                      <div className="absolute top-3 left-3 z-20">
+                        <span className="px-2 py-0.5 rounded-md bg-black/70 text-white text-[10px] font-black backdrop-blur-md border border-white/10 shadow-sm">
+                          #{String(idx + 1).padStart(2, '0')}
+                        </span>
+                      </div>
+
                       {/* Hover Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/40 opacity-0 group-hover/card:opacity-100 transition-opacity p-3 flex flex-col justify-between">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30 opacity-0 group-hover/mockup:opacity-100 transition-opacity p-4 flex flex-col justify-between z-20">
                         <div className="flex justify-end">
-                          <span className="p-1.5 rounded-lg bg-black/60 text-white backdrop-blur-md">
+                          <span className="p-2 rounded-xl bg-purple-600 text-white shadow-lg">
                             <Maximize2 className="w-4 h-4" />
                           </span>
                         </div>
                         <div>
                           <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300 block">
-                            #{idx + 1}
+                            Preview {idx + 1} of {validPreviews.length}
                           </span>
-                          <span className="text-xs font-semibold text-white drop-shadow truncate block">
-                            {shot.title || `Screenshot ${idx + 1}`}
+                          <span className="text-xs font-bold text-white drop-shadow truncate block mt-0.5">
+                            {preview.title || `Preview #${idx + 1}`}
                           </span>
                         </div>
                       </div>
@@ -340,16 +361,16 @@ export default function AppDetailPage() {
                 >
                   User Reviews ({totalCount})
                 </button>
-                {validScreenshots.length > 0 && (
+                {validPreviews.length > 0 && (
                   <button
-                    onClick={() => setActiveTab('screenshots')}
+                    onClick={() => setActiveTab('previews')}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                      activeTab === 'screenshots'
+                      activeTab === 'previews'
                         ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
                         : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
                     }`}
                   >
-                    <ImageIcon className="w-3.5 h-3.5" /> Screenshots ({validScreenshots.length})
+                    <Smartphone className="w-3.5 h-3.5" /> App Previews ({validPreviews.length})
                   </button>
                 )}
                 <button
@@ -374,46 +395,46 @@ export default function AppDetailPage() {
                 </button>
               </div>
 
-              {/* Tab: Screenshots Gallery */}
-              {activeTab === 'screenshots' && (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-6 animate-in fade-in">
+              {/* Tab: Previews Gallery */}
+              {activeTab === 'previews' && (
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-6 animate-in fade-in">
                   <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
                     <div>
-                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <ImageIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" /> High-Resolution Screenshots
+                      <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <Smartphone className="w-5 h-5 text-purple-600 dark:text-purple-400" /> App Previews Full Gallery
                       </h3>
                       <p className="text-xs text-zinc-500 mt-1">
-                        Click on any image to open full-screen lightbox preview
+                        High-resolution device screens. Click any preview image to open interactive full-screen viewer.
                       </p>
                     </div>
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
-                      {validScreenshots.length} Images
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40">
+                      {validPreviews.length} Previews
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4">
-                    {validScreenshots.map((shot, idx) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+                    {validPreviews.map((preview, idx) => (
                       <div
-                        key={shot.id || idx}
+                        key={preview.id || idx}
                         onClick={() => setLightboxIndex(idx)}
-                        className="group relative aspect-[9/16] rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-xl hover:border-purple-400 dark:hover:border-purple-600 transition-all cursor-pointer flex flex-col"
+                        className="group relative aspect-[9/19] rounded-[2rem] overflow-hidden bg-zinc-900 border-4 border-zinc-800 dark:border-zinc-700 shadow-md hover:shadow-2xl hover:border-purple-500 transition-all cursor-pointer flex flex-col"
                       >
                         <img
-                          src={shot.imageUrl || shot.url}
-                          alt={shot.title || `Screenshot ${idx + 1}`}
+                          src={preview.imageUrl || preview.url}
+                          alt={preview.title || `Preview ${idx + 1}`}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-between">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-between">
                           <div className="flex justify-between items-center">
-                            <span className="px-2 py-0.5 rounded bg-black/60 text-white text-[10px] font-bold">
+                            <span className="px-2 py-0.5 rounded bg-black/70 text-white text-[10px] font-bold">
                               #{idx + 1}
                             </span>
                             <span className="p-1.5 rounded-lg bg-purple-600 text-white">
                               <Maximize2 className="w-3.5 h-3.5" />
                             </span>
                           </div>
-                          <span className="text-xs font-semibold text-white truncate">
-                            {shot.title || `Screenshot ${idx + 1}`}
+                          <span className="text-xs font-bold text-white truncate">
+                            {preview.title || `Preview #${idx + 1}`}
                           </span>
                         </div>
                       </div>
@@ -431,15 +452,14 @@ export default function AppDetailPage() {
                     isLoading={isLoadingReviews}
                     averageRating={averageRating}
                     totalCount={totalCount}
-                    onReviewDeleted={fetchReviews}
                   />
                 </div>
               )}
 
               {/* Tab 2: Overview */}
               {activeTab === 'overview' && (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-6 animate-in fade-in">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in">
+                  <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
                     About {appData.name}
                   </h3>
                   <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
@@ -448,30 +468,30 @@ export default function AppDetailPage() {
                     ))}
                   </div>
 
-                  {/* Screenshots preview in Overview */}
-                  {validScreenshots.length > 0 && (
+                  {/* Previews reel in Overview */}
+                  {validPreviews.length > 0 && (
                     <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                          App Preview Screenshots
+                          App Preview Showcase
                         </h4>
                         <button
-                          onClick={() => setActiveTab('screenshots')}
+                          onClick={() => setActiveTab('previews')}
                           className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline"
                         >
-                          View Full Gallery ({validScreenshots.length})
+                          View Full Gallery ({validPreviews.length})
                         </button>
                       </div>
-                      <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
-                        {validScreenshots.map((shot, idx) => (
+                      <div className="flex items-center gap-4 overflow-x-auto pb-2 hide-scrollbar">
+                        {validPreviews.map((preview, idx) => (
                           <div
-                            key={shot.id || idx}
+                            key={preview.id || idx}
                             onClick={() => setLightboxIndex(idx)}
-                            className="shrink-0 w-28 aspect-[9/16] rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm cursor-pointer hover:border-purple-500 transition-all"
+                            className="shrink-0 w-32 aspect-[9/19] rounded-2xl overflow-hidden border-2 border-zinc-200 dark:border-zinc-800 shadow-sm cursor-pointer hover:border-purple-500 transition-all"
                           >
                             <img
-                              src={shot.imageUrl || shot.url}
-                              alt={shot.title || `Screenshot ${idx + 1}`}
+                              src={preview.imageUrl || preview.url}
+                              alt={preview.title || `Preview ${idx + 1}`}
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -498,8 +518,8 @@ export default function AppDetailPage() {
 
               {/* Tab 3: Tech Stack */}
               {activeTab === 'tech' && (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-6 animate-in fade-in">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in">
+                  <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
                     Android Architecture & Stack
                   </h3>
 
@@ -552,7 +572,7 @@ export default function AppDetailPage() {
             {/* Right Sidebar Column (4 cols) */}
             <div className="lg:col-span-4 space-y-6">
               {/* APK Download Box */}
-              <div className="bg-gradient-to-br from-purple-900 via-indigo-950 to-zinc-900 text-white rounded-2xl p-6 shadow-lg border border-purple-800/50 space-y-4">
+              <div className="bg-gradient-to-br from-purple-900 via-indigo-950 to-zinc-900 text-white rounded-3xl p-6 sm:p-8 shadow-lg border border-purple-800/50 space-y-4">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-emerald-400" />
                   <h4 className="font-bold text-sm">Download APK Package</h4>
@@ -564,7 +584,7 @@ export default function AppDetailPage() {
                   href={appData.downloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-3.5 px-4 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs text-center block shadow-md shadow-purple-600/30 transition-all"
+                  className="w-full py-4 px-4 rounded-2xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs text-center block shadow-md shadow-purple-600/30 transition-all"
                 >
                   Download {appData.name} APK
                 </a>
@@ -575,7 +595,7 @@ export default function AppDetailPage() {
               </div>
 
               {/* Developer Note */}
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-3">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-3">
                 <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                   Developer & Build Info
                 </h4>
@@ -588,9 +608,9 @@ export default function AppDetailPage() {
         </section>
 
         {/* Fullscreen Lightbox Modal */}
-        {lightboxIndex !== null && validScreenshots[lightboxIndex] && (
+        {lightboxIndex !== null && validPreviews[lightboxIndex] && (
           <div
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
             onClick={() => setLightboxIndex(null)}
           >
             {/* Top Lightbox Controls */}
@@ -598,12 +618,12 @@ export default function AppDetailPage() {
               className="absolute top-4 inset-x-4 sm:inset-x-8 flex items-center justify-between z-10"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="px-3 py-1.5 rounded-xl bg-white/10 text-white text-xs font-bold backdrop-blur-md border border-white/10">
-                  Screenshot {lightboxIndex + 1} of {validScreenshots.length}
+                  Preview {lightboxIndex + 1} of {validPreviews.length}
                 </span>
-                <span className="text-sm font-semibold text-white/90 hidden sm:inline-block">
-                  {validScreenshots[lightboxIndex].title || appData.name}
+                <span className="text-sm font-bold text-white/90 hidden sm:inline-block">
+                  {validPreviews[lightboxIndex].title || appData.name}
                 </span>
               </div>
 
@@ -617,59 +637,59 @@ export default function AppDetailPage() {
             </div>
 
             {/* Navigation Buttons */}
-            {validScreenshots.length > 1 && (
+            {validPreviews.length > 1 && (
               <>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validScreenshots.length - 1));
+                    setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validPreviews.length - 1));
                   }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-md border border-white/10 z-10"
-                  title="Previous (Left Arrow)"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-white/10 hover:bg-purple-600 text-white transition-all backdrop-blur-md border border-white/10 z-10"
+                  title="Previous Preview (Left Arrow)"
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setLightboxIndex((prev) => (prev !== null && prev < validScreenshots.length - 1 ? prev + 1 : 0));
+                    setLightboxIndex((prev) => (prev !== null && prev < validPreviews.length - 1 ? prev + 1 : 0));
                   }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-md border border-white/10 z-10"
-                  title="Next (Right Arrow)"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-white/10 hover:bg-purple-600 text-white transition-all backdrop-blur-md border border-white/10 z-10"
+                  title="Next Preview (Right Arrow)"
                 >
                   <ChevronRight className="w-6 h-6" />
                 </button>
               </>
             )}
 
-            {/* Main Screenshot Container */}
+            {/* Main Preview Container */}
             <div
               className="max-h-[82vh] max-w-full flex items-center justify-center p-2 relative"
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={validScreenshots[lightboxIndex].imageUrl || validScreenshots[lightboxIndex].url}
-                alt={validScreenshots[lightboxIndex].title || `Screenshot ${lightboxIndex + 1}`}
-                className="max-h-[80vh] w-auto max-w-[90vw] rounded-2xl shadow-2xl border border-white/10 object-contain"
+                src={validPreviews[lightboxIndex].imageUrl || validPreviews[lightboxIndex].url}
+                alt={validPreviews[lightboxIndex].title || `Preview ${lightboxIndex + 1}`}
+                className="max-h-[78vh] w-auto max-w-[90vw] rounded-3xl shadow-2xl border border-white/15 object-contain"
               />
             </div>
 
             {/* Bottom thumbnail strip */}
-            {validScreenshots.length > 1 && (
+            {validPreviews.length > 1 && (
               <div
                 className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-2 px-4 overflow-x-auto hide-scrollbar z-10"
                 onClick={(e) => e.stopPropagation()}
               >
-                {validScreenshots.map((shot, idx) => (
+                {validPreviews.map((preview, idx) => (
                   <button
-                    key={shot.id || idx}
+                    key={preview.id || idx}
                     onClick={() => setLightboxIndex(idx)}
-                    className={`w-12 h-16 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
-                      idx === lightboxIndex ? 'border-purple-500 scale-105 shadow-lg' : 'border-white/20 opacity-60 hover:opacity-100'
+                    className={`w-12 h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
+                      idx === lightboxIndex ? 'border-purple-500 scale-105 shadow-lg shadow-purple-500/30' : 'border-white/20 opacity-60 hover:opacity-100'
                     }`}
                   >
                     <img
-                      src={shot.imageUrl || shot.url}
+                      src={preview.imageUrl || preview.url}
                       alt={`Thumb ${idx + 1}`}
                       className="w-full h-full object-cover"
                     />
