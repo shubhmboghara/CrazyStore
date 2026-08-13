@@ -6,6 +6,7 @@ import { AndroidApp } from '@/lib/appsData';
 import { StarRating } from '@/components/StarRating';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { FaGithub } from 'react-icons/fa';
 import {
   Download,
   Play,
@@ -206,10 +207,17 @@ export default function HomePage() {
                         getIconComponent(app.iconSymbol)
                       )}
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
-                        {app.version}
-                      </span>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        {app.githubUrl && (
+                          <span className="px-2 py-0.5 rounded-md bg-zinc-900 text-white dark:bg-zinc-800 text-[10px] font-bold flex items-center gap-1">
+                            <FaGithub className="w-3 h-3" /> GitHub
+                          </span>
+                        )}
+                        <span className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
+                          {app.version}
+                        </span>
+                      </div>
                       <span className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40 text-[10px] font-bold">
                         {app.badge || 'Kotlin + Compose'}
                       </span>

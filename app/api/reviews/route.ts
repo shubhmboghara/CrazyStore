@@ -143,3 +143,42 @@ export async function PUT(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Review ID is required.' }, { status: 400 });
+    }
+
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Supabase delete review error:', error);
+      return NextResponse.json(
+        { error: error.message || 'Failed to delete review' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: 'Review deleted successfully', deletedReview: data },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Error deleting review:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete review', details: error.message },
+      { status: 500 }
+    );
+  }
+}

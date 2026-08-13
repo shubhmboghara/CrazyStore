@@ -57,6 +57,16 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
         return;
       }
 
+      if (data.review?.id) {
+        try {
+          const stored = JSON.parse(localStorage.getItem('my_review_ids') || '[]');
+          stored.push(data.review.id);
+          localStorage.setItem('my_review_ids', JSON.stringify(stored));
+        } catch {
+          // ignore localStorage error
+        }
+      }
+
       setSubmittedSuccess(true);
       showToast('Thank you! Your review has been published.', 'success');
       setReviewText('');

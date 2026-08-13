@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StarRating } from './StarRating';
 import { ReviewSkeleton } from './ReviewSkeleton';
-import { User, MessageSquare, ThumbsUp } from 'lucide-react';
+import { useToast } from './Toast';
+import { User, MessageSquare, ThumbsUp, Trash2, Loader2 } from 'lucide-react';
 
 export interface ReviewItem {
   id: string;
@@ -19,6 +20,7 @@ interface ReviewsListProps {
   isLoading: boolean;
   averageRating: number;
   totalCount: number;
+  onReviewDeleted?: () => void;
 }
 
 export function ReviewsList({
@@ -26,7 +28,56 @@ export function ReviewsList({
   isLoading,
   averageRating,
   totalCount,
+  onReviewDeleted,
 }: ReviewsListProps) {
+  const { showToast } = useToast();
+  const [myReviewIds, setMyReviewIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('my_review_ids') || '[]');
+      setMyReviewIds(stored);
+    } catch {
+      // ignore
+    }
+  }, [reviews]);
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+
+    setDeletingId(reviewId);
+    try {
+      const res = await fetch(`/api/reviews?id=${reviewId}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        showToast('Review deleted successfully!', 'success');
+        // Remove from local storage if present
+        try {
+          const stored = JSON.parse(localStorage.getItem('my_review_ids') || '[]');
+          const updated = stored.filter((id: string) => id !== reviewId);
+          localStorage.setItem('my_review_ids', JSON.stringify(updated));
+          setMyReviewIds(updated);
+        } catch {
+          // ignore
+        }
+        if (onReviewDeleted) {
+          onReviewDeleted();
+        }
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Failed to delete review', 'error');
+      }
+    } catch (err) {
+      console.error('Error deleting review:', err);
+      showToast('Error deleting review. Please try again.', 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const distribution = [5, 4, 3, 2, 1].map((star) => {
     const count = reviews.filter((r) => Math.round(r.rating) === star).length;
     const percentage = totalCount > 0 ? (count / totalCount) * 100 : 0;
@@ -142,10 +193,24 @@ export function ReviewsList({
                 <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line leading-relaxed pl-10">
                   {review.reviewText}
                 </p>
-                <div className="mt-3 pl-10 flex items-center gap-4 text-xs text-zinc-400 dark:text-zinc-500">
+                <div className="mt-3 pl-10 flex items-center justify-between text-xs text-zinc-400 dark:text-zinc-500">
                   <span className="inline-flex items-center gap-1 text-[11px] hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer">
                     <ThumbsUp className="w-3 h-3" /> Helpful
                   </span>
+
+                  <button
+                    onClick={() => handleDeleteReview(review.id)}
+                    disabled={deletingId === review.id}
+                    className="inline-flex items-center gap-1 text-[11px] text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 transition-colors font-medium"
+                    title="Delete this review"
+                  >
+                    {deletingId === review.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3 h-3" />
+                    )}
+                    <span>Delete</span>
+                  </button>
                 </div>
               </div>
             ))}

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import { AndroidApp } from '@/lib/appsData';
+import { FaGithub } from 'react-icons/fa';
 import {
   Upload,
   PlusCircle,
@@ -353,6 +354,30 @@ export function AdminAppUpload() {
     } catch (err) {
       console.error(err);
       alert('Error submitting reply');
+    }
+  };
+
+  const handleDeleteReviewAdmin = async (reviewId: string | number) => {
+    if (!confirm('Are you sure you want to delete this user review?')) return;
+
+    try {
+      const res = await fetch(`/api/reviews?id=${reviewId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-key': passcode,
+        },
+      });
+
+      if (res.ok) {
+        showToast('Review deleted successfully!', 'success');
+        fetchReviews();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete review');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting review');
     }
   };
 
@@ -781,10 +806,21 @@ export function AdminAppUpload() {
                        </div>
                     </div>
                     
-                    <div className="flex items-center gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800/80">
+                     <div className="flex items-center gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800/80">
                       <Link href={`/apps/${app.slug}`} target="_blank" className="flex-1 py-2 text-center rounded-xl bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-1">
                         View <ExternalLink className="w-3 h-3" />
                       </Link>
+                      {app.githubUrl && (
+                        <a
+                          href={app.githubUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center justify-center"
+                          title="View GitHub Repository"
+                        >
+                          <FaGithub className="w-4 h-4" />
+                        </a>
+                      )}
                       <button
                         onClick={() => startEditing(app)}
                         className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
@@ -840,6 +876,13 @@ export function AdminAppUpload() {
                             App: <span className="font-mono text-zinc-900 dark:text-zinc-100">{review.appSlug}</span> • {new Date(review.createdAt).toLocaleDateString()}
                           </div>
                         </div>
+                        <button
+                          onClick={() => handleDeleteReviewAdmin(review.id)}
+                          className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors"
+                          title="Delete this review"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                       <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">&quot;{review.reviewText}&quot;</p>
                     </div>

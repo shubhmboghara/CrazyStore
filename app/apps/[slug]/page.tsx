@@ -9,6 +9,7 @@ import { ReviewForm } from '@/components/ReviewForm';
 import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { FaGithub } from 'react-icons/fa';
 import {
   Download,
   ArrowLeft,
@@ -128,6 +129,18 @@ export default function AppDetailPage() {
       <Navbar />
 
       <main className="flex-1 pb-16">
+        {/* Feature Banner Graphic if provided */}
+        {appData.bannerUrl && (
+          <div className="relative w-full h-48 sm:h-64 md:h-80 overflow-hidden bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+            <img
+              src={appData.bannerUrl}
+              alt={`${appData.name} Feature Banner`}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-zinc-900 via-zinc-900/20 to-transparent" />
+          </div>
+        )}
+
         {/* Top Header Banner */}
         <section className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 py-10 sm:py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -172,7 +185,7 @@ export default function AppDetailPage() {
                 </div>
               </div>
 
-              {/* Download CTA Button */}
+              {/* Download & GitHub CTA Buttons */}
               <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
                 <a
                   href={appData.downloadUrl}
@@ -187,9 +200,9 @@ export default function AppDetailPage() {
                     href={appData.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-sm text-center hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-zinc-900 dark:bg-zinc-800 text-white font-bold text-sm text-center hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2 shadow-md"
                   >
-                    <ExternalLink className="w-4 h-4" /> Source
+                    <FaGithub className="w-5 h-5" /> GitHub Source
                   </a>
                 )}
               </div>
@@ -245,6 +258,7 @@ export default function AppDetailPage() {
                     isLoading={isLoadingReviews}
                     averageRating={averageRating}
                     totalCount={totalCount}
+                    onReviewDeleted={fetchReviews}
                   />
                 </div>
               )}
@@ -282,6 +296,29 @@ export default function AppDetailPage() {
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                     Android Architecture & Stack
                   </h3>
+
+                  {appData.githubUrl && (
+                    <div className="p-4 rounded-2xl bg-zinc-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-zinc-800 text-white">
+                          <FaGithub className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-sm block text-white">GitHub Source Repository</span>
+                          <span className="text-xs text-zinc-400 font-mono line-clamp-1">{appData.githubUrl}</span>
+                        </div>
+                      </div>
+                      <a
+                        href={appData.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shrink-0 transition-colors text-center"
+                      >
+                        Open Source Code
+                      </a>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {appData.techStack.map((tech) => (
                       <div
