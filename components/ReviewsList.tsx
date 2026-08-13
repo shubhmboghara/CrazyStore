@@ -31,17 +31,28 @@ export function ReviewsList({
   onReviewDeleted,
 }: ReviewsListProps) {
   const { showToast } = useToast();
-  const [myReviewIds, setMyReviewIds] = useState<string[]>([]);
+  const [myReviewIds, setMyReviewIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(localStorage.getItem('my_review_ids') || '[]');
+    } catch {
+      return [];
+    }
+  });
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('my_review_ids') || '[]');
-      setMyReviewIds(stored);
-    } catch {
-      // ignore
-    }
-  }, [reviews]);
+    const handleStorage = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('my_review_ids') || '[]');
+        setMyReviewIds(stored);
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const handleDeleteReview = async (reviewId: string) => {
     if (!confirm('Are you sure you want to delete this review?')) return;

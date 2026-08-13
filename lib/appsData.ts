@@ -22,6 +22,7 @@ export interface AndroidApp {
     accentColor?: string;
     type?: 'feed' | 'player' | 'settings' | 'stats' | string;
     url?: string;
+    imageUrl?: string;
   }[];
   initialRating: number;
   initialReviewCount: number;

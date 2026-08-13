@@ -71,6 +71,9 @@ export function AdminAppUpload() {
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [bannerUrl, setBannerUrl] = useState<string>('');
   const [existingScreenshots, setExistingScreenshots] = useState<any[]>([]);
+  const [deletingScreenshotId, setDeletingScreenshotId] = useState<string | null>(null);
+  const [isDeletingLogo, setIsDeletingLogo] = useState<boolean>(false);
+  const [isDeletingBanner, setIsDeletingBanner] = useState<boolean>(false);
 
   useEffect(() => {
     // Intentionally omitting automatic authentication check so the user is
@@ -81,6 +84,73 @@ export function AdminAppUpload() {
     setIsAuthenticated(false);
     setPasscode('');
     showToast('Logged out of admin portal', 'info');
+  };
+
+  const deleteImageFromImageKit = async (url: string) => {
+    if (!url) return;
+    try {
+      await fetch(`/api/upload?url=${encodeURIComponent(url)}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      console.warn('Failed to delete image from ImageKit:', err);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (logoUrl) {
+      setIsDeletingLogo(true);
+      try {
+        await deleteImageFromImageKit(logoUrl);
+        setLogoUrl('');
+        showToast('App Logo removed and deleted from ImageKit', 'info');
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to delete logo from ImageKit', 'error');
+      } finally {
+        setIsDeletingLogo(false);
+      }
+    }
+    setLogoFile(null);
+  };
+
+  const handleRemoveBanner = async () => {
+    if (bannerUrl) {
+      setIsDeletingBanner(true);
+      try {
+        await deleteImageFromImageKit(bannerUrl);
+        setBannerUrl('');
+        showToast('Feature Banner removed and deleted from ImageKit', 'info');
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to delete banner from ImageKit', 'error');
+      } finally {
+        setIsDeletingBanner(false);
+      }
+    }
+    setBannerFile(null);
+  };
+
+  const handleDeleteExistingScreenshot = async (screenshot: any) => {
+    if (!confirm(`Delete screenshot "${screenshot.title || 'Screenshot'}"? It will be removed from ImageKit.`)) return;
+
+    setDeletingScreenshotId(screenshot.id);
+    try {
+      if (screenshot.imageUrl) {
+        await deleteImageFromImageKit(screenshot.imageUrl);
+      }
+      setExistingScreenshots((prev) => prev.filter((s) => s.id !== screenshot.id));
+      showToast('Screenshot removed and deleted from ImageKit', 'success');
+    } catch (err) {
+      console.error('Error removing screenshot:', err);
+      showToast('Error removing screenshot', 'error');
+    } finally {
+      setDeletingScreenshotId(null);
+    }
+  };
+
+  const handleRemovePendingScreenshot = (indexToRemove: number) => {
+    setScreenshotFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const fetchApps = async () => {
@@ -114,11 +184,38 @@ export function AdminAppUpload() {
   };
 
   useEffect(() => {
+    let isMounted = true;
     if (isAuthenticated) {
-      fetchApps();
-      fetchReviews();
+      const loadInitial = async () => {
+        setIsLoadingApps(true);
+        setIsLoadingReviews(true);
+        try {
+          const [appsRes, reviewsRes] = await Promise.all([
+            fetch('/api/apps'),
+            fetch('/api/reviews')
+          ]);
+          if (appsRes.ok && isMounted) {
+            const appsData = await appsRes.json();
+            setApps(appsData.apps || []);
+          }
+          if (reviewsRes.ok && isMounted) {
+            const revData = await reviewsRes.json();
+            setReviews(revData.reviews || []);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          if (isMounted) {
+            setIsLoadingApps(false);
+            setIsLoadingReviews(false);
+          }
+        }
+      };
+      loadInitial();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      isMounted = false;
+    };
   }, [isAuthenticated]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -204,7 +301,16 @@ export function AdminAppUpload() {
     
     setLogoUrl(app.logoUrl || '');
     setBannerUrl(app.bannerUrl || '');
-    setExistingScreenshots(app.screenshots || []);
+    const parsedScreenshots = (app.screenshots || []).map((s: any, idx: number) => ({
+      id: s.id || `screenshot-${idx}-${Date.now()}`,
+      title: s.title || `Screenshot ${idx + 1}`,
+      subtitle: s.subtitle || 'App Screenshot',
+      accentColor: s.accentColor || 'from-zinc-900/40 to-zinc-900/20',
+      type: s.type || 'feed',
+      imageUrl: s.imageUrl || s.url || '',
+      url: s.url || s.imageUrl || '',
+    })).filter((s: any) => s.imageUrl || s.url);
+    setExistingScreenshots(parsedScreenshots);
     
     setLogoFile(null);
     setBannerFile(null);
@@ -226,9 +332,17 @@ export function AdminAppUpload() {
       let screenshotsData: any[] = isEditing ? existingScreenshots : [];
 
       if (logoFile) {
+        // If replacing an existing logo, clean up the old one from ImageKit
+        if (isEditing && logoUrl && logoUrl.includes('imagekit.io')) {
+          deleteImageFromImageKit(logoUrl);
+        }
         finalLogoUrl = await uploadFile(logoFile);
       }
       if (bannerFile) {
+        // If replacing an existing banner, clean up the old one from ImageKit
+        if (isEditing && bannerUrl && bannerUrl.includes('imagekit.io')) {
+          deleteImageFromImageKit(bannerUrl);
+        }
         finalBannerUrl = await uploadFile(bannerFile);
       }
       if (screenshotFiles.length > 0) {
@@ -237,11 +351,12 @@ export function AdminAppUpload() {
             const url = await uploadFile(file);
             return {
               id: `screenshot-${Date.now()}-${index}`,
-              title: `Screenshot ${index + 1}`,
+              title: `Screenshot ${existingScreenshots.length + index + 1}`,
               subtitle: 'App Screenshot',
               accentColor: 'from-zinc-900/40 to-zinc-900/20',
               type: 'feed',
               imageUrl: url,
+              url: url,
             };
           })
         );
@@ -302,8 +417,30 @@ export function AdminAppUpload() {
   };
 
   const handleDelete = async (slugToDelete: string) => {
-    if (!confirm(`Are you sure you want to delete ${slugToDelete}?`)) return;
+    if (!confirm(`Are you sure you want to delete ${slugToDelete}? This will also clean up associated images.`)) return;
     try {
+      // Find app to clean up its images from ImageKit
+      const appToDelete = apps.find(a => a.slug === slugToDelete);
+      if (appToDelete) {
+        const imagesToDelete = [
+          appToDelete.logoUrl,
+          appToDelete.bannerUrl,
+          ...(appToDelete.screenshots?.map((s: any) => s.imageUrl || s.url) || [])
+        ].filter(Boolean);
+        
+        if (imagesToDelete.length > 0) {
+          try {
+            await fetch('/api/upload', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ urls: imagesToDelete })
+            });
+          } catch (e) {
+            console.warn('Could not clean up images:', e);
+          }
+        }
+      }
+
       const res = await fetch(`/api/apps?slug=${slugToDelete}`, {
         method: 'DELETE',
         headers: {
@@ -311,7 +448,7 @@ export function AdminAppUpload() {
         },
       });
       if (res.ok) {
-        showToast('App deleted successfully!', 'success');
+        showToast('App and associated media deleted successfully!', 'success');
         fetchApps();
         if (isEditing && editingSlug === slugToDelete) {
           resetForm();
@@ -676,36 +813,333 @@ export function AdminAppUpload() {
               </div>
 
               {/* Media Section */}
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-5">
-                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm border-b border-zinc-100 dark:border-zinc-800 pb-3">
-                  <ImageIcon className="w-4 h-4 text-zinc-900 dark:text-zinc-100" /> Branding & Media
-                </h4>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/50 border border-dashed border-zinc-300 dark:border-zinc-700">
-                      <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <Upload className="w-4 h-4 text-zinc-900" /> App Logo
-                      </label>
-                      <p className="text-[10px] text-zinc-500">1:1 square image recommended.</p>
-                      <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="text-xs text-zinc-500 w-full file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-zinc-50 file:text-zinc-700 hover:file:bg-zinc-100 dark:file:bg-zinc-900/30 dark:file:text-zinc-300" />
-                      {isEditing && logoUrl && <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Currently uploaded. Select new to replace.</p>}
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-6">
+                <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                  <h4 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm">
+                    <ImageIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Branding & Media Management
+                  </h4>
+                  <span className="text-[11px] font-semibold text-zinc-400">
+                    Synced with ImageKit Storage
+                  </span>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Top Grid: Logo & Feature Banner */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* App Logo Card */}
+                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between space-y-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                            <Upload className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" /> App Logo (1:1)
+                          </label>
+                          {logoFile ? (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                              New File Selected
+                            </span>
+                          ) : logoUrl ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                              Live on ImageKit
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold">
+                              Using Default Icon
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-zinc-500 mb-3">Square icon for app cards and header.</p>
+
+                        {/* Logo Preview Container */}
+                        <div className="flex items-center gap-4">
+                          <div className="w-20 h-20 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-center overflow-hidden shrink-0 relative group">
+                            {logoFile ? (
+                              <img
+                                src={URL.createObjectURL(logoFile)}
+                                alt="Logo Preview"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : logoUrl ? (
+                              <img
+                                src={logoUrl}
+                                alt="Logo Preview"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Smartphone className="w-8 h-8 text-zinc-400" />
+                            )}
+                          </div>
+
+                          <div className="flex-1 space-y-2">
+                            <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold transition-all shadow-sm">
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>{logoUrl || logoFile ? 'Change Logo' : 'Upload Logo'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                              />
+                            </label>
+
+                            {(logoUrl || logoFile) && (
+                              <div>
+                                <button
+                                  type="button"
+                                  disabled={isDeletingLogo}
+                                  onClick={handleRemoveLogo}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-bold transition-colors"
+                                >
+                                  {isDeletingLogo ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>Remove Logo</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/50 border border-dashed border-zinc-300 dark:border-zinc-700">
-                      <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <Upload className="w-4 h-4 text-zinc-900" /> Feature Banner
-                      </label>
-                      <p className="text-[10px] text-zinc-500">16:9 landscape image recommended.</p>
-                      <input type="file" accept="image/*" onChange={(e) => setBannerFile(e.target.files?.[0] || null)} className="text-xs text-zinc-500 w-full file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-zinc-50 file:text-zinc-700 hover:file:bg-zinc-100 dark:file:bg-zinc-900/30 dark:file:text-zinc-300" />
-                      {isEditing && bannerUrl && <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Currently uploaded. Select new to replace.</p>}
+
+                    {/* Feature Banner Card */}
+                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between space-y-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                            <Upload className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" /> Feature Banner (16:9)
+                          </label>
+                          {bannerFile ? (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                              New File Selected
+                            </span>
+                          ) : bannerUrl ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                              Live on ImageKit
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold">
+                              No Banner
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-zinc-500 mb-3">Optional wide banner for detail showcase.</p>
+
+                        {/* Banner Preview Frame */}
+                        <div className="w-full h-24 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-center overflow-hidden relative mb-3">
+                          {bannerFile ? (
+                            <img
+                              src={URL.createObjectURL(bannerFile)}
+                              alt="Banner Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : bannerUrl ? (
+                            <img
+                              src={bannerUrl}
+                              alt="Banner Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-center text-zinc-400 text-xs flex items-center gap-2">
+                              <ImageIcon className="w-4 h-4" />
+                              <span>No Banner Uploaded</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold transition-all shadow-sm">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>{bannerUrl || bannerFile ? 'Change Banner' : 'Upload Banner'}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => setBannerFile(e.target.files?.[0] || null)}
+                            />
+                          </label>
+
+                          {(bannerUrl || bannerFile) && (
+                            <button
+                              type="button"
+                              disabled={isDeletingBanner}
+                              onClick={handleRemoveBanner}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-bold transition-colors"
+                            >
+                              {isDeletingBanner ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                              <span>Remove Banner</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/50 border border-dashed border-zinc-300 dark:border-zinc-700">
-                    <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                      <Upload className="w-4 h-4 text-zinc-900" /> Screenshots (Multiple)
-                    </label>
-                    <p className="text-[10px] text-zinc-500">Select multiple files to add to the gallery.</p>
-                    <input type="file" accept="image/*" multiple onChange={(e) => setScreenshotFiles(Array.from(e.target.files || []))} className="text-xs text-zinc-500 w-full file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-zinc-50 file:text-zinc-700 hover:file:bg-zinc-100 dark:file:bg-zinc-900/30 dark:file:text-zinc-300" />
-                    {isEditing && existingScreenshots.length > 0 && <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">{existingScreenshots.length} screenshots currently saved. Selecting files will append to them.</p>}
+
+                  {/* Screenshots (Multiple) Management Section */}
+                  <div className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                          <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Screenshots Gallery (Multiple)
+                        </label>
+                        <p className="text-[11px] text-zinc-500">
+                          Upload phone screenshots. You can remove specific images individually.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {existingScreenshots.length > 0 && (
+                          <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800/40">
+                            {existingScreenshots.length} Live on ImageKit
+                          </span>
+                        )}
+                        {screenshotFiles.length > 0 && (
+                          <span className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[11px] font-bold border border-blue-200 dark:border-blue-800/40">
+                            {screenshotFiles.length} New to Upload
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Saved Screenshots from ImageKit */}
+                    {existingScreenshots.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                            Currently Saved Screenshots ({existingScreenshots.length})
+                          </span>
+                          <span className="text-[10px] text-zinc-400">
+                            Click Delete on any image to permanently remove from ImageKit
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                          {existingScreenshots.map((screenshot, idx) => (
+                            <div
+                              key={screenshot.id || idx}
+                              className="relative group rounded-xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm aspect-[9/16] flex flex-col"
+                            >
+                              <img
+                                src={screenshot.imageUrl || screenshot.url}
+                                alt={screenshot.title || `Screenshot ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+
+                              {/* Top Bar with Number & Delete Button */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/60 opacity-90 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
+                                <div className="flex items-center justify-between">
+                                  <span className="px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-bold backdrop-blur-sm">
+                                    #{idx + 1}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    disabled={deletingScreenshotId === screenshot.id}
+                                    onClick={() => handleDeleteExistingScreenshot(screenshot)}
+                                    className="p-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all hover:scale-105"
+                                    title="Delete this screenshot from ImageKit"
+                                  >
+                                    {deletingScreenshotId === screenshot.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+
+                                <div className="text-[10px] text-white font-medium truncate drop-shadow">
+                                  {screenshot.title || `Screenshot ${idx + 1}`}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pending Selected Files Preview */}
+                    {screenshotFiles.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                          Pending Uploads ({screenshotFiles.length} selected)
+                        </span>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                          {screenshotFiles.map((file, idx) => (
+                            <div
+                              key={idx}
+                              className="relative group rounded-xl overflow-hidden bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/60 shadow-sm aspect-[9/16] flex flex-col"
+                            >
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`Pending ${file.name}`}
+                                className="w-full h-full object-cover"
+                              />
+
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/60 p-2 flex flex-col justify-between">
+                                <div className="flex items-center justify-between">
+                                  <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white text-[9px] font-bold">
+                                    New #{idx + 1}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePendingScreenshot(idx)}
+                                    className="p-1 rounded-md bg-zinc-900/80 hover:bg-rose-600 text-white transition-colors"
+                                    title="Unselect this image"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                <span className="text-[9px] text-zinc-200 truncate font-mono">
+                                  {file.name}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add More Screenshots Picker Area */}
+                    <div className="p-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-white/60 dark:bg-zinc-900/40 flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
+                          <PlusCircle className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {existingScreenshots.length > 0 || screenshotFiles.length > 0
+                              ? 'Add More Screenshots'
+                              : 'Select Screenshot Images'}
+                          </span>
+                          <span className="text-[11px] text-zinc-500">
+                            Hold Ctrl/Cmd to select multiple files at once.
+                          </span>
+                        </div>
+                      </div>
+
+                      <label className="cursor-pointer px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1.5 shrink-0">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Select Files</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            const newFiles = Array.from(e.target.files || []);
+                            setScreenshotFiles((prev) => [...prev, ...newFiles]);
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
