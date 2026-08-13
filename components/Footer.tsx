@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Smartphone } from 'lucide-react';
+import { FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa';
 
 export function Footer() {
   return (
@@ -13,9 +14,18 @@ export function Footer() {
             CrazyStore
           </span>
         </div>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          © {new Date().getFullYear()} CrazyStore. All rights reserved. Open Source.
-        </p>
+
+        <div className="flex items-center gap-5">
+          <a href="https://github.com/shubhmboghara" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" aria-label="GitHub">
+            <FaGithub className="w-5 h-5" />
+          </a>
+          <a href="https://linkedin.com/in/shubham-boghara-60b4a1343" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" aria-label="LinkedIn">
+            <FaLinkedin className="w-5 h-5" />
+          </a>
+          <a href="https://instagram.com/shubhambogharadotcom" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" aria-label="Instagram">
+            <FaInstagram className="w-5 h-5" />
+          </a>
+        </div>
       </div>
     </footer>
   );
