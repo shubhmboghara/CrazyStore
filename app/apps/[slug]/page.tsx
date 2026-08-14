@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { AndroidApp } from '@/lib/appsData';
@@ -52,12 +52,57 @@ export default function AppDetailPage() {
 
   const [activeTab, setActiveTab] = useState<'reviews' | 'overview' | 'tech' | 'previews'>('reviews');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [activePreviewIdx, setActivePreviewIdx] = useState<number>(0);
+  const previewsContainerRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingPreviewsRef = useRef<boolean>(false);
+  const startXPreviewsRef = useRef<number>(0);
+  const scrollLeftPreviewsRef = useRef<number>(0);
 
   const scrollPreviews = (direction: 'left' | 'right') => {
-    const container = document.getElementById('previews-scroll-container');
+    const container = previewsContainerRef.current;
     if (!container) return;
-    const scrollAmount = direction === 'left' ? -340 : 340;
+    const scrollAmount = direction === 'left' ? -320 : 320;
     container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
+
+  const scrollToPreviewIndex = (idx: number) => {
+    const container = previewsContainerRef.current;
+    if (!container) return;
+    const child = container.children[idx] as HTMLElement | undefined;
+    if (child) {
+      child.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  };
+
+  const handlePreviewsScroll = () => {
+    const container = previewsContainerRef.current;
+    if (!container) return;
+    const scrollLeft = container.scrollLeft;
+    const itemWidth = 300;
+    const newIdx = Math.round(scrollLeft / itemWidth);
+    setActivePreviewIdx(Math.min(Math.max(0, newIdx), validPreviews.length - 1));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const container = previewsContainerRef.current;
+    if (!container) return;
+    isDraggingPreviewsRef.current = true;
+    startXPreviewsRef.current = e.pageX - container.offsetLeft;
+    scrollLeftPreviewsRef.current = container.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingPreviewsRef.current) return;
+    e.preventDefault();
+    const container = previewsContainerRef.current;
+    if (!container) return;
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startXPreviewsRef.current) * 1.3;
+    container.scrollLeft = scrollLeftPreviewsRef.current - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    isDraggingPreviewsRef.current = false;
   };
 
   const validPreviews = (appData?.screenshots || [])
@@ -342,16 +387,22 @@ export default function AppDetailPage() {
                 {validPreviews.length > 1 && (
                   <button
                     onClick={() => scrollPreviews('left')}
-                    className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/90 dark:bg-zinc-800/90 text-zinc-900 dark:text-white shadow-xl border border-zinc-200 dark:border-zinc-700 backdrop-blur-md opacity-0 group-hover/reel:opacity-100 transition-all hover:scale-110 hover:bg-purple-600 hover:text-white hidden sm:flex items-center justify-center"
+                    className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-white/95 dark:bg-zinc-800/95 text-zinc-900 dark:text-white shadow-xl border border-zinc-200 dark:border-zinc-700 backdrop-blur-md opacity-0 group-hover/reel:opacity-100 transition-all duration-200 hover:scale-110 hover:bg-purple-600 hover:text-white hidden sm:flex items-center justify-center focus:outline-none"
                     title="Scroll Left"
+                    aria-label="Previous screenshots"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                 )}
 
                 <div
-                  id="previews-scroll-container"
-                  className="flex items-start gap-5 sm:gap-6 overflow-x-auto pb-4 pt-1 px-1 scroll-smooth hide-scrollbar snap-x snap-mandatory"
+                  ref={previewsContainerRef}
+                  onScroll={handlePreviewsScroll}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUpOrLeave}
+                  onMouseLeave={handleMouseUpOrLeave}
+                  className="flex items-start gap-5 sm:gap-6 overflow-x-auto pb-3 pt-1 px-1 scroll-smooth snap-x snap-mandatory hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-none cursor-grab active:cursor-grabbing"
                 >
                   {validPreviews.map((preview, idx) => {
                     const hasCustomTitle = preview.title && !/^screenshot\s*\d*$/i.test(preview.title.trim()) && !/^preview\s*\d*$/i.test(preview.title.trim()) && !/^screen\s*\d*$/i.test(preview.title.trim());
@@ -382,7 +433,8 @@ export default function AppDetailPage() {
                           <img
                             src={preview.imageUrl || preview.url}
                             alt={hasCustomTitle ? preview.title : appData.name}
-                            className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-2xl drop-shadow-xl group-hover:scale-[1.02] transition-transform duration-300"
+                            className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-2xl drop-shadow-xl group-hover:scale-[1.02] transition-transform duration-300 pointer-events-none"
+                            draggable={false}
                           />
 
                           {/* Hover Overlay with Zoom Indicator */}
@@ -421,11 +473,36 @@ export default function AppDetailPage() {
                 {validPreviews.length > 1 && (
                   <button
                     onClick={() => scrollPreviews('right')}
-                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/90 dark:bg-zinc-800/90 text-zinc-900 dark:text-white shadow-xl border border-zinc-200 dark:border-zinc-700 backdrop-blur-md opacity-0 group-hover/reel:opacity-100 transition-all hover:scale-110 hover:bg-purple-600 hover:text-white hidden sm:flex items-center justify-center"
+                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-white/95 dark:bg-zinc-800/95 text-zinc-900 dark:text-white shadow-xl border border-zinc-200 dark:border-zinc-700 backdrop-blur-md opacity-0 group-hover/reel:opacity-100 transition-all duration-200 hover:scale-110 hover:bg-purple-600 hover:text-white hidden sm:flex items-center justify-center focus:outline-none"
                     title="Scroll Right"
+                    aria-label="Next screenshots"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
+                )}
+
+                {/* Clean, Modern Bottom Pagination Dots (Replaces ugly browser scrollbars) */}
+                {validPreviews.length > 1 && (
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 shadow-sm backdrop-blur-sm">
+                      {validPreviews.map((_, dotIdx) => {
+                        const isActive = dotIdx === activePreviewIdx;
+                        return (
+                          <button
+                            key={dotIdx}
+                            onClick={() => scrollToPreviewIndex(dotIdx)}
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              isActive
+                                ? 'w-6 bg-purple-600 dark:bg-purple-500 shadow-sm shadow-purple-500/50'
+                                : 'w-2 bg-zinc-300 dark:bg-zinc-600 hover:bg-zinc-400 dark:hover:bg-zinc-500'
+                            }`}
+                            title={`Jump to preview ${dotIdx + 1}`}
+                            aria-label={`Go to screenshot ${dotIdx + 1}`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -592,7 +669,7 @@ export default function AppDetailPage() {
                           View Gallery ({validPreviews.length})
                         </button>
                       </div>
-                      <div className="flex items-center gap-4 overflow-x-auto pb-3 hide-scrollbar">
+                      <div className="flex items-center gap-4 overflow-x-auto pb-3 hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                         {validPreviews.map((preview, idx) => (
                           <div
                             key={preview.id || idx}
