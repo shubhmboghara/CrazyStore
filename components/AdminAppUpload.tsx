@@ -1062,90 +1062,87 @@ export function AdminAppUpload() {
                               key={screenshot.id || idx}
                               className="relative group rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all flex flex-col p-3 space-y-3"
                             >
-                              {/* Top Bar with Sequence Number & Reorder/Delete */}
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="px-2 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 text-xs font-black border border-purple-200 dark:border-purple-800/40">
-                                    #{idx + 1}
-                                  </span>
-                                  <span className="text-[11px] font-semibold text-zinc-500">
-                                    {idx === 0 ? 'Primary Cover' : `Order ${idx + 1}`}
-                                  </span>
+                                {/* Top Bar with Reorder/Delete */}
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                                      {idx === 0 ? 'Primary Cover' : `Image ${idx + 1}`}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1">
+                                    {/* Move Left / Up */}
+                                    <button
+                                      type="button"
+                                      disabled={idx === 0}
+                                      onClick={() => moveExistingPreview(idx, idx - 1)}
+                                      className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                      title="Move Left in sequence"
+                                    >
+                                      <ArrowLeft className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {/* Move Right / Down */}
+                                    <button
+                                      type="button"
+                                      disabled={idx === existingScreenshots.length - 1}
+                                      onClick={() => moveExistingPreview(idx, idx + 1)}
+                                      className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                      title="Move Right in sequence"
+                                    >
+                                      <ArrowRight className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {/* Delete from ImageKit */}
+                                    <button
+                                      type="button"
+                                      disabled={deletingScreenshotId === (screenshot.id || String(idx))}
+                                      onClick={() => handleDeleteExistingScreenshot(screenshot, idx)}
+                                      className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-600 hover:text-white text-rose-600 dark:text-rose-400 transition-colors ml-1"
+                                      title="Permanently delete this preview image from ImageKit"
+                                    >
+                                      {deletingScreenshotId === (screenshot.id || String(idx)) ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      )}
+                                    </button>
+                                  </div>
                                 </div>
 
-                                <div className="flex items-center gap-1">
-                                  {/* Move Left / Up */}
-                                  <button
-                                    type="button"
-                                    disabled={idx === 0}
-                                    onClick={() => moveExistingPreview(idx, idx - 1)}
-                                    className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                    title="Move Left in sequence"
-                                  >
-                                    <ArrowLeft className="w-3.5 h-3.5" />
-                                  </button>
-
-                                  {/* Move Right / Down */}
-                                  <button
-                                    type="button"
-                                    disabled={idx === existingScreenshots.length - 1}
-                                    onClick={() => moveExistingPreview(idx, idx + 1)}
-                                    className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                    title="Move Right in sequence"
-                                  >
-                                    <ArrowRight className="w-3.5 h-3.5" />
-                                  </button>
-
-                                  {/* Delete from ImageKit */}
-                                  <button
-                                    type="button"
-                                    disabled={deletingScreenshotId === (screenshot.id || String(idx))}
-                                    onClick={() => handleDeleteExistingScreenshot(screenshot, idx)}
-                                    className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-600 hover:text-white text-rose-600 dark:text-rose-400 transition-colors ml-1"
-                                    title="Permanently delete this preview image from ImageKit"
-                                  >
-                                    {deletingScreenshotId === (screenshot.id || String(idx)) ? (
-                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                    ) : (
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    )}
-                                  </button>
+                                {/* Preview Frame Thumbnail */}
+                                <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80">
+                                  <img
+                                    src={screenshot.imageUrl || screenshot.url}
+                                    alt={screenshot.title || `Preview ${idx + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute bottom-2 right-2">
+                                    <a
+                                      href={screenshot.imageUrl || screenshot.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-colors inline-flex"
+                                      title="Open full image"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </a>
+                                  </div>
                                 </div>
-                              </div>
 
-                              {/* Preview Frame Thumbnail */}
-                              <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80">
-                                <img
-                                  src={screenshot.imageUrl || screenshot.url}
-                                  alt={screenshot.title || `Preview ${idx + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute bottom-2 right-2">
-                                  <a
-                                    href={screenshot.imageUrl || screenshot.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-colors inline-flex"
-                                    title="Open full image"
-                                  >
-                                    <Eye className="w-3.5 h-3.5" />
-                                  </a>
+                                {/* Editable Title/Caption */}
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                                    Optional Caption
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={screenshot.title || ''}
+                                    onChange={(e) => updateExistingPreviewTitle(idx, e.target.value)}
+                                    placeholder="e.g. Dashboard Dark Mode"
+                                    className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                  />
                                 </div>
-                              </div>
-
-                              {/* Editable Title/Caption */}
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                                  Caption / Title
-                                </label>
-                                <input
-                                  type="text"
-                                  value={screenshot.title || ''}
-                                  onChange={(e) => updateExistingPreviewTitle(idx, e.target.value)}
-                                  placeholder={`Preview #${idx + 1}`}
-                                  className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-purple-600"
-                                />
-                              </div>
                             </div>
                           ))}
                         </div>
@@ -1171,8 +1168,8 @@ export function AdminAppUpload() {
                               className="relative group rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/60 shadow-sm flex flex-col p-3 space-y-3"
                             >
                               <div className="flex items-center justify-between">
-                                <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-black border border-blue-200 dark:border-blue-800/40">
-                                  Queued #{existingScreenshots.length + idx + 1}
+                                <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200 dark:border-blue-800/40">
+                                  Queued
                                 </span>
 
                                 <div className="flex items-center gap-1">
