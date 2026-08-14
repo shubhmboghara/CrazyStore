@@ -1129,13 +1129,17 @@ export function AdminAppUpload() {
                                 </div>
 
                                 {/* Preview Frame Thumbnail */}
-                                <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80">
+                                <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-900 dark:bg-black border border-zinc-200 dark:border-zinc-800/80 flex items-center justify-center p-1">
+                                  <div
+                                    className="absolute inset-0 bg-cover bg-center blur-lg opacity-25 pointer-events-none"
+                                    style={{ backgroundImage: `url(${screenshot.imageUrl || screenshot.url})` }}
+                                  />
                                   <img
                                     src={screenshot.imageUrl || screenshot.url}
                                     alt={screenshot.title || `Preview ${idx + 1}`}
-                                    className="w-full h-full object-cover"
+                                    className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-lg"
                                   />
-                                  <div className="absolute bottom-2 right-2">
+                                  <div className="absolute bottom-2 right-2 z-20">
                                     <a
                                       href={screenshot.imageUrl || screenshot.url}
                                       target="_blank"
@@ -1220,11 +1224,11 @@ export function AdminAppUpload() {
                                 </div>
                               </div>
 
-                              <div className="w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-blue-100 dark:border-blue-900/40">
+                              <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-900 dark:bg-black border border-blue-100 dark:border-blue-900/40 flex items-center justify-center p-1">
                                 <img
                                   src={URL.createObjectURL(file)}
                                   alt={`Pending ${file.name}`}
-                                  className="w-full h-full object-cover"
+                                  className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-lg"
                                 />
                               </div>
 

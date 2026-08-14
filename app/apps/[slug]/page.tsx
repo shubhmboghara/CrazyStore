@@ -368,21 +368,28 @@ export default function AppDetailPage() {
                             details: `Explored Visuals: ${hasCustomTitle ? preview.title : `Preview ${idx + 1}`} (${appData.name})`,
                           });
                         }}
-                        className="shrink-0 w-72 sm:w-80 md:w-[340px] lg:w-[360px] group cursor-pointer snap-start flex flex-col items-center"
+                        className="shrink-0 w-64 sm:w-72 md:w-80 lg:w-[320px] group cursor-pointer snap-start flex flex-col items-center"
                       >
-                        {/* Generous High-Impact Screenshot Card */}
-                        <div className="relative w-full h-[460px] sm:h-[520px] md:h-[560px] rounded-3xl overflow-hidden bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 shadow-md group-hover:shadow-2xl group-hover:border-purple-500/80 transition-all duration-300 transform group-hover:-translate-y-1.5 flex items-center justify-center">
+                        {/* Full Uncut Screenshot Card */}
+                        <div className="relative w-full h-[460px] sm:h-[520px] md:h-[560px] rounded-3xl overflow-hidden bg-zinc-900 dark:bg-black border border-zinc-200/80 dark:border-zinc-800 shadow-md group-hover:shadow-2xl group-hover:border-purple-500/80 transition-all duration-300 transform group-hover:-translate-y-1.5 flex items-center justify-center p-2.5 sm:p-3">
+                          {/* Ambient backdrop glow */}
+                          <div
+                            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 dark:opacity-35 scale-125 pointer-events-none transition-opacity duration-300"
+                            style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
+                          />
+
+                          {/* Full Image */}
                           <img
                             src={preview.imageUrl || preview.url}
                             alt={hasCustomTitle ? preview.title : appData.name}
-                            className="w-full h-full object-cover object-top group-hover:scale-[1.03] transition-transform duration-500"
+                            className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-2xl drop-shadow-xl group-hover:scale-[1.02] transition-transform duration-300"
                           />
 
                           {/* Hover Overlay with Zoom Indicator */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-5 flex flex-col justify-between z-10 pointer-events-none">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 sm:p-5 flex flex-col justify-between z-20 pointer-events-none rounded-3xl">
                             <div className="flex justify-end">
-                              <span className="p-3 rounded-2xl bg-purple-600/90 backdrop-blur-md text-white shadow-lg shadow-purple-600/30">
-                                <ZoomIn className="w-5 h-5" />
+                              <span className="p-2.5 sm:p-3 rounded-2xl bg-purple-600/90 backdrop-blur-md text-white shadow-lg shadow-purple-600/30">
+                                <ZoomIn className="w-4 h-4 sm:w-5 sm:h-5" />
                               </span>
                             </div>
                             {hasCustomTitle ? (
@@ -390,7 +397,7 @@ export default function AppDetailPage() {
                                 {preview.title}
                               </span>
                             ) : (
-                              <span className="text-xs font-semibold text-zinc-300 drop-shadow-sm">
+                              <span className="text-xs font-semibold text-zinc-200 drop-shadow-sm">
                                 Tap to view full size
                               </span>
                             )}
@@ -504,16 +511,23 @@ export default function AppDetailPage() {
                           onClick={() => setLightboxIndex(idx)}
                           className="group cursor-pointer flex flex-col items-center"
                         >
-                          <div className="relative w-full h-[460px] sm:h-[500px] rounded-3xl overflow-hidden bg-zinc-950 border border-zinc-200/90 dark:border-zinc-800 shadow-md group-hover:shadow-2xl group-hover:border-purple-500/80 transition-all duration-300 transform group-hover:-translate-y-1.5 flex items-center justify-center">
+                          <div className="relative w-full h-[460px] sm:h-[500px] rounded-3xl overflow-hidden bg-zinc-900 dark:bg-black border border-zinc-200/90 dark:border-zinc-800 shadow-md group-hover:shadow-2xl group-hover:border-purple-500/80 transition-all duration-300 transform group-hover:-translate-y-1.5 flex items-center justify-center p-2.5 sm:p-3">
+                            {/* Ambient backdrop glow */}
+                            <div
+                              className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 dark:opacity-35 scale-125 pointer-events-none transition-opacity duration-300"
+                              style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
+                            />
+
+                            {/* Full Image */}
                             <img
                               src={preview.imageUrl || preview.url}
                               alt={hasCustomTitle ? preview.title : appData.name}
-                              className="w-full h-full object-cover object-top group-hover:scale-[1.03] transition-transform duration-500"
+                              className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-2xl drop-shadow-xl group-hover:scale-[1.02] transition-transform duration-300"
                             />
 
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-between z-10 pointer-events-none">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-between z-20 pointer-events-none rounded-3xl">
                               <div className="flex justify-end">
-                                <span className="p-3 rounded-2xl bg-purple-600 text-white shadow-lg">
+                                <span className="p-2.5 rounded-2xl bg-purple-600 text-white shadow-lg">
                                   <ZoomIn className="w-4 h-4" />
                                 </span>
                               </div>
@@ -583,12 +597,16 @@ export default function AppDetailPage() {
                           <div
                             key={preview.id || idx}
                             onClick={() => setLightboxIndex(idx)}
-                            className="shrink-0 w-44 sm:w-52 h-72 sm:h-80 rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm cursor-pointer hover:border-purple-500 hover:shadow-xl transition-all transform hover:-translate-y-1"
+                            className="shrink-0 w-44 sm:w-52 h-72 sm:h-80 rounded-2xl overflow-hidden bg-zinc-900 dark:bg-black border border-zinc-200 dark:border-zinc-800 shadow-sm cursor-pointer hover:border-purple-500 hover:shadow-xl transition-all transform hover:-translate-y-1 relative p-1.5 flex items-center justify-center"
                           >
+                            <div
+                              className="absolute inset-0 bg-cover bg-center blur-xl opacity-20 pointer-events-none"
+                              style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
+                            />
                             <img
                               src={preview.imageUrl || preview.url}
                               alt={appData.name}
-                              className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
+                              className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-xl drop-shadow-md hover:scale-105 transition-transform duration-300"
                             />
                           </div>
                         ))}
