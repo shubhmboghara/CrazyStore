@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { StarRating } from './StarRating';
 import { useToast } from './Toast';
+import { trackEvent } from '@/lib/analytics';
 import { Send, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface ReviewFormProps {
@@ -69,6 +70,14 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
 
       setSubmittedSuccess(true);
       showToast('Thank you! Your review has been published.', 'success');
+
+      trackEvent({
+        eventType: 'review_submit',
+        appSlug,
+        isTaskCompleted: true,
+        details: `Submitted ${rating}★ Review by ${name.trim() || 'Anonymous'} on app: ${appSlug}`,
+      });
+
       setReviewText('');
       setName('');
       setRating(5);

@@ -9,6 +9,7 @@ import { ReviewForm } from '@/components/ReviewForm';
 import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { trackEvent } from '@/lib/analytics';
 import { FaGithub } from 'react-icons/fa';
 import {
   Download,
@@ -248,6 +249,15 @@ export default function AppDetailPage() {
                   href={appData.downloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => {
+                    trackEvent({
+                      eventType: 'app_download',
+                      appSlug: appData.slug,
+                      appName: appData.name,
+                      isTaskCompleted: true,
+                      details: `Downloaded APK: ${appData.name} (${appData.version})`,
+                    });
+                  }}
                   className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm text-center shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2"
                 >
                   <Download className="w-5 h-5" /> Download APK
@@ -257,6 +267,14 @@ export default function AppDetailPage() {
                     href={appData.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => {
+                      trackEvent({
+                        eventType: 'github_click',
+                        appSlug: appData.slug,
+                        appName: appData.name,
+                        details: `Viewed GitHub Source: ${appData.name}`,
+                      });
+                    }}
                     className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-zinc-900 dark:bg-zinc-800 text-white font-bold text-sm text-center hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2 shadow-md"
                   >
                     <FaGithub className="w-5 h-5" /> GitHub Source
@@ -340,7 +358,15 @@ export default function AppDetailPage() {
                     return (
                       <div
                         key={preview.id || idx}
-                        onClick={() => setLightboxIndex(idx)}
+                        onClick={() => {
+                          setLightboxIndex(idx);
+                          trackEvent({
+                            eventType: 'screenshot_view',
+                            appSlug: appData.slug,
+                            appName: appData.name,
+                            details: `Explored Visuals: ${hasCustomTitle ? preview.title : `Preview ${idx + 1}`} (${appData.name})`,
+                          });
+                        }}
                         className="shrink-0 w-72 sm:w-80 md:w-[340px] lg:w-[360px] group cursor-pointer snap-start flex flex-col items-center"
                       >
                         {/* Generous High-Impact Screenshot Card */}
@@ -653,6 +679,15 @@ export default function AppDetailPage() {
                   href={appData.downloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => {
+                    trackEvent({
+                      eventType: 'app_download',
+                      appSlug: appData.slug,
+                      appName: appData.name,
+                      isTaskCompleted: true,
+                      details: `Downloaded APK (sidebar): ${appData.name} (${appData.version})`,
+                    });
+                  }}
                   className="w-full py-4 px-4 rounded-2xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs text-center block shadow-md shadow-purple-600/30 transition-all"
                 >
                   Download {appData.name} APK

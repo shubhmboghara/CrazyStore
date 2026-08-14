@@ -6,6 +6,7 @@ import { AndroidApp } from '@/lib/appsData';
 import { StarRating } from '@/components/StarRating';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { trackEvent } from '@/lib/analytics';
 import { FaGithub } from 'react-icons/fa';
 import {
   Download,
@@ -172,7 +173,13 @@ export default function HomePage() {
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => {
+                    setSelectedCategory(cat);
+                    trackEvent({
+                      eventType: 'category_filter',
+                      details: `Filtered apps by "${cat}" category`,
+                    });
+                  }}
                   className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                     selectedCategory === cat
                       ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
@@ -193,6 +200,15 @@ export default function HomePage() {
                 <Link
                   href={`/apps/${app.slug}`}
                   key={app.slug}
+                  onClick={() => {
+                    trackEvent({
+                      eventType: 'app_view',
+                      appSlug: app.slug,
+                      appName: app.name,
+                      path: `/apps/${app.slug}`,
+                      details: `Explored App Details: ${app.name}`,
+                    });
+                  }}
                   className="group flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:shadow-purple-900/10 hover:border-purple-300 dark:hover:border-purple-800/50 transition-all duration-300 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >

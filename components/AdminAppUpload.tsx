@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import { AndroidApp } from '@/lib/appsData';
+import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { FaGithub } from 'react-icons/fa';
 import {
   Upload,
@@ -25,7 +26,9 @@ import {
   ArrowLeft,
   ArrowRight,
   Eye,
-  Sliders
+  Sliders,
+  BarChart3,
+  Activity,
 } from 'lucide-react';
 
 export function AdminAppUpload() {
@@ -35,7 +38,7 @@ export function AdminAppUpload() {
   const [passcode, setPasscode] = useState<string>('');
   const [passcodeError, setPasscodeError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'editor' | 'list' | 'reviews'>('editor');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'editor' | 'list' | 'reviews'>('analytics');
 
   // Apps State
   const [apps, setApps] = useState<AndroidApp[]>([]);
@@ -725,6 +728,17 @@ export function AdminAppUpload() {
       <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-2">
         <div className="flex space-x-6 overflow-x-auto custom-scrollbar">
           <button
+            onClick={() => setActiveTab('analytics')}
+            className={`pb-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'analytics'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+            }`}
+          >
+            <Activity className="w-4 h-4 text-purple-500" />
+            Visitor Analytics & Activity
+          </button>
+          <button
             onClick={() => setActiveTab('editor')}
             className={`pb-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
               activeTab === 'editor'
@@ -768,6 +782,10 @@ export function AdminAppUpload() {
           Lock Portal
         </button>
       </div>
+
+      {activeTab === 'analytics' && (
+        <AdminAnalytics passcode={passcode} />
+      )}
 
       {activeTab === 'editor' && (
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
