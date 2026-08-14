@@ -7,6 +7,7 @@ import { AndroidApp } from '@/lib/appsData';
 import { StarRating } from '@/components/StarRating';
 import { ReviewForm } from '@/components/ReviewForm';
 import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
+import { AppDetailSkeleton } from '@/components/AppDetailSkeleton';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { trackEvent } from '@/lib/analytics';
@@ -175,14 +176,7 @@ export default function AppDetailPage() {
   };
 
   if (isLoadingApp) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col font-sans">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <p className="text-zinc-500 font-bold text-sm">Loading application...</p>
-        </main>
-      </div>
-    );
+    return <AppDetailSkeleton />;
   }
 
   if (!appData) {

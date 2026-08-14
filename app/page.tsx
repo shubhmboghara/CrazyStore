@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AndroidApp } from '@/lib/appsData';
 import { StarRating } from '@/components/StarRating';
+import { AppCardSkeleton } from '@/components/AppCardSkeleton';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { trackEvent } from '@/lib/analytics';
@@ -193,7 +194,7 @@ export default function HomePage() {
           </div>
 
           {isLoading ? (
-            <div className="text-center py-20 text-sm text-zinc-500">Loading applications...</div>
+            <AppCardSkeleton count={6} />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {filteredApps.map((app, idx) => (

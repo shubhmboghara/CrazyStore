@@ -322,8 +322,12 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
-              {isLoading ? '...' : kpis.totalPageViews.toLocaleString()}
+            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100 min-h-[32px] flex items-center">
+              {isLoading ? (
+                <div className="w-16 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+              ) : (
+                kpis.totalPageViews.toLocaleString()
+              )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1 flex items-center gap-1">
               <span className="text-emerald-500 font-bold flex items-center">
@@ -343,8 +347,12 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
-              {isLoading ? '...' : kpis.uniqueVisitors.toLocaleString()}
+            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100 min-h-[32px] flex items-center">
+              {isLoading ? (
+                <div className="w-16 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+              ) : (
+                kpis.uniqueVisitors.toLocaleString()
+              )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1 flex items-center gap-1">
               <span>{kpis.totalSessions} total sessions</span>
@@ -361,8 +369,12 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              {isLoading ? '...' : kpis.completedTasks.toLocaleString()}
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 min-h-[32px] flex items-center">
+              {isLoading ? (
+                <div className="w-16 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 animate-pulse" />
+              ) : (
+                kpis.completedTasks.toLocaleString()
+              )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1 flex items-center gap-1">
               <span className="font-bold text-emerald-600 dark:text-emerald-400">{kpis.taskCompletionRate}%</span>
@@ -380,8 +392,12 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
-              {isLoading ? '...' : kpis.earlyExits.toLocaleString()}
+            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100 min-h-[32px] flex items-center">
+              {isLoading ? (
+                <div className="w-16 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+              ) : (
+                kpis.earlyExits.toLocaleString()
+              )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1 flex items-center gap-1">
               <span className="font-bold text-rose-500">{kpis.bounceRate}%</span>
@@ -399,8 +415,12 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
-              {isLoading ? '...' : kpis.avgDurationFormatted}
+            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100 min-h-[32px] flex items-center">
+              {isLoading ? (
+                <div className="w-20 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+              ) : (
+                kpis.avgDurationFormatted
+              )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1">
               Time spent exploring apps
@@ -417,8 +437,12 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
-              {isLoading ? '...' : (statsData?.locations?.countries?.length || 1)}
+            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100 min-h-[32px] flex items-center">
+              {isLoading ? (
+                <div className="w-12 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+              ) : (
+                statsData?.locations?.countries?.length || 1
+              )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1">
               Countries & regions visited

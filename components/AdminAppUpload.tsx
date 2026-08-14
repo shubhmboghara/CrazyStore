@@ -1333,8 +1333,25 @@ export function AdminAppUpload() {
 
           <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
             {isLoadingApps ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2, 3, 4].map((n) => (
+                  <div
+                    key={n}
+                    className="p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 animate-pulse flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
+                      <div className="space-y-2">
+                        <div className="w-32 h-4 rounded bg-zinc-300 dark:bg-zinc-700" />
+                        <div className="w-24 h-3 rounded bg-zinc-200 dark:bg-zinc-800" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+                      <div className="w-8 h-8 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : apps.length === 0 ? (
               <div className="text-center py-20 px-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl">
@@ -1416,8 +1433,25 @@ export function AdminAppUpload() {
 
           <div className="space-y-6">
             {isLoadingReviews ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4].map((n) => (
+                  <div
+                    key={n}
+                    className="p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 animate-pulse space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <div className="w-28 h-4 rounded bg-zinc-300 dark:bg-zinc-700" />
+                        <div className="w-36 h-3 rounded bg-zinc-200 dark:bg-zinc-800" />
+                      </div>
+                      <div className="w-14 h-5 rounded-full bg-amber-100 dark:bg-amber-950/40" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="w-full h-3.5 rounded bg-zinc-200 dark:bg-zinc-800" />
+                      <div className="w-4/5 h-3.5 rounded bg-zinc-200 dark:bg-zinc-800" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : reviews.length === 0 ? (
               <div className="text-center py-20 px-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl">
