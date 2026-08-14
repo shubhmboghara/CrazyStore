@@ -8,6 +8,7 @@ import { StarRating } from '@/components/StarRating';
 import { ReviewForm } from '@/components/ReviewForm';
 import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
 import { AppDetailSkeleton } from '@/components/AppDetailSkeleton';
+import { LazyScreenshot } from '@/components/LazyScreenshot';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { trackEvent } from '@/lib/analytics';
@@ -405,7 +406,7 @@ export default function AppDetailPage() {
                   className="flex items-start gap-5 sm:gap-6 overflow-x-auto pb-3 pt-1 px-1 scroll-smooth snap-x snap-mandatory hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-none cursor-grab active:cursor-grabbing"
                 >
                   {validPreviews.map((preview, idx) => {
-                    const hasCustomTitle = preview.title && !/^screenshot\s*\d*$/i.test(preview.title.trim()) && !/^preview\s*\d*$/i.test(preview.title.trim()) && !/^screen\s*\d*$/i.test(preview.title.trim());
+                    const hasCustomTitle = Boolean(preview.title && !/^screenshot\s*\d*$/i.test(preview.title.trim()) && !/^preview\s*\d*$/i.test(preview.title.trim()) && !/^screen\s*\d*$/i.test(preview.title.trim()));
 
                     return (
                       <div
@@ -421,40 +422,16 @@ export default function AppDetailPage() {
                         }}
                         className="shrink-0 w-64 sm:w-72 md:w-80 lg:w-[320px] group cursor-pointer snap-start flex flex-col items-center"
                       >
-                        {/* Full Uncut Screenshot Card */}
-                        <div className="relative w-full h-[460px] sm:h-[520px] md:h-[560px] rounded-3xl overflow-hidden bg-zinc-900 dark:bg-black border border-zinc-200/80 dark:border-zinc-800 shadow-md group-hover:shadow-2xl group-hover:border-purple-500/80 transition-all duration-300 transform group-hover:-translate-y-1.5 flex items-center justify-center p-2.5 sm:p-3">
-                          {/* Ambient backdrop glow */}
-                          <div
-                            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 dark:opacity-35 scale-125 pointer-events-none transition-opacity duration-300"
-                            style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
-                          />
-
-                          {/* Full Image */}
-                          <img
-                            src={preview.imageUrl || preview.url}
-                            alt={hasCustomTitle ? preview.title : appData.name}
-                            className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-2xl drop-shadow-xl group-hover:scale-[1.02] transition-transform duration-300 pointer-events-none"
-                            draggable={false}
-                          />
-
-                          {/* Hover Overlay with Zoom Indicator */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 sm:p-5 flex flex-col justify-between z-20 pointer-events-none rounded-3xl">
-                            <div className="flex justify-end">
-                              <span className="p-2.5 sm:p-3 rounded-2xl bg-purple-600/90 backdrop-blur-md text-white shadow-lg shadow-purple-600/30">
-                                <ZoomIn className="w-4 h-4 sm:w-5 sm:h-5" />
-                              </span>
-                            </div>
-                            {hasCustomTitle ? (
-                              <span className="text-sm font-bold text-white line-clamp-2 drop-shadow-md">
-                                {preview.title}
-                              </span>
-                            ) : (
-                              <span className="text-xs font-semibold text-zinc-200 drop-shadow-sm">
-                                Tap to view full size
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        {/* Full Uncut Screenshot Card with IntersectionObserver Lazy Loading */}
+                        <LazyScreenshot
+                          src={preview.imageUrl || preview.url}
+                          alt={appData.name}
+                          title={preview.title}
+                          hasCustomTitle={hasCustomTitle}
+                          aspectClass="h-[460px] sm:h-[520px] md:h-[560px]"
+                          rootRef={previewsContainerRef}
+                          priority={idx < 2}
+                        />
 
                         {/* Optional Custom Caption */}
                         {hasCustomTitle && (
@@ -580,7 +557,7 @@ export default function AppDetailPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                     {validPreviews.map((preview, idx) => {
-                      const hasCustomTitle = preview.title && !/^screenshot\s*\d*$/i.test(preview.title.trim()) && !/^preview\s*\d*$/i.test(preview.title.trim()) && !/^screen\s*\d*$/i.test(preview.title.trim());
+                      const hasCustomTitle = Boolean(preview.title && !/^screenshot\s*\d*$/i.test(preview.title.trim()) && !/^preview\s*\d*$/i.test(preview.title.trim()) && !/^screen\s*\d*$/i.test(preview.title.trim()));
 
                       return (
                         <div
@@ -588,33 +565,14 @@ export default function AppDetailPage() {
                           onClick={() => setLightboxIndex(idx)}
                           className="group cursor-pointer flex flex-col items-center"
                         >
-                          <div className="relative w-full h-[460px] sm:h-[500px] rounded-3xl overflow-hidden bg-zinc-900 dark:bg-black border border-zinc-200/90 dark:border-zinc-800 shadow-md group-hover:shadow-2xl group-hover:border-purple-500/80 transition-all duration-300 transform group-hover:-translate-y-1.5 flex items-center justify-center p-2.5 sm:p-3">
-                            {/* Ambient backdrop glow */}
-                            <div
-                              className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 dark:opacity-35 scale-125 pointer-events-none transition-opacity duration-300"
-                              style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
-                            />
-
-                            {/* Full Image */}
-                            <img
-                              src={preview.imageUrl || preview.url}
-                              alt={hasCustomTitle ? preview.title : appData.name}
-                              className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-2xl drop-shadow-xl group-hover:scale-[1.02] transition-transform duration-300"
-                            />
-
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-between z-20 pointer-events-none rounded-3xl">
-                              <div className="flex justify-end">
-                                <span className="p-2.5 rounded-2xl bg-purple-600 text-white shadow-lg">
-                                  <ZoomIn className="w-4 h-4" />
-                                </span>
-                              </div>
-                              {hasCustomTitle && (
-                                <span className="text-sm font-bold text-white line-clamp-2">
-                                  {preview.title}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                          <LazyScreenshot
+                            src={preview.imageUrl || preview.url}
+                            alt={appData.name}
+                            title={preview.title}
+                            hasCustomTitle={hasCustomTitle}
+                            aspectClass="h-[460px] sm:h-[500px]"
+                            priority={idx < 3}
+                          />
 
                           {hasCustomTitle && (
                             <div className="mt-3 text-center w-full px-2">
@@ -674,16 +632,13 @@ export default function AppDetailPage() {
                           <div
                             key={preview.id || idx}
                             onClick={() => setLightboxIndex(idx)}
-                            className="shrink-0 w-44 sm:w-52 h-72 sm:h-80 rounded-2xl overflow-hidden bg-zinc-900 dark:bg-black border border-zinc-200 dark:border-zinc-800 shadow-sm cursor-pointer hover:border-purple-500 hover:shadow-xl transition-all transform hover:-translate-y-1 relative p-1.5 flex items-center justify-center"
+                            className="shrink-0 w-44 sm:w-52 group cursor-pointer"
                           >
-                            <div
-                              className="absolute inset-0 bg-cover bg-center blur-xl opacity-20 pointer-events-none"
-                              style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
-                            />
-                            <img
+                            <LazyScreenshot
                               src={preview.imageUrl || preview.url}
                               alt={appData.name}
-                              className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-xl drop-shadow-md hover:scale-105 transition-transform duration-300"
+                              aspectClass="h-72 sm:h-80"
+                              priority={idx < 2}
                             />
                           </div>
                         ))}
