@@ -1,6 +1,6 @@
 'use client';
 
-// Client-side analytics helper and event emitter
+// Client-side real-time analytics helper and event emitter
 
 export type ActivityType =
   | 'page_view'
@@ -14,6 +14,7 @@ export type ActivityType =
   | 'share_click'
   | 'theme_toggle'
   | 'early_exit'
+  | 'session_ping'
   | 'task_completed';
 
 export interface TrackPayload {
@@ -33,16 +34,16 @@ export function getVisitorId(): string {
   try {
     let vid = localStorage.getItem('cs_visitor_id');
     if (!vid) {
-      vid = 'v_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+      vid = 'v_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
       localStorage.setItem('cs_visitor_id', vid);
     }
     return vid;
   } catch {
-    return 'anonymous_' + Math.random().toString(36).substring(2, 8);
+    return 'anon_' + Math.random().toString(36).substring(2, 8);
   }
 }
 
-// Generate or retrieve session ID (expires after 30 mins of inactivity)
+// Generate or retrieve session ID (expires after 25 mins of inactivity)
 export function getSessionId(): string {
   if (typeof window === 'undefined') return 'server_session';
   try {
@@ -50,11 +51,11 @@ export function getSessionId(): string {
     const timeKey = 'cs_session_time';
     const now = Date.now();
     const lastActive = parseInt(sessionStorage.getItem(timeKey) || '0', 10);
-    
+
     let sid = sessionStorage.getItem(sessionKey);
-    // New session if older than 30 mins or not exists
-    if (!sid || (now - lastActive > 30 * 60 * 1000)) {
-      sid = 's_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+    // New session if older than 25 mins or not exists
+    if (!sid || (now - lastActive > 25 * 60 * 1000)) {
+      sid = 's_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
       sessionStorage.setItem(sessionKey, sid);
     }
     sessionStorage.setItem(timeKey, now.toString());
@@ -64,7 +65,7 @@ export function getSessionId(): string {
   }
 }
 
-// Detect basic device and screen info
+// Detect client device, screen, timezone, and locale info
 export function getClientDeviceInfo() {
   if (typeof window === 'undefined') {
     return {
@@ -73,6 +74,7 @@ export function getClientDeviceInfo() {
       browser: 'Unknown',
       screenResolution: '1920x1080',
       language: 'en',
+      timeZone: 'UTC',
     };
   }
 
@@ -98,17 +100,23 @@ export function getClientDeviceInfo() {
   else if (/Edg/i.test(ua)) browser = 'Edge';
   else if (/OPR/i.test(ua)) browser = 'Opera';
 
+  let timeZone = 'UTC';
+  try {
+    timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {}
+
   return {
     deviceType,
     os,
     browser,
     screenResolution: `${window.screen?.width || 0}x${window.screen?.height || 0}`,
     language: navigator.language || 'en-US',
+    timeZone,
   };
 }
 
 /**
- * Send an analytics event to the server
+ * Send a real analytics event to the server
  */
 export async function trackEvent(payload: TrackPayload) {
   if (typeof window === 'undefined') return;
@@ -120,7 +128,6 @@ export async function trackEvent(payload: TrackPayload) {
     const currentPath = payload.path || window.location.pathname;
     const referrer = document.referrer || '';
 
-    // Automatically determine if task is completed
     const isCompleted = payload.isTaskCompleted ?? (
       payload.eventType === 'app_download' ||
       payload.eventType === 'review_submit' ||
@@ -143,6 +150,7 @@ export async function trackEvent(payload: TrackPayload) {
       browser: deviceInfo.browser,
       screenResolution: deviceInfo.screenResolution,
       language: deviceInfo.language,
+      timeZone: deviceInfo.timeZone,
       referrer,
       timestamp: new Date().toISOString(),
     };
@@ -156,9 +164,46 @@ export async function trackEvent(payload: TrackPayload) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData),
         keepalive: true,
-      }).catch((e) => console.debug('Analytics track error:', e));
+      }).catch((e) => console.debug('Analytics track debug:', e));
     }
   } catch (err) {
     console.debug('Analytics tracking skipped:', err);
   }
 }
+
+/**
+ * Sends a real test ping event for admin testing
+ */
+export async function pingTestEvent(customAppSlug?: string, customAppName?: string) {
+  const visitorId = getVisitorId();
+  const sessionId = getSessionId();
+  const deviceInfo = getClientDeviceInfo();
+
+  const bodyData = {
+    visitorId,
+    sessionId,
+    eventType: 'app_view',
+    path: customAppSlug ? `/apps/${customAppSlug}` : '/',
+    appSlug: customAppSlug || null,
+    appName: customAppName || 'Live Test Verification',
+    details: customAppName ? `Admin verified live session on ${customAppName}` : 'Admin verified live session ping',
+    metadata: { isAdminTest: true },
+    durationSeconds: 12,
+    isTaskCompleted: false,
+    device: deviceInfo.deviceType,
+    os: deviceInfo.os,
+    browser: deviceInfo.browser,
+    screenResolution: deviceInfo.screenResolution,
+    language: deviceInfo.language,
+    timeZone: deviceInfo.timeZone,
+    referrer: 'Admin Verification',
+    timestamp: new Date().toISOString(),
+  };
+
+  return fetch('/api/analytics/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bodyData),
+  });
+}
+

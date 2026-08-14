@@ -20,6 +20,7 @@ export function AnalyticsTracker() {
     trackEvent({
       eventType: 'page_view',
       path: pathname,
+      details: pathname === '/' ? 'Visited Homepage' : `Browsing ${pathname}`,
     });
 
     // Mark interaction on user clicks/scrolls
@@ -31,18 +32,38 @@ export function AnalyticsTracker() {
     window.addEventListener('scroll', handleUserInteraction, { passive: true });
     window.addEventListener('keydown', handleUserInteraction, { passive: true });
 
+    // Live session heartbeat: ping server every 20 seconds to keep live visitor status active
+    const heartbeatInterval = setInterval(() => {
+      const activeDuration = Math.round((Date.now() - startTimeRef.current) / 1000);
+      trackEvent({
+        eventType: 'session_ping',
+        path: pathname,
+        durationSeconds: activeDuration,
+        details: `Active on ${pathname}`,
+      });
+    }, 20000);
+
     // Handle Early Exit vs Duration on tab close or navigation
     const handleUnload = () => {
       if (eventSentRef.current) return;
-      const durationSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
+      const durationSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
 
-      // If user stayed < 8 seconds with zero interactions, flag as early exit
-      if (durationSeconds < 8 && !hasInteractedRef.current) {
+      // If user stayed < 6 seconds with zero interactions, flag as early exit
+      if (durationSeconds < 6 && !hasInteractedRef.current) {
         trackEvent({
           eventType: 'early_exit',
           path: pathname,
           durationSeconds,
           isTaskCompleted: false,
+          details: `Left ${pathname} in under 6s (Bounced)`,
+        });
+      } else {
+        // Send final duration update
+        trackEvent({
+          eventType: 'session_ping',
+          path: pathname,
+          durationSeconds,
+          details: `Completed session on ${pathname} (${durationSeconds}s)`,
         });
       }
       eventSentRef.current = true;
@@ -51,6 +72,7 @@ export function AnalyticsTracker() {
     window.addEventListener('beforeunload', handleUnload);
 
     return () => {
+      clearInterval(heartbeatInterval);
       handleUnload();
       window.removeEventListener('click', handleUserInteraction);
       window.removeEventListener('scroll', handleUserInteraction);
@@ -61,3 +83,4 @@ export function AnalyticsTracker() {
 
   return null;
 }
+

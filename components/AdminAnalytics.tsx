@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Users,
   Eye,
@@ -27,6 +27,9 @@ import {
   Trash2,
   Database,
   ShieldAlert,
+  Send,
+  Radio,
+  ExternalLink,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -44,6 +47,8 @@ import {
   Legend,
 } from 'recharts';
 import { useToast } from '@/components/Toast';
+import { pingTestEvent } from '@/lib/analytics';
+import Link from 'next/link';
 
 interface AdminAnalyticsProps {
   passcode: string;
@@ -54,38 +59,47 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
   const [timeRange, setTimeRange] = useState<'today' | '7d' | '30d' | 'all'>('7d');
   const [selectedAppSlug, setSelectedAppSlug] = useState<string>('all');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAutoSync, setIsAutoSync] = useState<boolean>(true);
   const [statsData, setStatsData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'app_locations' | 'activities'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'app_locations' | 'activities' | 'locations'>('overview');
   const [appSearch, setAppSearch] = useState<string>('');
   const [activityFilter, setActivityFilter] = useState<string>('all');
   const [activitySearch, setActivitySearch] = useState<string>('');
+  const [isPinging, setIsPinging] = useState<boolean>(false);
+  const [isClearing, setIsClearing] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('Just now');
 
-  const fetchStats = useCallback(async (range = timeRange, appSlug = selectedAppSlug) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/analytics/stats?range=${range}&appSlug=${appSlug}`, {
-        headers: {
-          'x-admin-key': passcode,
-        },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setStatsData(data);
-      } else {
-        showToast('Failed to load analytics data', 'error');
+  const fetchStats = useCallback(
+    async (range = timeRange, appSlug = selectedAppSlug, isSilent = false) => {
+      if (!isSilent) setIsLoading(true);
+      try {
+        const res = await fetch(`/api/analytics/stats?range=${range}&appSlug=${appSlug}`, {
+          headers: {
+            'x-admin-key': passcode,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStatsData(data);
+          setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        } else {
+          if (!isSilent) showToast('Failed to load analytics data', 'error');
+        }
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+        if (!isSilent) showToast('Error connecting to analytics engine', 'error');
+      } finally {
+        if (!isSilent) setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching analytics:', err);
-      showToast('Error connecting to analytics engine', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [passcode, timeRange, selectedAppSlug, showToast]);
+    },
+    [passcode, timeRange, selectedAppSlug, showToast]
+  );
 
+  // Initial and reactive load
   useEffect(() => {
     let ignore = false;
-    async function load() {
-      setIsLoading(true);
+
+    async function loadData() {
       try {
         const res = await fetch(`/api/analytics/stats?range=${timeRange}&appSlug=${selectedAppSlug}`, {
           headers: {
@@ -95,22 +109,55 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
         if (res.ok && !ignore) {
           const data = await res.json();
           setStatsData(data);
+          setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
         }
       } catch (err) {
-        console.error('Error fetching analytics:', err);
+        console.error('Error loading analytics:', err);
       } finally {
         if (!ignore) {
           setIsLoading(false);
         }
       }
     }
-    load();
+
+    loadData();
+
     return () => {
       ignore = true;
     };
   }, [timeRange, selectedAppSlug, passcode]);
 
-  const handleAction = async (action: 'seed' | 'clear') => {
+  // Live Auto-Sync Polling every 5 seconds
+  useEffect(() => {
+    if (!isAutoSync) return;
+    const interval = setInterval(() => {
+      fetchStats(timeRange, selectedAppSlug, true);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isAutoSync, timeRange, selectedAppSlug, fetchStats]);
+
+  // Send real live test ping
+  const handleSendTestPing = async () => {
+    setIsPinging(true);
+    try {
+      await pingTestEvent(selectedAppSlug !== 'all' ? selectedAppSlug : undefined);
+      showToast('Live test visit event dispatched! Updating analytics...', 'success');
+      setTimeout(() => {
+        fetchStats(timeRange, selectedAppSlug, true);
+        setIsPinging(false);
+      }, 500);
+    } catch {
+      showToast('Failed to send test event', 'error');
+      setIsPinging(false);
+    }
+  };
+
+  // Clear analytics history
+  const handleClearHistory = async () => {
+    if (!confirm('Are you sure you want to clear all in-memory analytics events and reset the dashboard?')) {
+      return;
+    }
+    setIsClearing(true);
     try {
       const res = await fetch('/api/analytics/stats', {
         method: 'POST',
@@ -118,17 +165,19 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
           'Content-Type': 'application/json',
           'x-admin-key': passcode,
         },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action: 'clear' }),
       });
       const data = await res.json();
       if (res.ok) {
-        showToast(data.message || 'Action executed successfully', 'success');
-        fetchStats(timeRange);
+        showToast(data.message || 'Analytics history reset cleanly', 'success');
+        fetchStats(timeRange, selectedAppSlug);
       } else {
-        showToast(data.error || 'Action failed', 'error');
+        showToast(data.error || 'Failed to clear analytics', 'error');
       }
     } catch {
-      showToast('Error performing analytics action', 'error');
+      showToast('Error resetting analytics', 'error');
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -177,24 +226,43 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             <div>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  Visitor Traffic & Location Intelligence
+                  Real-Time Visitor & Location Analytics
                 </h2>
-                {kpis.activeRightNow > 0 && (
+                {kpis.activeRightNow > 0 ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 text-xs font-bold animate-pulse">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    {kpis.activeRightNow} Live Now
+                    {kpis.activeRightNow} Live Active Now
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 text-xs font-bold">
+                    <span className="w-2 h-2 rounded-full bg-zinc-400"></span>
+                    Ready for Visitors
                   </span>
                 )}
               </div>
               <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
-                Track visitor count, origin countries & cities per app, visiting hours, and task completions.
+                100% Real visitor sessions, location intelligence per app, live activity audit, and conversion tracking.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Toolbar: App Filter, Time Range & Quick Actions */}
+        {/* Toolbar: App Filter, Time Range, Auto-Sync & Real-Time Actions */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Live Auto Sync Toggle */}
+          <button
+            onClick={() => setIsAutoSync(!isAutoSync)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-xs font-bold transition-all ${
+              isAutoSync
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-200/80 dark:border-zinc-700/60'
+            }`}
+            title="Auto-refresh analytics every 5s"
+          >
+            <Radio className={`w-3.5 h-3.5 ${isAutoSync ? 'animate-pulse text-emerald-500' : ''}`} />
+            <span>{isAutoSync ? 'Live Sync ON' : 'Live Sync Paused'}</span>
+          </button>
+
           {/* App Selector Dropdown */}
           <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-700/60 text-xs font-bold">
             <Smartphone className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
@@ -203,7 +271,7 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
               onChange={(e) => {
                 setSelectedAppSlug(e.target.value);
               }}
-              className="bg-transparent text-zinc-800 dark:text-zinc-200 font-bold focus:outline-none cursor-pointer max-w-[150px] sm:max-w-[200px] truncate"
+              className="bg-transparent text-zinc-800 dark:text-zinc-200 font-bold focus:outline-none cursor-pointer max-w-[150px] sm:max-w-[190px] truncate"
             >
               <option value="all">All Apps (Storewide)</option>
               {statsData?.availableApps?.map((app: any) => (
@@ -247,25 +315,36 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             onClick={() => fetchStats(timeRange, selectedAppSlug)}
             disabled={isLoading}
             className="p-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-950/60 text-zinc-700 dark:text-zinc-300 hover:text-purple-600 dark:hover:text-purple-400 border border-zinc-200/80 dark:border-zinc-700/60 transition-all"
-            title="Refresh analytics data"
+            title={`Refresh analytics (Last: ${lastSyncTime})`}
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-purple-600' : ''}`} />
           </button>
 
-          {/* Generate Traffic Data */}
+          {/* Send Live Test Ping */}
           <button
-            onClick={() => handleAction('seed')}
-            className="px-3.5 py-2 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40 text-xs font-bold hover:bg-purple-100 transition-colors flex items-center gap-1.5"
-            title="Seed realistic sample visitors & activity stream"
+            onClick={handleSendTestPing}
+            disabled={isPinging}
+            className="px-3.5 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
+            title="Dispatch a real live test visit event to verify real-time tracking"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Generate Traffic Data</span>
+            <Send className={`w-3.5 h-3.5 ${isPinging ? 'animate-bounce' : ''}`} />
+            <span>{isPinging ? 'Pinging...' : 'Test Live Ping'}</span>
+          </button>
+
+          {/* Reset / Clear History */}
+          <button
+            onClick={handleClearHistory}
+            disabled={isClearing}
+            className="p-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 border border-zinc-200/80 dark:border-zinc-700/60 transition-all"
+            title="Reset/Clear analytics logs"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Main View Tabs */}
-      <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-3">
+      {/* Main View Navigation Tabs */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-3">
         <button
           onClick={() => setActiveTab('overview')}
           className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
@@ -287,10 +366,27 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
           }`}
         >
           <Globe2 className="w-4 h-4" />
-          App Visitor Locations & Origins
+          App Visitor Location Intelligence
           {statsData?.appLocations?.length > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-black">
-              {statsData.appLocations.length}
+            <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-black">
+              {statsData.appLocations.length} Apps
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('locations')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
+            activeTab === 'locations'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+          }`}
+        >
+          <Globe2 className="w-4 h-4" />
+          Countries & Top Cities
+          {statsData?.locations?.countries?.length > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-black">
+              {statsData.locations.countries.length}
             </span>
           )}
         </button>
@@ -304,16 +400,16 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
           }`}
         >
           <Activity className="w-4 h-4" />
-          Live User Activity Log
-          <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-black">
-            {recentActivities.length}
+          Live Activity Audit Stream
+          <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-black">
+            {recentActivities.length} Events
           </span>
         </button>
       </div>
 
       {/* Top 6 KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {/* Card 1: Total Visits */}
+        {/* Card 1: Total Views */}
         <div className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs hover:border-purple-500/50 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Views</span>
@@ -331,9 +427,9 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             </div>
             <p className="text-[11px] text-zinc-500 mt-1 flex items-center gap-1">
               <span className="text-emerald-500 font-bold flex items-center">
-                <TrendingUp className="w-3 h-3 mr-0.5" /> Active
+                <TrendingUp className="w-3 h-3 mr-0.5" /> Real-time
               </span>
-              <span>across all pages</span>
+              <span>across catalog & apps</span>
             </p>
           </div>
         </div>
@@ -355,7 +451,7 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
               )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1 flex items-center gap-1">
-              <span>{kpis.totalSessions} total sessions</span>
+              <span>{kpis.totalSessions} active sessions</span>
             </p>
           </div>
         </div>
@@ -378,7 +474,7 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
             </div>
             <p className="text-[11px] text-zinc-500 mt-1 flex items-center gap-1">
               <span className="font-bold text-emerald-600 dark:text-emerald-400">{kpis.taskCompletionRate}%</span>
-              <span>completion rate</span>
+              <span>conversion rate</span>
             </p>
           </div>
         </div>
@@ -423,7 +519,7 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
               )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1">
-              Time spent exploring apps
+              Measured from real sessions
             </p>
           </div>
         </div>
@@ -441,7 +537,7 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
               {isLoading ? (
                 <div className="w-12 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
               ) : (
-                statsData?.locations?.countries?.length || 1
+                statsData?.locations?.countries?.length || 0
               )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-1">
@@ -470,7 +566,7 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
                     )}
                   </h3>
                   <p className="text-xs text-zinc-500 mt-0.5">
-                    Daily visitor trends, total page views, and completed goals (downloads & reviews)
+                    Real visitor trends, total page views, and completed goals (downloads & reviews)
                   </p>
                 </div>
 
@@ -523,8 +619,9 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-zinc-400 text-xs">
-                    No timeline data recorded yet
+                  <div className="h-full flex flex-col items-center justify-center text-zinc-400 text-xs space-y-2">
+                    <Activity className="w-8 h-8 opacity-30" />
+                    <span>No traffic recorded in this time range yet</span>
                   </div>
                 )}
               </div>
@@ -538,7 +635,7 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
                     <Globe2 className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                     Visitor Locations
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">Top countries & regions visiting your store</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Real countries & regions visiting your store</p>
                 </div>
               </div>
 
@@ -569,7 +666,7 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
                   ))
                 ) : (
                   <div className="text-center py-8 text-zinc-400 text-xs">
-                    No location data yet
+                    No visitor locations recorded yet
                   </div>
                 )}
               </div>
@@ -722,7 +819,7 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
                 App Visitor Origins & Location Intelligence
               </h3>
               <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-                See exactly which countries and cities are visiting each app, APK download conversion per region, and active hours.
+                Real location analytics for every app: see exact countries, cities, conversion rates, and hourly distribution.
               </p>
             </div>
 
@@ -765,9 +862,19 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
                           <Smartphone className="w-4 h-4" />
                         </div>
                         <div>
-                          <h4 className="text-base font-black text-zinc-900 dark:text-zinc-100">
-                            {app.name}
-                          </h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-base font-black text-zinc-900 dark:text-zinc-100">
+                              {app.name}
+                            </h4>
+                            <Link
+                              href={`/apps/${app.slug}`}
+                              target="_blank"
+                              className="text-zinc-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                              title="Open app page to test live tracking"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
                           <span className="text-[11px] font-mono text-zinc-400">
                             /apps/{app.slug}
                           </span>
@@ -836,35 +943,41 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
                     </div>
 
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                      {app.countries?.map((c: any, cIdx: number) => (
-                        <div key={c.code || cIdx} className="space-y-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
-                              <span className="text-base">{c.flag || '🌐'}</span>
-                              <span className="font-bold">{c.country}</span>
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-zinc-900 dark:text-zinc-100 font-bold">
-                                {c.visits} visits
+                      {app.countries?.length > 0 ? (
+                        app.countries.map((c: any, cIdx: number) => (
+                          <div key={c.code || cIdx} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                                <span className="text-base">{c.flag || '🌐'}</span>
+                                <span className="font-bold">{c.country}</span>
                               </span>
-                              {c.downloads > 0 && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 font-bold">
-                                  {c.downloads} dl
+                              <div className="flex items-center gap-2">
+                                <span className="text-zinc-900 dark:text-zinc-100 font-bold">
+                                  {c.visits} visits
                                 </span>
-                              )}
-                              <span className="text-[10px] text-zinc-400 font-mono">
-                                {c.percentage}%
-                              </span>
+                                {c.downloads > 0 && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 font-bold">
+                                    {c.downloads} dl
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-zinc-400 font-mono">
+                                  {c.percentage}%
+                                </span>
+                              </div>
+                            </div>
+                            <div className="w-full h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-purple-500"
+                                style={{ width: `${Math.max(c.percentage, 6)}%` }}
+                              ></div>
                             </div>
                           </div>
-                          <div className="w-full h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-purple-500"
-                              style={{ width: `${Math.max(c.percentage, 6)}%` }}
-                            ></div>
-                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-zinc-400 text-xs">
+                          No visits tracked yet for this app
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
 
@@ -896,20 +1009,120 @@ export function AdminAnalytics({ passcode }: AdminAnalyticsProps) {
         </div>
       )}
 
-      {/* TAB 3: LIVE USER ACTIVITY STREAM & AUDIT LOG */}
+      {/* TAB 3: COUNTRIES & TOP CITIES */}
+      {activeTab === 'locations' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Countries Full Breakdown Table */}
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <Globe2 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    Visitor Origin Countries
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">Real visitor sessions grouped by geographic country</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {statsData?.locations?.countries?.length > 0 ? (
+                  statsData.locations.countries.map((c: any, idx: number) => (
+                    <div
+                      key={c.code || idx}
+                      className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800/80"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{c.flag || '🌐'}</span>
+                        <div>
+                          <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {c.country} ({c.code})
+                          </span>
+                          <span className="text-[10px] text-zinc-500">
+                            {c.uniqueVisitors} unique visitors • {c.completedTasks} completed goals
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-sm font-black text-zinc-900 dark:text-zinc-100 block">
+                          {c.count} visits
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 font-bold">
+                          {c.percentage}% share
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-zinc-400 text-xs">
+                    No country location data logged yet
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Top Origin Cities List */}
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <Globe2 className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                    Top Origin Cities
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">High traffic metropolitan areas</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {statsData?.locations?.topCities?.length > 0 ? (
+                  statsData.locations.topCities.map((ct: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800/80"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{ct.flag || '📍'}</span>
+                        <div>
+                          <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {ct.city}
+                          </span>
+                          <span className="text-[10px] text-zinc-500">{ct.country}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-xs font-black text-cyan-600 dark:text-cyan-400 block">
+                          {ct.count} visits
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-zinc-400 text-xs">
+                    No city data logged yet
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: LIVE USER ACTIVITY STREAM & AUDIT LOG */}
       {activeTab === 'activities' && (
         <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm p-6 space-y-5 animate-in fade-in duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-5">
             <div>
               <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2.5">
                 <Activity className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                Live User Activity Stream
+                Live User Activity Audit Stream
                 <span className="px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 text-xs font-bold border border-purple-200 dark:border-purple-800/40">
                   {recentActivities.length} Events
                 </span>
               </h3>
               <p className="text-xs text-zinc-500 mt-1">
-                Real-time audit log of every visitor action, app visited, location, and task completion status
+                Real-time audit log of visitor actions, app views, APK downloads, and reviews
               </p>
             </div>
 

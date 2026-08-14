@@ -19,115 +19,6 @@ if (!global.__analyticsStore) {
   };
 }
 
-// Helper to seed initial sample realistic activity if the store is empty
-function seedSampleAnalyticsIfEmpty() {
-  const store = global.__analyticsStore!;
-  if (store.events.length >= 10) return;
-
-  const sampleCountries = [
-    { country: 'United States', code: 'US', flag: '🇺🇸', city: 'San Francisco' },
-    { country: 'India', code: 'IN', flag: '🇮🇳', city: 'Bengaluru' },
-    { country: 'Germany', code: 'DE', flag: '🇩🇪', city: 'Berlin' },
-    { country: 'United Kingdom', code: 'GB', flag: '🇬🇧', city: 'London' },
-    { country: 'Canada', code: 'CA', flag: '🇨🇦', city: 'Toronto' },
-    { country: 'France', code: 'FR', flag: '🇫🇷', city: 'Paris' },
-    { country: 'Japan', code: 'JP', flag: '🇯🇵', city: 'Tokyo' },
-    { country: 'Brazil', code: 'BR', flag: '🇧🇷', city: 'São Paulo' },
-  ];
-
-  const sampleApps = [
-    { slug: 'stride-counter-step-tracker', name: 'Stride Counter' },
-    { slug: 'zenith-focus-pomodoro-timer', name: 'Zenith Focus' },
-    { slug: 'aurora-notes-markdown-journal', name: 'Aurora Notes' },
-    { slug: 'pulse-fit-workout-companion', name: 'PulseFit Workout' },
-    { slug: 'crypto-track-realtime-portfolio', name: 'CryptoTrack' },
-  ];
-
-  const devices = ['Mobile', 'Desktop', 'Tablet'];
-  const browsers = ['Chrome', 'Safari', 'Firefox', 'Edge'];
-  const osList = ['Android', 'Windows', 'iOS', 'macOS'];
-
-  const now = Date.now();
-  // Generate sample historical events across past 7 days
-  for (let i = 0; i < 45; i++) {
-    const timeOffset = Math.floor(Math.random() * 6 * 24 * 60 * 60 * 1000) + (i * 15 * 60 * 1000);
-    const eventTime = new Date(now - timeOffset);
-    const countryObj = sampleCountries[i % sampleCountries.length];
-    const appObj = sampleApps[i % sampleApps.length];
-    const device = devices[i % devices.length];
-    const browser = browsers[i % browsers.length];
-    const os = osList[i % osList.length];
-
-    const eventTypes: Array<{ type: string; details: string; completed: boolean; path: string }> = [
-      { type: 'page_view', details: 'Visited Homepage', completed: false, path: '/' },
-      { type: 'app_view', details: `Explored App: ${appObj.name}`, completed: false, path: `/apps/${appObj.slug}` },
-      { type: 'app_download', details: `Downloaded APK: ${appObj.name}`, completed: true, path: `/apps/${appObj.slug}` },
-      { type: 'screenshot_view', details: `Expanded Highlights Gallery for ${appObj.name}`, completed: false, path: `/apps/${appObj.slug}` },
-      { type: 'review_submit', details: `Submitted 5★ Review for ${appObj.name}`, completed: true, path: `/apps/${appObj.slug}` },
-      { type: 'search', details: 'Searched "productivity tools"', completed: false, path: '/' },
-      { type: 'category_filter', details: 'Filtered apps by "Tools & Utilities"', completed: false, path: '/' },
-      { type: 'early_exit', details: 'Left within 5 seconds without action', completed: false, path: '/' },
-    ];
-
-    const ev = eventTypes[i % eventTypes.length];
-    const visitorId = `v_sample_${(i % 12) + 1}`;
-    const sessionId = `s_sample_${(i % 20) + 1}`;
-
-    const record = {
-      id: `ev_sample_${i}`,
-      visitorId,
-      sessionId,
-      eventType: ev.type,
-      path: ev.path,
-      appSlug: ev.type.includes('app') || ev.type.includes('screenshot') || ev.type.includes('review') ? appObj.slug : null,
-      appName: ev.type.includes('app') || ev.type.includes('screenshot') || ev.type.includes('review') ? appObj.name : null,
-      details: ev.details,
-      metadata: {},
-      durationSeconds: ev.type === 'early_exit' ? 4 : Math.floor(Math.random() * 180) + 20,
-      isTaskCompleted: ev.completed,
-      device,
-      os,
-      browser,
-      screenResolution: device === 'Mobile' ? '390x844' : '1920x1080',
-      language: 'en',
-      referrer: i % 2 === 0 ? 'https://google.com' : 'Direct',
-      country: countryObj.country,
-      countryCode: countryObj.code,
-      city: countryObj.city,
-      region: '',
-      flag: countryObj.flag,
-      ip: `192.168.${(i % 50) + 1}.*`,
-      createdAt: eventTime.toISOString(),
-      timestamp: eventTime.getTime(),
-      hour: eventTime.getHours(),
-      dayOfWeek: eventTime.getDay(),
-      dateStr: eventTime.toISOString().split('T')[0],
-    };
-
-    store.events.push(record);
-
-    // Register visitor
-    if (!store.visitors.has(visitorId)) {
-      store.visitors.set(visitorId, {
-        visitorId,
-        firstSeen: eventTime.toISOString(),
-        lastSeen: eventTime.toISOString(),
-        visitsCount: 1,
-        country: countryObj.country,
-        city: countryObj.city,
-        flag: countryObj.flag,
-        device,
-        os,
-        browser,
-        tasksCompleted: ev.completed ? 1 : 0,
-      });
-    }
-  }
-
-  // Sort events newest first
-  store.events.sort((a, b) => b.timestamp - a.timestamp);
-}
-
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -136,27 +27,36 @@ export async function GET(req: NextRequest) {
     const adminKey = req.headers.get('x-admin-key');
     const expectedPasscode = process.env.ADMIN_PASSCODE || 'Kf$W8Dx0UaSf0shubham@93';
 
-    // Optional admin verification
-    const isAdmin = adminKey && adminKey === expectedPasscode;
-
-    // Seed sample analytics if store is fresh
-    seedSampleAnalyticsIfEmpty();
-
+    // Store reference
     const store = global.__analyticsStore!;
     let allEvents = [...store.events];
 
-    // Try fetching from Supabase if table exists to combine
+    // Fetch existing custom/catalog apps from Supabase so we have the full catalog metadata
+    const registeredAppsMap: Record<string, { slug: string; name: string }> = {};
     try {
       const cookieStore = await cookies();
       const supabase = createClient(cookieStore);
+
+      const { data: dbApps } = await supabase.from('apps').select('slug, name');
+      if (dbApps && Array.isArray(dbApps)) {
+        dbApps.forEach((app: any) => {
+          if (app.slug) {
+            registeredAppsMap[app.slug.toLowerCase()] = {
+              slug: app.slug,
+              name: app.name || app.slug,
+            };
+          }
+        });
+      }
+
+      // Try fetching from Supabase analytics_events if available
       const { data: dbEvents, error } = await supabase
         .from('analytics_events')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(2000);
+        .limit(3000);
 
       if (!error && dbEvents && dbEvents.length > 0) {
-        // Merge Supabase events with in-memory store
         const existingIds = new Set(allEvents.map((e) => e.id));
         for (const d of dbEvents) {
           if (!existingIds.has(d.id)) {
@@ -190,13 +90,24 @@ export async function GET(req: NextRequest) {
         }
       }
     } catch {
-      // Supabase query fallback
+      // Supabase fallback
     }
 
     allEvents.sort((a, b) => b.timestamp - a.timestamp);
 
-    // Collect available apps list across all events
+    // Build available apps list from both known registered apps and tracked events
     const availableAppsMap: Record<string, { slug: string; name: string; totalEvents: number }> = {};
+
+    // Populate registered apps first
+    Object.values(registeredAppsMap).forEach((app) => {
+      availableAppsMap[app.slug] = {
+        slug: app.slug,
+        name: app.name,
+        totalEvents: 0,
+      };
+    });
+
+    // Count real events per app
     allEvents.forEach((e) => {
       if (e.appSlug) {
         if (!availableAppsMap[e.appSlug]) {
@@ -212,6 +123,7 @@ export async function GET(req: NextRequest) {
         }
       }
     });
+
     const availableAppsList = Object.values(availableAppsMap).sort((a, b) => b.totalEvents - a.totalEvents);
 
     // Apply time range filter
@@ -233,11 +145,12 @@ export async function GET(req: NextRequest) {
 
     // Apply appSlug filter if requested by the client
     const filteredEvents = selectedAppSlug !== 'all'
-      ? timeFilteredEvents.filter((e) => e.appSlug === selectedAppSlug || e.path?.includes(`/apps/${selectedAppSlug}`))
+      ? timeFilteredEvents.filter((e) => e.appSlug === selectedAppSlug || e.path?.toLowerCase().includes(`/apps/${selectedAppSlug.toLowerCase()}`))
       : timeFilteredEvents;
 
-    // 1. KPI Calculations
-    const totalPageViews = filteredEvents.filter((e) => e.eventType === 'page_view' || e.eventType === 'app_view').length || filteredEvents.length;
+    // 1. Real KPI Calculations
+    const pageViewEvents = filteredEvents.filter((e) => e.eventType === 'page_view' || e.eventType === 'app_view');
+    const totalPageViews = pageViewEvents.length > 0 ? pageViewEvents.length : filteredEvents.length;
     const uniqueVisitorsSet = new Set(filteredEvents.map((e) => e.visitorId));
     const uniqueVisitorsCount = uniqueVisitorsSet.size;
     const totalSessionsSet = new Set(filteredEvents.map((e) => e.sessionId));
@@ -252,31 +165,38 @@ export async function GET(req: NextRequest) {
       ? Math.min(100, Math.round((completedTasksCount / totalSessionsCount) * 100))
       : 0;
 
-    // Early Exit / Bounces (early_exit event OR session with only 1 event and duration < 10s)
-    const earlyExitsCount = filteredEvents.filter(
-      (e) => e.eventType === 'early_exit' || (e.durationSeconds > 0 && e.durationSeconds < 8 && !e.isTaskCompleted)
-    ).length;
+    // Early Exits / Bounces
+    const earlyExitsCount = filteredEvents.filter((e) => e.eventType === 'early_exit').length;
     const bounceRate = totalSessionsCount > 0
-      ? Math.min(100, Math.round((earlyExitsCount / Math.max(totalSessionsCount, 1)) * 100))
-      : 18;
+      ? Math.min(100, Math.round((earlyExitsCount / totalSessionsCount) * 100))
+      : 0;
 
-    // Active Visitors in last 15 mins
-    const fifteenMinsAgo = now - 15 * 60 * 1000;
-    const activeVisitorsRightNow = new Set(
-      allEvents.filter((e) => e.timestamp >= fifteenMinsAgo).map((e) => e.visitorId)
-    ).size || 1;
+    // Active Visitors in last 2 mins (Real-time live presence)
+    const twoMinsAgo = now - 2 * 60 * 1000;
+    let activeSessionsCount = 0;
+    store.sessions.forEach((s) => {
+      const lastActive = s.lastActiveTimestamp || (s.lastSeen ? new Date(s.lastSeen).getTime() : 0);
+      if (lastActive >= twoMinsAgo) {
+        activeSessionsCount += 1;
+      }
+    });
 
-    // Avg session duration
-    const durationEvents = filteredEvents.filter((e) => e.durationSeconds > 0);
+    // Also check recent events if session map was reset
+    const recentEventsActiveVisitors = new Set(
+      allEvents.filter((e) => e.timestamp >= twoMinsAgo).map((e) => e.visitorId)
+    ).size;
+    const activeVisitorsRightNow = Math.max(activeSessionsCount, recentEventsActiveVisitors);
+
+    // Avg session duration from real duration events
+    const durationEvents = filteredEvents.filter((e) => e.durationSeconds && e.durationSeconds > 0);
     const avgDurationSeconds = durationEvents.length > 0
       ? Math.round(durationEvents.reduce((acc, curr) => acc + curr.durationSeconds, 0) / durationEvents.length)
-      : 145;
+      : 0;
 
-    // 2. Timeline Chart Data (Group by date or hour)
+    // 2. Timeline Chart Data
     const timelineMap: Record<string, { date: string; pageViews: number; uniqueVisitors: number; completedTasks: number; bounces: number }> = {};
 
     if (timeRange === 'today') {
-      // Group by Hour (0 to 23)
       for (let h = 0; h <= 23; h++) {
         const hourKey = `${h.toString().padStart(2, '0')}:00`;
         timelineMap[hourKey] = { date: hourKey, pageViews: 0, uniqueVisitors: 0, completedTasks: 0, bounces: 0 };
@@ -290,8 +210,7 @@ export async function GET(req: NextRequest) {
         }
       });
     } else {
-      // Group by Day (past 7, 30 days)
-      const numDays = timeRange === '30d' ? 30 : 7;
+      const numDays = timeRange === '30d' ? 30 : timeRange === 'all' ? 14 : 7;
       for (let i = numDays - 1; i >= 0; i--) {
         const d = new Date(now - i * 24 * 60 * 60 * 1000);
         const dateKey = d.toISOString().split('T')[0];
@@ -340,10 +259,10 @@ export async function GET(req: NextRequest) {
       countryMap[cCode].visitors.add(e.visitorId);
       if (e.isTaskCompleted) countryMap[cCode].completedTasks += 1;
 
-      if (e.city && e.city !== 'Unknown City' && e.city !== 'Direct Visitor') {
+      if (e.city && e.city !== 'Unknown City' && e.city !== 'Direct Visitor' && e.city !== 'Local Visitor') {
         const cityKey = `${e.city}, ${e.country}`;
         if (!cityMap[cityKey]) {
-          cityMap[cityKey] = { city: e.city, country: e.country, flag: e.flag, count: 0 };
+          cityMap[cityKey] = { city: e.city, country: e.country, flag: e.flag || '🌐', count: 0 };
         }
         cityMap[cityKey].count += 1;
       }
@@ -365,7 +284,7 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // 4. Per-App Location Intelligence & Matrix (Which country/city visits which App)
+    // 4. Per-App Location Intelligence & Matrix (Real per-app breakdowns)
     const appLocationMatrix: Record<
       string,
       {
@@ -381,6 +300,22 @@ export async function GET(req: NextRequest) {
         lastActive: number;
       }
     > = {};
+
+    // Initialize all available apps in the matrix
+    Object.values(availableAppsMap).forEach((app) => {
+      appLocationMatrix[app.slug] = {
+        slug: app.slug,
+        name: app.name,
+        totalVisits: 0,
+        uniqueVisitors: new Set(),
+        downloads: 0,
+        reviews: 0,
+        countries: {},
+        cities: {},
+        hourly: Array(24).fill(0),
+        lastActive: 0,
+      };
+    });
 
     timeFilteredEvents.forEach((e) => {
       if (e.appSlug) {
@@ -423,7 +358,7 @@ export async function GET(req: NextRequest) {
         if (e.eventType === 'app_download') appObj.countries[cCode].downloads += 1;
 
         // City breakdown for this app
-        if (e.city && e.city !== 'Unknown City' && e.city !== 'Direct Visitor') {
+        if (e.city && e.city !== 'Unknown City' && e.city !== 'Direct Visitor' && e.city !== 'Local Visitor') {
           const cityKey = `${e.city}, ${e.country}`;
           if (!appObj.cities[cityKey]) {
             appObj.cities[cityKey] = {
@@ -460,15 +395,15 @@ export async function GET(req: NextRequest) {
           reviews: app.reviews,
           conversionRate: app.totalVisits > 0 ? Math.round((app.downloads / app.totalVisits) * 100) : 0,
           countries: sortedCountries,
-          topCountry: sortedCountries[0] || { country: 'United States', flag: '🇺🇸', visits: 0, percentage: 0 },
+          topCountry: sortedCountries[0] || null,
           cities: sortedCities,
           hourly: app.hourly,
-          lastActiveAgo: formatRelativeTime(app.lastActive),
+          lastActiveAgo: app.lastActive > 0 ? formatRelativeTime(app.lastActive) : 'No visits yet',
         };
       })
       .sort((a, b) => b.totalVisits - a.totalVisits);
 
-    // 4. Hourly Distribution (0-23 hours)
+    // 5. Hourly Distribution (0-23 hours)
     const hourlyDistribution = Array.from({ length: 24 }, (_, i) => ({
       hour: `${i.toString().padStart(2, '0')}:00`,
       visits: 0,
@@ -479,7 +414,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // 5. Activity Breakdown & Funnel
+    // 6. Activity Breakdown & Funnel
     const activityCounts: Record<string, number> = {
       page_view: 0,
       app_view: 0,
@@ -499,13 +434,13 @@ export async function GET(req: NextRequest) {
 
     // Conversion Funnel Data
     const funnelSteps = [
-      { step: 'Landed on Store', count: totalSessionsCount || 1, percentage: 100, color: '#9333ea' },
-      { step: 'Viewed App Details', count: activityCounts.app_view + activityCounts.screenshot_view || Math.round(totalSessionsCount * 0.72), percentage: totalSessionsCount ? Math.round(((activityCounts.app_view || 1) / totalSessionsCount) * 100) : 72, color: '#3b82f6' },
-      { step: 'Explored Gallery / Reviews', count: activityCounts.screenshot_view + Math.round(activityCounts.app_view * 0.45), percentage: totalSessionsCount ? Math.round(((activityCounts.screenshot_view || 1) / totalSessionsCount) * 100) : 48, color: '#06b6d4' },
+      { step: 'Landed on Store', count: totalSessionsCount, percentage: totalSessionsCount > 0 ? 100 : 0, color: '#9333ea' },
+      { step: 'Viewed App Details', count: activityCounts.app_view + activityCounts.screenshot_view, percentage: totalSessionsCount ? Math.min(100, Math.round(((activityCounts.app_view + activityCounts.screenshot_view) / totalSessionsCount) * 100)) : 0, color: '#3b82f6' },
+      { step: 'Explored Gallery / Reviews', count: activityCounts.screenshot_view, percentage: totalSessionsCount ? Math.min(100, Math.round((activityCounts.screenshot_view / totalSessionsCount) * 100)) : 0, color: '#06b6d4' },
       { step: 'Completed Goal (Download/Review)', count: completedTasksCount, percentage: taskCompletionRate, color: '#10b981' },
     ];
 
-    // 6. Top Apps Visited & Downloaded
+    // 7. Top Apps Visited & Downloaded
     const appStatsMap: Record<string, { slug: string; name: string; views: number; downloads: number; reviews: number }> = {};
     filteredEvents.forEach((e) => {
       if (e.appSlug) {
@@ -525,7 +460,7 @@ export async function GET(req: NextRequest) {
     });
     const topAppsList = Object.values(appStatsMap).sort((a, b) => (b.downloads * 3 + b.views) - (a.downloads * 3 + a.views)).slice(0, 8);
 
-    // 7. Device, OS, Browser Breakdowns
+    // 8. Device, OS, Browser Breakdowns
     const deviceMap: Record<string, number> = { Mobile: 0, Desktop: 0, Tablet: 0 };
     const browserMap: Record<string, number> = { Chrome: 0, Safari: 0, Firefox: 0, Edge: 0, Other: 0 };
     const osMap: Record<string, number> = { Android: 0, iOS: 0, Windows: 0, macOS: 0, Linux: 0, Other: 0 };
@@ -541,7 +476,7 @@ export async function GET(req: NextRequest) {
       else osMap.Other += 1;
     });
 
-    // 8. Recent Detailed Activity Stream (last 60 events)
+    // 9. Recent Detailed Activity Stream (last 60 real events)
     const recentActivityStream = filteredEvents.slice(0, 60).map((e) => ({
       id: e.id,
       visitorId: e.visitorId,
@@ -605,30 +540,25 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST endpoint to allow admin to seed demo data or reset
+// POST endpoint to allow admin to clear analytics history or send a test verification ping
 export async function POST(req: NextRequest) {
   try {
     const adminKey = req.headers.get('x-admin-key');
     const expectedPasscode = process.env.ADMIN_PASSCODE || 'Kf$W8Dx0UaSf0shubham@93';
 
     if (!adminKey || adminKey !== expectedPasscode) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: Invalid admin passcode' }, { status: 401 });
     }
 
     const body = await req.json();
     const action = body.action;
 
-    if (action === 'seed') {
-      global.__analyticsStore!.events = [];
-      global.__analyticsStore!.visitors.clear();
-      global.__analyticsStore!.sessions.clear();
-      seedSampleAnalyticsIfEmpty();
-      return NextResponse.json({ success: true, message: 'Seeded fresh sample activity data' });
-    } else if (action === 'clear') {
-      global.__analyticsStore!.events = [];
-      global.__analyticsStore!.visitors.clear();
-      global.__analyticsStore!.sessions.clear();
-      return NextResponse.json({ success: true, message: 'Cleared all analytics data' });
+    if (action === 'clear') {
+      const store = global.__analyticsStore!;
+      store.events = [];
+      store.visitors.clear();
+      store.sessions.clear();
+      return NextResponse.json({ success: true, message: 'Real-time analytics logs reset successfully' });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
@@ -649,7 +579,9 @@ function formatRelativeTime(timestamp: number): string {
 }
 
 function formatDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return '0s';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
+  if (m === 0) return `${s}s`;
   return `${m}m ${s}s`;
 }
