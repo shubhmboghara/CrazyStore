@@ -132,6 +132,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const timeRange = searchParams.get('range') || '7d'; // 'today' | '7d' | '30d' | 'all'
+    const selectedAppSlug = searchParams.get('appSlug') || 'all';
     const adminKey = req.headers.get('x-admin-key');
     const expectedPasscode = process.env.ADMIN_PASSCODE || 'Kf$W8Dx0UaSf0shubham@93';
 
@@ -194,6 +195,25 @@ export async function GET(req: NextRequest) {
 
     allEvents.sort((a, b) => b.timestamp - a.timestamp);
 
+    // Collect available apps list across all events
+    const availableAppsMap: Record<string, { slug: string; name: string; totalEvents: number }> = {};
+    allEvents.forEach((e) => {
+      if (e.appSlug) {
+        if (!availableAppsMap[e.appSlug]) {
+          availableAppsMap[e.appSlug] = {
+            slug: e.appSlug,
+            name: e.appName || e.appSlug,
+            totalEvents: 0,
+          };
+        }
+        availableAppsMap[e.appSlug].totalEvents += 1;
+        if (e.appName && availableAppsMap[e.appSlug].name === e.appSlug) {
+          availableAppsMap[e.appSlug].name = e.appName;
+        }
+      }
+    });
+    const availableAppsList = Object.values(availableAppsMap).sort((a, b) => b.totalEvents - a.totalEvents);
+
     // Apply time range filter
     const now = Date.now();
     let filterCutoff = 0;
@@ -207,12 +227,17 @@ export async function GET(req: NextRequest) {
       filterCutoff = now - 30 * 24 * 60 * 60 * 1000;
     }
 
-    const filteredEvents = filterCutoff > 0
+    const timeFilteredEvents = filterCutoff > 0
       ? allEvents.filter((e) => e.timestamp >= filterCutoff)
       : allEvents;
 
+    // Apply appSlug filter if requested by the client
+    const filteredEvents = selectedAppSlug !== 'all'
+      ? timeFilteredEvents.filter((e) => e.appSlug === selectedAppSlug || e.path?.includes(`/apps/${selectedAppSlug}`))
+      : timeFilteredEvents;
+
     // 1. KPI Calculations
-    const totalPageViews = filteredEvents.filter((e) => e.eventType === 'page_view').length || filteredEvents.length;
+    const totalPageViews = filteredEvents.filter((e) => e.eventType === 'page_view' || e.eventType === 'app_view').length || filteredEvents.length;
     const uniqueVisitorsSet = new Set(filteredEvents.map((e) => e.visitorId));
     const uniqueVisitorsCount = uniqueVisitorsSet.size;
     const totalSessionsSet = new Set(filteredEvents.map((e) => e.sessionId));
@@ -340,6 +365,109 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
+    // 4. Per-App Location Intelligence & Matrix (Which country/city visits which App)
+    const appLocationMatrix: Record<
+      string,
+      {
+        slug: string;
+        name: string;
+        totalVisits: number;
+        uniqueVisitors: Set<string>;
+        downloads: number;
+        reviews: number;
+        countries: Record<string, { country: string; code: string; flag: string; visits: number; downloads: number }>;
+        cities: Record<string, { city: string; country: string; flag: string; visits: number }>;
+        hourly: number[];
+        lastActive: number;
+      }
+    > = {};
+
+    timeFilteredEvents.forEach((e) => {
+      if (e.appSlug) {
+        if (!appLocationMatrix[e.appSlug]) {
+          appLocationMatrix[e.appSlug] = {
+            slug: e.appSlug,
+            name: e.appName || e.appSlug,
+            totalVisits: 0,
+            uniqueVisitors: new Set(),
+            downloads: 0,
+            reviews: 0,
+            countries: {},
+            cities: {},
+            hourly: Array(24).fill(0),
+            lastActive: e.timestamp,
+          };
+        }
+
+        const appObj = appLocationMatrix[e.appSlug];
+        appObj.totalVisits += 1;
+        appObj.uniqueVisitors.add(e.visitorId);
+        if (e.appName && appObj.name === e.appSlug) appObj.name = e.appName;
+        if (e.timestamp > appObj.lastActive) appObj.lastActive = e.timestamp;
+        if (e.eventType === 'app_download') appObj.downloads += 1;
+        if (e.eventType === 'review_submit') appObj.reviews += 1;
+        if (e.hour >= 0 && e.hour < 24) appObj.hourly[e.hour] += 1;
+
+        // Country breakdown for this app
+        const cCode = e.countryCode || 'US';
+        if (!appObj.countries[cCode]) {
+          appObj.countries[cCode] = {
+            country: e.country || 'United States',
+            code: cCode,
+            flag: e.flag || '🌐',
+            visits: 0,
+            downloads: 0,
+          };
+        }
+        appObj.countries[cCode].visits += 1;
+        if (e.eventType === 'app_download') appObj.countries[cCode].downloads += 1;
+
+        // City breakdown for this app
+        if (e.city && e.city !== 'Unknown City' && e.city !== 'Direct Visitor') {
+          const cityKey = `${e.city}, ${e.country}`;
+          if (!appObj.cities[cityKey]) {
+            appObj.cities[cityKey] = {
+              city: e.city,
+              country: e.country,
+              flag: e.flag || '🌐',
+              visits: 0,
+            };
+          }
+          appObj.cities[cityKey].visits += 1;
+        }
+      }
+    });
+
+    const appLocationBreakdown = Object.values(appLocationMatrix)
+      .map((app) => {
+        const sortedCountries = Object.values(app.countries)
+          .map((c) => ({
+            ...c,
+            percentage: app.totalVisits > 0 ? Math.round((c.visits / app.totalVisits) * 100) : 0,
+          }))
+          .sort((a, b) => b.visits - a.visits);
+
+        const sortedCities = Object.values(app.cities)
+          .sort((a, b) => b.visits - a.visits)
+          .slice(0, 5);
+
+        return {
+          slug: app.slug,
+          name: app.name,
+          totalVisits: app.totalVisits,
+          uniqueVisitors: app.uniqueVisitors.size,
+          downloads: app.downloads,
+          reviews: app.reviews,
+          conversionRate: app.totalVisits > 0 ? Math.round((app.downloads / app.totalVisits) * 100) : 0,
+          countries: sortedCountries,
+          topCountry: sortedCountries[0] || { country: 'United States', flag: '🇺🇸', visits: 0, percentage: 0 },
+          cities: sortedCities,
+          hourly: app.hourly,
+          lastActiveAgo: formatRelativeTime(app.lastActive),
+        };
+      })
+      .sort((a, b) => b.totalVisits - a.totalVisits);
+
     // 4. Hourly Distribution (0-23 hours)
     const hourlyDistribution = Array.from({ length: 24 }, (_, i) => ({
       hour: `${i.toString().padStart(2, '0')}:00`,
@@ -453,6 +581,9 @@ export async function GET(req: NextRequest) {
         avgDurationFormatted: formatDuration(avgDurationSeconds),
       },
       timeline: timelineData,
+      selectedAppSlug,
+      availableApps: availableAppsList,
+      appLocations: appLocationBreakdown,
       locations: {
         countries: countriesList,
         topCities: topCitiesList,

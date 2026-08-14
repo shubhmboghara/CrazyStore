@@ -97,6 +97,13 @@ export default function AppDetailPage() {
           const found = apps.find((a: AndroidApp) => a.slug.toLowerCase() === slug.toLowerCase());
           if (found) {
             setAppData(found);
+            trackEvent({
+              eventType: 'app_view',
+              appSlug: found.slug,
+              appName: found.name,
+              path: `/apps/${found.slug}`,
+              details: `Visited App Profile: ${found.name}`,
+            });
           }
         }
       } catch (err) {
