@@ -7,6 +7,7 @@ import { StarRating } from '@/components/StarRating';
 import { AppCardSkeleton } from '@/components/AppCardSkeleton';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
 import { FaGithub } from 'react-icons/fa';
 import {
@@ -20,6 +21,10 @@ import {
   Zap,
   Code2,
   Sparkles,
+  CheckCircle2,
+  Cpu,
+  Lock,
+  Boxes,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -87,8 +92,31 @@ export default function HomePage() {
     }
   };
 
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://crazystore.app';
+
+  const homeItemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Featured Open-Source Android Applications',
+    description: 'A curated directory of high-performance Android applications built with Kotlin and Jetpack Compose.',
+    numberOfItems: apps.length,
+    itemListElement: apps.map((app, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: app.name,
+      url: `${baseUrl}/apps/${app.slug}`,
+      description: app.shortDescription,
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col font-sans text-zinc-900 dark:text-zinc-100">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(homeItemListJsonLd) }}
+        />
+      </head>
       <Navbar />
 
       <main className="flex-1">
@@ -265,6 +293,70 @@ export default function HomePage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Generative Engine Optimization (GEO) & FOSS Architecture Standards Section */}
+        <section className="py-16 bg-white dark:bg-zinc-900/60 border-y border-zinc-200 dark:border-zinc-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 border border-purple-200/60 dark:border-purple-800/40 px-3 py-1 rounded-full">
+                Verification & Architecture Standards
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 mt-3 mb-3">
+                Why Developers & Power Users Choose CrazyStore
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Every Android APK indexed on CrazyStore adheres to strict open-source privacy benchmarks, modern Android architecture patterns, and reproducible builds.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/50 space-y-3">
+                <div className="p-3 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 w-fit">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">100% Zero-Telemetry</h3>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  No Facebook SDKs, Google Analytics, ad networks, or user fingerprinting. Completely offline-capable and privacy compliant.
+                </p>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/50 space-y-3">
+                <div className="p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 w-fit">
+                  <Cpu className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Modern Android (MAD)</h3>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  Built with Kotlin 2.0, Jetpack Compose, Material Design 3, Coroutines, and ExoPlayer for native 120Hz rendering and fluid UI.
+                </p>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/50 space-y-3">
+                <div className="p-3 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 w-fit">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">De-Googled & MicroG Ready</h3>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  Engineered to operate without Google Play Services. Fully compatible with GrapheneOS, LineageOS, CalyxOS, and vanilla AOSP.
+                </p>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/50 space-y-3">
+                <div className="p-3 rounded-2xl bg-fuchsia-100 dark:bg-fuchsia-950/80 text-fuchsia-600 dark:text-fuchsia-400 w-fit">
+                  <Boxes className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Verified User Feedback</h3>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  Community-driven star ratings, real bug reports, and transparent open-source code repositories with public GitHub links.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Global GEO FAQ & Knowledge Graph Section */}
+        <section className="py-16 sm:py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <GeoKnowledgeBase />
         </section>
       </main>
 

@@ -10,6 +10,7 @@ import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
 import { AppDetailSkeleton } from '@/components/AppDetailSkeleton';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
 import { FaGithub } from 'react-icons/fa';
 import {
@@ -156,6 +157,12 @@ export default function AppDetailPage() {
     }
   };
 
+  useEffect(() => {
+    if (appData) {
+      document.title = `${appData.name} APK Download (${appData.version}) - Open Source Android App | CrazyStore`;
+    }
+  }, [appData]);
+
   if (isLoadingApp) {
     return <AppDetailSkeleton />;
   }
@@ -176,8 +183,112 @@ export default function AppDetailPage() {
     );
   }
 
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://crazystore.app';
+
+  const appSchemaJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'MobileApplication',
+        '@id': `${baseUrl}/apps/${appData.slug}#software`,
+        name: appData.name,
+        operatingSystem: appData.minAndroid,
+        applicationCategory: appData.category === 'Media & Video' ? 'MultimediaApplication' : 'UtilitiesApplication',
+        description: appData.shortDescription,
+        softwareVersion: appData.version,
+        fileSize: appData.size,
+        downloadUrl: appData.downloadUrl,
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+          availability: 'https://schema.org/InStock',
+        },
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: averageRating || appData.initialRating || 5.0,
+          reviewCount: Math.max(totalCount, appData.initialReviewCount || 1),
+          bestRating: 5,
+          worstRating: 1,
+        },
+        featureList: appData.features.join(', '),
+        author: {
+          '@type': 'Organization',
+          name: 'CrazyStore Open Source',
+          url: baseUrl,
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: baseUrl,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Android Apps',
+            item: `${baseUrl}/#catalog`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: appData.name,
+            item: `${baseUrl}/apps/${appData.slug}`,
+          },
+        ],
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: `What is ${appData.name} and what are its key features?`,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `${appData.name} is an open-source Android application developed with ${appData.techStack.join(', ')}. ${appData.tagline} Key capabilities include: ${appData.features.join(', ')}.`,
+            },
+          },
+          {
+            '@type': 'Question',
+            name: `Is ${appData.name} APK safe, ad-free, and verified?`,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `Yes, ${appData.name} is 100% free and open-source with zero advertisements, zero background trackers, and verified security.`,
+            },
+          },
+          {
+            '@type': 'Question',
+            name: `How to install ${appData.name} APK on Android?`,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `Download the APK package (${appData.size}) from CrazyStore at ${baseUrl}/apps/${appData.slug}, open the downloaded file on your Android device, enable install from unknown sources if prompted, and complete installation.`,
+            },
+          },
+          {
+            '@type': 'Question',
+            name: `Does ${appData.name} require Google Play Services?`,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `No. ${appData.name} operates 100% standalone and is fully compatible with de-Googled devices, MicroG, and standard Android systems.`,
+            },
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col font-sans text-zinc-900 dark:text-zinc-100">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchemaJsonLd) }}
+        />
+      </head>
       <Navbar />
 
       <main className="flex-1 pb-16">
@@ -417,6 +528,9 @@ export default function AppDetailPage() {
                       <span>{totalCount > 0 ? 'Read All Reviews' : 'Leave First Review'}</span>
                     </button>
                   </div>
+
+                  {/* GEO Knowledge Base & Instant Answers FAQ */}
+                  <GeoKnowledgeBase app={appData} />
                 </div>
               )}
 
