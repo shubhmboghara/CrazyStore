@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { AndroidApp } from '@/lib/appsData';
@@ -8,7 +8,6 @@ import { StarRating } from '@/components/StarRating';
 import { ReviewForm } from '@/components/ReviewForm';
 import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
 import { AppDetailSkeleton } from '@/components/AppDetailSkeleton';
-import { LazyScreenshot } from '@/components/LazyScreenshot';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { trackEvent } from '@/lib/analytics';
@@ -28,15 +27,12 @@ import {
   Play,
   Activity,
   Music,
-  ImageIcon,
-  Maximize2,
-  ChevronLeft,
-  ChevronRight,
-  X,
   Sparkles,
-  LayoutGrid,
-  ZoomIn,
-  Image as LucideImage,
+  Info,
+  MessageSquare,
+  Code2,
+  Star,
+  Check,
 } from 'lucide-react';
 
 export default function AppDetailPage() {
@@ -51,87 +47,8 @@ export default function AppDetailPage() {
   const [averageRating, setAverageRating] = useState<number>(5.0);
   const [totalCount, setTotalCount] = useState<number>(0);
 
-  const [activeTab, setActiveTab] = useState<'reviews' | 'overview' | 'tech' | 'previews'>('reviews');
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [activePreviewIdx, setActivePreviewIdx] = useState<number>(0);
-  const previewsContainerRef = useRef<HTMLDivElement | null>(null);
-  const isDraggingPreviewsRef = useRef<boolean>(false);
-  const startXPreviewsRef = useRef<number>(0);
-  const scrollLeftPreviewsRef = useRef<number>(0);
-
-  const scrollPreviews = (direction: 'left' | 'right') => {
-    const container = previewsContainerRef.current;
-    if (!container) return;
-    const scrollAmount = direction === 'left' ? -320 : 320;
-    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-  };
-
-  const scrollToPreviewIndex = (idx: number) => {
-    const container = previewsContainerRef.current;
-    if (!container) return;
-    const child = container.children[idx] as HTMLElement | undefined;
-    if (child) {
-      child.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-  };
-
-  const handlePreviewsScroll = () => {
-    const container = previewsContainerRef.current;
-    if (!container) return;
-    const scrollLeft = container.scrollLeft;
-    const itemWidth = 300;
-    const newIdx = Math.round(scrollLeft / itemWidth);
-    setActivePreviewIdx(Math.min(Math.max(0, newIdx), validPreviews.length - 1));
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const container = previewsContainerRef.current;
-    if (!container) return;
-    isDraggingPreviewsRef.current = true;
-    startXPreviewsRef.current = e.pageX - container.offsetLeft;
-    scrollLeftPreviewsRef.current = container.scrollLeft;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingPreviewsRef.current) return;
-    e.preventDefault();
-    const container = previewsContainerRef.current;
-    if (!container) return;
-    const x = e.pageX - container.offsetLeft;
-    const walk = (x - startXPreviewsRef.current) * 1.3;
-    container.scrollLeft = scrollLeftPreviewsRef.current - walk;
-  };
-
-  const handleMouseUpOrLeave = () => {
-    isDraggingPreviewsRef.current = false;
-  };
-
-  const validPreviews = (appData?.screenshots || [])
-    .map((s, idx) => ({
-      id: s.id || `preview-${idx}`,
-      title: s.title || `Preview #${idx + 1}`,
-      subtitle: s.subtitle || 'App Preview',
-      accentColor: s.accentColor || 'from-zinc-900/40 to-zinc-900/20',
-      type: s.type || 'preview',
-      imageUrl: s.imageUrl || s.url || '',
-      url: s.url || s.imageUrl || '',
-    }))
-    .filter((s) => Boolean(s.imageUrl || s.url));
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (lightboxIndex === null) return;
-      if (e.key === 'Escape') setLightboxIndex(null);
-      if (e.key === 'ArrowLeft') {
-        setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validPreviews.length - 1));
-      }
-      if (e.key === 'ArrowRight') {
-        setLightboxIndex((prev) => (prev !== null && prev < validPreviews.length - 1 ? prev + 1 : 0));
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex, validPreviews.length]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tech'>('overview');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function loadApp() {
@@ -218,6 +135,24 @@ export default function AppDetailPage() {
         return <Music className="w-8 h-8 text-white" />;
       default:
         return <Smartphone className="w-8 h-8 text-white" />;
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: appData?.name || 'Android App',
+          text: appData?.shortDescription || 'Check out this open source Android app',
+          url: window.location.href,
+        });
+      } catch {
+        // Ignored
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -332,265 +267,162 @@ export default function AppDetailPage() {
           </div>
         </section>
 
-        {/* App Highlights & Previews Showcase */}
-        {validPreviews.length > 0 && (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40">
-                    <LucideImage className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2.5">
-                      App Highlights
-                    </h3>
-                    <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
-                      Explore the user interface, experience, and features
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {/* Left / Right Carousel arrows */}
-                  {validPreviews.length > 1 && (
-                    <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-2xl border border-zinc-200/80 dark:border-zinc-700/60">
-                      <button
-                        onClick={() => scrollPreviews('left')}
-                        className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-purple-600 dark:hover:text-purple-400 shadow-xs transition-all"
-                        title="Scroll Left"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => scrollPreviews('right')}
-                        className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-purple-600 dark:hover:text-purple-400 shadow-xs transition-all"
-                        title="Scroll Right"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => setActiveTab('previews')}
-                    className="px-4 py-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:text-purple-600 dark:hover:text-purple-400 transition-all flex items-center gap-1.5 border border-zinc-200/80 dark:border-zinc-700/60"
-                  >
-                    <LayoutGrid className="w-3.5 h-3.5" />
-                    <span>View All</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Large, Immersive Horizontal Screenshot Cards Carousel */}
-              <div className="relative group/reel">
-                {/* Floating Left Arrow */}
-                {validPreviews.length > 1 && (
-                  <button
-                    onClick={() => scrollPreviews('left')}
-                    className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-white/95 dark:bg-zinc-800/95 text-zinc-900 dark:text-white shadow-xl border border-zinc-200 dark:border-zinc-700 backdrop-blur-md opacity-0 group-hover/reel:opacity-100 transition-all duration-200 hover:scale-110 hover:bg-purple-600 hover:text-white hidden sm:flex items-center justify-center focus:outline-none"
-                    title="Scroll Left"
-                    aria-label="Previous screenshots"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                )}
-
-                <div
-                  ref={previewsContainerRef}
-                  onScroll={handlePreviewsScroll}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUpOrLeave}
-                  onMouseLeave={handleMouseUpOrLeave}
-                  className="flex items-start gap-5 sm:gap-6 overflow-x-auto pb-3 pt-1 px-1 scroll-smooth snap-x snap-mandatory hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-none cursor-grab active:cursor-grabbing"
-                >
-                  {validPreviews.map((preview, idx) => {
-                    const hasCustomTitle = Boolean(preview.title && !/^screenshot\s*\d*$/i.test(preview.title.trim()) && !/^preview\s*\d*$/i.test(preview.title.trim()) && !/^screen\s*\d*$/i.test(preview.title.trim()));
-
-                    return (
-                      <div
-                        key={preview.id || idx}
-                        onClick={() => {
-                          setLightboxIndex(idx);
-                          trackEvent({
-                            eventType: 'screenshot_view',
-                            appSlug: appData.slug,
-                            appName: appData.name,
-                            details: `Explored Visuals: ${hasCustomTitle ? preview.title : `Preview ${idx + 1}`} (${appData.name})`,
-                          });
-                        }}
-                        className="shrink-0 w-64 sm:w-72 md:w-80 lg:w-[320px] group cursor-pointer snap-start flex flex-col items-center"
-                      >
-                        {/* Full Uncut Screenshot Card with IntersectionObserver Lazy Loading */}
-                        <LazyScreenshot
-                          src={preview.imageUrl || preview.url}
-                          alt={appData.name}
-                          title={preview.title}
-                          hasCustomTitle={hasCustomTitle}
-                          aspectClass="h-[460px] sm:h-[520px] md:h-[560px]"
-                          rootRef={previewsContainerRef}
-                          priority={idx < 2}
-                        />
-
-                        {/* Optional Custom Caption */}
-                        {hasCustomTitle && (
-                          <div className="mt-3 text-center w-full px-2">
-                            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 block truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                              {preview.title}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Floating Right Arrow */}
-                {validPreviews.length > 1 && (
-                  <button
-                    onClick={() => scrollPreviews('right')}
-                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-white/95 dark:bg-zinc-800/95 text-zinc-900 dark:text-white shadow-xl border border-zinc-200 dark:border-zinc-700 backdrop-blur-md opacity-0 group-hover/reel:opacity-100 transition-all duration-200 hover:scale-110 hover:bg-purple-600 hover:text-white hidden sm:flex items-center justify-center focus:outline-none"
-                    title="Scroll Right"
-                    aria-label="Next screenshots"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                )}
-
-                {/* Clean, Modern Bottom Pagination Dots (Replaces ugly browser scrollbars) */}
-                {validPreviews.length > 1 && (
-                  <div className="mt-4 flex items-center justify-center gap-2">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 shadow-sm backdrop-blur-sm">
-                      {validPreviews.map((_, dotIdx) => {
-                        const isActive = dotIdx === activePreviewIdx;
-                        return (
-                          <button
-                            key={dotIdx}
-                            onClick={() => scrollToPreviewIndex(dotIdx)}
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              isActive
-                                ? 'w-6 bg-purple-600 dark:bg-purple-500 shadow-sm shadow-purple-500/50'
-                                : 'w-2 bg-zinc-300 dark:bg-zinc-600 hover:bg-zinc-400 dark:hover:bg-zinc-500'
-                            }`}
-                            title={`Jump to preview ${dotIdx + 1}`}
-                            aria-label={`Go to screenshot ${dotIdx + 1}`}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Content Tabs & Main Review Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Main Content Column (8 cols) */}
             <div className="lg:col-span-8 space-y-8">
               {/* Tab Navigation */}
-              <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2 overflow-x-auto hide-scrollbar">
-                <button
-                  onClick={() => setActiveTab('reviews')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                    activeTab === 'reviews'
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
-                  }`}
-                >
-                  User Reviews ({totalCount})
-                </button>
-                {validPreviews.length > 0 && (
-                  <button
-                    onClick={() => setActiveTab('previews')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                      activeTab === 'previews'
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
-                    }`}
-                  >
-                    <LucideImage className="w-3.5 h-3.5" /> Highlights ({validPreviews.length})
-                  </button>
-                )}
+              <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2 overflow-x-auto hide-scrollbar no-scrollbar [scrollbar-width:none]">
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
                     activeTab === 'overview'
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
                   }`}
                 >
-                  App Overview
+                  <Info className="w-4 h-4" /> About & Features
+                </button>
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                    activeTab === 'reviews'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" /> User Reviews ({totalCount})
                 </button>
                 <button
                   onClick={() => setActiveTab('tech')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
                     activeTab === 'tech'
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
                   }`}
                 >
-                  Tech Stack & Source
+                  <Code2 className="w-4 h-4" /> Tech Stack & Source
                 </button>
               </div>
 
-              {/* Tab: Highlights Gallery */}
-              {activeTab === 'previews' && (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-5">
-                    <div>
-                      <h3 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2.5">
-                        <LucideImage className="w-5 h-5 text-purple-600 dark:text-purple-400" /> App Highlights & Gallery
-                      </h3>
-                      <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-                        High-resolution interface highlights for {appData.name}. Click any image to view in full resolution.
+              {/* Tab 1: Overview & About (Prominently visible on load) */}
+              {activeTab === 'overview' && (
+                <div className="space-y-8 animate-in fade-in duration-300">
+                  {/* Primary About Card */}
+                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800/80 pb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40">
+                          <Info className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100">
+                            About {appData.name}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
+                            Complete application overview and capabilities
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="self-start sm:self-auto px-3 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs border border-zinc-200 dark:border-zinc-700/60">
+                        {appData.category || 'Android Application'}
+                      </span>
+                    </div>
+
+                    {/* Full Description Paragraphs */}
+                    <div className="space-y-4 text-sm sm:text-base text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal">
+                      {appData.fullDescription.map((paragraph, index) => (
+                        <p key={index} className="leading-relaxed">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+
+                    {/* Key Highlights & Features Grid */}
+                    <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800/80 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <h4 className="text-base sm:text-lg font-black text-zinc-900 dark:text-zinc-100">
+                          Key Features & Highlights
+                        </h4>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        {appData.features.map((feature, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3.5 sm:p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/70 dark:border-zinc-700/50 flex items-start gap-3 hover:border-purple-400/60 dark:hover:border-purple-600/50 transition-colors"
+                          >
+                            <div className="p-1.5 rounded-xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5 shadow-xs">
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            </div>
+                            <span className="text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200 leading-snug">
+                              {feature}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Quick Specs Bento */}
+                    <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800/80">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">
+                        Specifications at a Glance
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-700/40">
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase block">Android Version</span>
+                          <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-zinc-100 mt-0.5 block">{appData.minAndroid}</span>
+                        </div>
+                        <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-700/40">
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase block">Package Size</span>
+                          <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-zinc-100 mt-0.5 block">{appData.size}</span>
+                        </div>
+                        <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-700/40">
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase block">Build Release</span>
+                          <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-zinc-100 mt-0.5 block">{appData.version}</span>
+                        </div>
+                        <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-700/40">
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase block">UI Framework</span>
+                          <span className="text-xs sm:text-sm font-black text-purple-600 dark:text-purple-400 mt-0.5 block">Jetpack Compose</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Community Reviews Teaser Card */}
+                  <div className="bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-transparent dark:from-purple-950/30 dark:via-indigo-950/20 border border-purple-200/60 dark:border-purple-800/40 rounded-3xl p-6 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xs">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                        <span className="text-base font-black text-zinc-900 dark:text-zinc-100">
+                          {averageRating.toFixed(1)} / 5.0 Rating
+                        </span>
+                        <span className="text-xs text-zinc-500">
+                          ({totalCount} verified user {totalCount === 1 ? 'review' : 'reviews'})
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
+                        Have you tried {appData.name}? Share your feedback and rating with the community.
                       </p>
                     </div>
 
-                    <span className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40">
-                      {validPreviews.length} Images
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                    {validPreviews.map((preview, idx) => {
-                      const hasCustomTitle = Boolean(preview.title && !/^screenshot\s*\d*$/i.test(preview.title.trim()) && !/^preview\s*\d*$/i.test(preview.title.trim()) && !/^screen\s*\d*$/i.test(preview.title.trim()));
-
-                      return (
-                        <div
-                          key={preview.id || idx}
-                          onClick={() => setLightboxIndex(idx)}
-                          className="group cursor-pointer flex flex-col items-center"
-                        >
-                          <LazyScreenshot
-                            src={preview.imageUrl || preview.url}
-                            alt={appData.name}
-                            title={preview.title}
-                            hasCustomTitle={hasCustomTitle}
-                            aspectClass="h-[460px] sm:h-[500px]"
-                            priority={idx < 3}
-                          />
-
-                          {hasCustomTitle && (
-                            <div className="mt-3 text-center w-full px-2">
-                              <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200 block truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                                {preview.title}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    <button
+                      onClick={() => setActiveTab('reviews')}
+                      className="px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-purple-600/20 transition-all shrink-0 flex items-center gap-2"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>{totalCount > 0 ? 'Read All Reviews' : 'Leave First Review'}</span>
+                    </button>
                   </div>
                 </div>
               )}
 
-              {/* Tab 1: Reviews & Submission */}
+              {/* Tab 2: User Reviews & Feedback */}
               {activeTab === 'reviews' && (
-                <div className="space-y-8 animate-in fade-in">
+                <div className="space-y-8 animate-in fade-in duration-300">
                   <ReviewForm appSlug={appData.slug} onReviewSubmitted={fetchReviews} />
                   <ReviewsList
                     reviews={reviews}
@@ -601,70 +433,9 @@ export default function AppDetailPage() {
                 </div>
               )}
 
-              {/* Tab 2: Overview */}
-              {activeTab === 'overview' && (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in">
-                  <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-                    About {appData.name}
-                  </h3>
-                  <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                    {appData.fullDescription.map((paragraph, index) => (
-                      <p key={index}>{paragraph}</p>
-                    ))}
-                  </div>
-
-                  {/* Previews reel in Overview */}
-                  {validPreviews.length > 0 && (
-                    <div className="pt-5 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                          App Highlights
-                        </h4>
-                        <button
-                          onClick={() => setActiveTab('previews')}
-                          className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
-                        >
-                          View Gallery ({validPreviews.length})
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-4 overflow-x-auto pb-3 hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                        {validPreviews.map((preview, idx) => (
-                          <div
-                            key={preview.id || idx}
-                            onClick={() => setLightboxIndex(idx)}
-                            className="shrink-0 w-44 sm:w-52 group cursor-pointer"
-                          >
-                            <LazyScreenshot
-                              src={preview.imageUrl || preview.url}
-                              alt={appData.name}
-                              aspectClass="h-72 sm:h-80"
-                              priority={idx < 2}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3">
-                      Key Highlights & Features
-                    </h4>
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {appData.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-300">
-                          <CheckCircle2 className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 3: Tech Stack */}
+              {/* Tab 3: Tech Stack & Architecture */}
               {activeTab === 'tech' && (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in">
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
                   <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
                     Android Architecture & Stack
                   </h3>
@@ -703,190 +474,117 @@ export default function AppDetailPage() {
                       </div>
                     ))}
                   </div>
-                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-500 space-y-2">
-                    <p>
-                      <strong>Architecture Pattern:</strong> MVVM with Clean Architecture principles, StateFlow, and Jetpack ViewModel.
-                    </p>
-                    <p>
-                      <strong>UI Engine:</strong> 100% Jetpack Compose with Material 3 design system and Dynamic Color palette.
-                    </p>
+
+                  <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 space-y-2">
+                    <span className="text-xs font-bold text-zinc-500 block uppercase">Requirements</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                      <div>Minimum Android: <span className="font-bold text-zinc-900 dark:text-zinc-100">{appData.minAndroid}</span></div>
+                      <div>Architecture: <span className="font-bold text-zinc-900 dark:text-zinc-100">arm64-v8a, armeabi-v7a, x86_64</span></div>
+                      <div>Internet Permission: <span className="font-bold text-zinc-900 dark:text-zinc-100">Optional</span></div>
+                      <div>Google Play Services: <span className="font-bold text-zinc-900 dark:text-zinc-100">Not Required (100% De-Googled)</span></div>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Right Sidebar Column (4 cols) */}
+            {/* Right Sidebar Meta Column (4 cols) */}
             <div className="lg:col-span-4 space-y-6">
-              {/* APK Download Box */}
-              <div className="bg-gradient-to-br from-purple-900 via-indigo-950 to-zinc-900 text-white rounded-3xl p-6 sm:p-8 shadow-lg border border-purple-800/50 space-y-4">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                  <h4 className="font-bold text-sm">Download APK Package</h4>
+              {/* Quick Info Bento Box */}
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-5">
+                <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  App Meta & Specs
+                </h4>
+
+                <div className="space-y-4 text-xs">
+                  <div className="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-500 flex items-center gap-1.5">
+                      <HardDrive className="w-3.5 h-3.5" /> File Size
+                    </span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{appData.size}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-500 flex items-center gap-1.5">
+                      <Cpu className="w-3.5 h-3.5" /> Min Android
+                    </span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{appData.minAndroid}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-500 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" /> Release Date
+                    </span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{appData.updatedAt || 'Recent'}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-500 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Security
+                    </span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">Verified & Safe</span>
+                  </div>
                 </div>
-                <p className="text-xs text-purple-200/80 leading-relaxed">
-                  Download the compiled release directly. Free from ads or trackable SDKs.
-                </p>
-                <a
-                  href={appData.downloadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => {
-                    trackEvent({
-                      eventType: 'app_download',
-                      appSlug: appData.slug,
-                      appName: appData.name,
-                      isTaskCompleted: true,
-                      details: `Downloaded APK (sidebar): ${appData.name} (${appData.version})`,
-                    });
-                  }}
-                  className="w-full py-4 px-4 rounded-2xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs text-center block shadow-md shadow-purple-600/30 transition-all"
-                >
-                  Download {appData.name} APK
-                </a>
-                <div className="text-[11px] text-purple-300/70 space-y-1 font-mono pt-2 border-t border-purple-800/60">
-                  <p>Min SDK: {appData.minAndroid}</p>
-                  <p>Size: {appData.size}</p>
+
+                <div className="pt-2">
+                  <button
+                    onClick={handleShare}
+                    className="w-full py-3 px-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Share2 className="w-4 h-4" /> {copied ? 'Link Copied!' : 'Share Application'}
+                  </button>
                 </div>
               </div>
 
-              {/* Developer Note */}
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-3">
-                <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                  Developer & Build Info
+              {/* App Specs & Safety Card */}
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 rounded-3xl p-6 shadow-xs space-y-4">
+                <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                  App Details & Security
                 </h4>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                  Built using Gradle 8.5 with Android Gradle Plugin (AGP) and Jetpack Compose compiler.
-                </p>
+
+                <div className="space-y-3 text-xs divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-zinc-500">Category</span>
+                    <span className="font-semibold text-zinc-800 dark:text-zinc-200">{appData.category || 'Media & Utilities'}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2.5">
+                    <span className="text-zinc-500">Package Size</span>
+                    <span className="font-semibold text-zinc-800 dark:text-zinc-200">{appData.size}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2.5">
+                    <span className="text-zinc-500">Target Platform</span>
+                    <span className="font-semibold text-zinc-800 dark:text-zinc-200">{appData.minAndroid}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2.5">
+                    <span className="text-zinc-500">License</span>
+                    <span className="font-semibold text-purple-600 dark:text-purple-400">Open Source (MIT / Apache)</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2.5">
+                    <span className="text-zinc-500">Safety & Ads</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> 100% Free & No Ads
+                    </span>
+                  </div>
+                </div>
+
+                {appData.githubUrl && (
+                  <div className="pt-2">
+                    <a
+                      href={appData.githubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <FaGithub className="w-4 h-4" /> View on GitHub
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </section>
-
-        {/* Fullscreen Lightbox Modal (Google Play / App Store Style) */}
-        {lightboxIndex !== null && validPreviews[lightboxIndex] && (
-          <div
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 animate-in fade-in select-none"
-            onClick={() => setLightboxIndex(null)}
-          >
-            {/* Top Lightbox Bar */}
-            <div
-              className="w-full max-w-6xl flex items-center justify-between z-20 pb-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-3">
-                <div>
-                  <span className="text-sm font-bold text-white block">
-                    {appData.name}
-                  </span>
-                  {validPreviews[lightboxIndex].title && !/^screenshot\s*\d*$/i.test(validPreviews[lightboxIndex].title.trim()) && !/^preview\s*\d*$/i.test(validPreviews[lightboxIndex].title.trim()) && !/^screen\s*\d*$/i.test(validPreviews[lightboxIndex].title.trim()) && (
-                    <span className="text-xs text-purple-300 font-medium block">
-                      {validPreviews[lightboxIndex].title}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Download / Open Original */}
-                <a
-                  href={validPreviews[lightboxIndex].imageUrl || validPreviews[lightboxIndex].url}
-                  download="app-screenshot.png"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-md border border-white/10 flex items-center gap-1.5 text-xs font-bold"
-                  title="Open/Download original image"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Save</span>
-                </a>
-
-                {/* Close Button */}
-                <button
-                  onClick={() => setLightboxIndex(null)}
-                  className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-md border border-white/10"
-                  title="Close (Esc)"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Central Stage */}
-            <div
-              className="relative flex-1 w-full flex items-center justify-center p-2 min-h-0"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Navigation Left */}
-              {validPreviews.length > 1 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validPreviews.length - 1));
-                  }}
-                  className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-purple-600 text-white transition-all backdrop-blur-md border border-white/15 z-30 shadow-2xl hover:scale-105"
-                  title="Previous (Left Arrow)"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-              )}
-
-              {/* Central Zoomed Image */}
-              <div className="relative z-10 max-h-[78vh] flex items-center justify-center shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 bg-zinc-950">
-                <img
-                  src={validPreviews[lightboxIndex].imageUrl || validPreviews[lightboxIndex].url}
-                  alt={appData.name}
-                  className="max-h-[76vh] w-auto max-w-[85vw] object-contain rounded-2xl sm:rounded-3xl"
-                />
-              </div>
-
-              {/* Navigation Right */}
-              {validPreviews.length > 1 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLightboxIndex((prev) => (prev !== null && prev < validPreviews.length - 1 ? prev + 1 : 0));
-                  }}
-                  className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-purple-600 text-white transition-all backdrop-blur-md border border-white/15 z-30 shadow-2xl hover:scale-105"
-                  title="Next (Right Arrow)"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              )}
-            </div>
-
-            {/* Bottom thumbnail strip & Keyboard tip */}
-            <div
-              className="w-full max-w-4xl flex flex-col items-center gap-2.5 z-20 pt-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {validPreviews.length > 1 && (
-                <div className="flex items-center justify-center gap-2.5 px-3 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 overflow-x-auto hide-scrollbar max-w-full">
-                  {validPreviews.map((preview, idx) => (
-                    <button
-                      key={preview.id || idx}
-                      onClick={() => setLightboxIndex(idx)}
-                      className={`w-11 h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 relative ${
-                        idx === lightboxIndex
-                          ? 'border-purple-500 scale-105 shadow-lg shadow-purple-500/50 ring-2 ring-purple-400'
-                          : 'border-white/20 opacity-50 hover:opacity-100 hover:border-white/60'
-                      }`}
-                    >
-                      <img
-                        src={preview.imageUrl || preview.url}
-                        alt="Screenshot thumbnail"
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <span className="text-[11px] text-zinc-400 font-medium hidden sm:inline-block">
-                Use Left & Right Arrow keys to navigate &bull; Press Esc to close
-              </span>
-            </div>
-          </div>
-        )}
       </main>
       <Footer />
     </div>
