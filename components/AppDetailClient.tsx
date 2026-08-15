@@ -38,7 +38,7 @@ interface AppDetailClientProps {
 }
 
 export function AppDetailClient({ initialApp }: AppDetailClientProps) {
-  const [appData] = useState<AndroidApp>(initialApp);
+  const [appData, setAppData] = useState<AndroidApp>(initialApp);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(true);
   const [averageRating, setAverageRating] = useState<number>(initialApp.initialRating || 5.0);
@@ -47,9 +47,39 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tech'>('overview');
   const [copied, setCopied] = useState(false);
 
+  // Fetch the latest fresh app details directly from the API on mount or slug change
+  useEffect(() => {
+    let isSubscribed = true;
+    async function loadFreshAppDetails() {
+      try {
+        const res = await fetch(`/api/apps?slug=${encodeURIComponent(initialApp.slug)}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
+        if (res.ok && isSubscribed) {
+          const data = await res.json();
+          if (data.app) {
+            setAppData(data.app);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch fresh app data from API:', err);
+      }
+    }
+    loadFreshAppDetails();
+    return () => {
+      isSubscribed = false;
+    };
+  }, [initialApp.slug]);
+
   const fetchReviews = useCallback(async () => {
     try {
-      const res = await fetch(`/api/reviews?appSlug=${appData.slug}`);
+      const res = await fetch(`/api/reviews?appSlug=${appData.slug}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       if (res.ok) {
         const data = await res.json();
         setReviews(data.reviews || []);
@@ -72,7 +102,10 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
     async function loadInitialReviews() {
       try {
-        const res = await fetch(`/api/reviews?appSlug=${appData.slug}`);
+        const res = await fetch(`/api/reviews?appSlug=${appData.slug}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' },
+        });
         if (res.ok && isSubscribed) {
           const data = await res.json();
           setReviews(data.reviews || []);

@@ -200,7 +200,10 @@ export function AdminAppUpload() {
   const fetchApps = async () => {
     setIsLoadingApps(true);
     try {
-      const res = await fetch('/api/apps');
+      const res = await fetch('/api/apps', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       if (res.ok) {
         const data = await res.json();
         setApps(data.apps || []);
@@ -215,7 +218,10 @@ export function AdminAppUpload() {
   const fetchReviews = async () => {
     setIsLoadingReviews(true);
     try {
-      const res = await fetch('/api/reviews');
+      const res = await fetch('/api/reviews', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       if (res.ok) {
         const data = await res.json();
         setReviews(data.reviews || []);
@@ -235,8 +241,14 @@ export function AdminAppUpload() {
         setIsLoadingReviews(true);
         try {
           const [appsRes, reviewsRes] = await Promise.all([
-            fetch('/api/apps'),
-            fetch('/api/reviews'),
+            fetch('/api/apps', {
+              cache: 'no-store',
+              headers: { 'Cache-Control': 'no-cache' },
+            }),
+            fetch('/api/reviews', {
+              cache: 'no-store',
+              headers: { 'Cache-Control': 'no-cache' },
+            }),
           ]);
           if (appsRes.ok && isMounted) {
             const appsData = await appsRes.json();

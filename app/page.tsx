@@ -38,7 +38,12 @@ export default function HomePage() {
     async function loadApps() {
       setIsLoading(true);
       try {
-        const res = await fetch('/api/apps');
+        const res = await fetch('/api/apps', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
         if (res.ok) {
           const data = await res.json();
           const fetchedApps = data.apps || [];
@@ -51,7 +56,12 @@ export default function HomePage() {
           const results: Record<string, { avg: number; count: number }> = {};
           for (const app of fetchedApps) {
             try {
-              const reviewRes = await fetch(`/api/reviews?appSlug=${app.slug}`);
+              const reviewRes = await fetch(`/api/reviews?appSlug=${encodeURIComponent(app.slug)}`, {
+                cache: 'no-store',
+                headers: {
+                  'Cache-Control': 'no-cache',
+                },
+              });
               if (reviewRes.ok) {
                 const reviewData = await reviewRes.json();
                 results[app.slug] = {

@@ -1,23 +1,47 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ANDROID_APPS, getAppBySlug } from '@/lib/appsData';
+import { ANDROID_APPS, AndroidApp, getAppBySlug } from '@/lib/appsData';
 import { AppDetailClient } from '@/components/AppDetailClient';
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-export async function generateStaticParams() {
-  return ANDROID_APPS.map((app) => ({
-    slug: app.slug,
-  }));
+async function getApp(slug: string): Promise<AndroidApp | null> {
+  const normalizedSlug = slug.toLowerCase().trim();
+  const defaultApp = getAppBySlug(normalizedSlug);
+
+  try {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    const { data: dbApp, error } = await supabase
+      .from('apps')
+      .select('*')
+      .ilike('slug', normalizedSlug)
+      .maybeSingle();
+
+    if (!error && dbApp) {
+      return {
+        ...(defaultApp || {}),
+        ...dbApp,
+        isCustom: true,
+      } as AndroidApp;
+    }
+  } catch (err) {
+    console.warn('Error fetching app from Supabase:', err);
+  }
+
+  return defaultApp || null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const app = getAppBySlug(slug);
+  const app = await getApp(slug);
 
   if (!app) {
     return {
@@ -70,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
   const { slug } = await params;
-  const app = getAppBySlug(slug);
+  const app = await getApp(slug);
 
   if (!app) {
     notFound();

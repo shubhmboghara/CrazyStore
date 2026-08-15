@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import { AndroidApp } from '@/lib/appsData';
+import { ANDROID_APPS, AndroidApp } from '@/lib/appsData';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,38 +11,91 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const slug = searchParams.get('slug')?.toLowerCase();
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    let dbApps: any[] = [];
+    try {
+      const cookieStore = await cookies();
+      const supabase = createClient(cookieStore);
+      const { data, error } = await supabase
+        .from('apps')
+        .select('*')
+        .order('createdAt', { ascending: false });
 
-    const { data: dbApps, error } = await supabase
-      .from('apps')
-      .select('*')
-      .order('createdAt', { ascending: false });
-
-    let customApps: any[] = [];
-    if (!error && dbApps) {
-      customApps = dbApps.map((data: any) => ({
-        ...data,
-        isCustom: true,
-      }));
-    } else {
-      console.warn('Supabase apps query fallback or missing table:', error);
+      if (!error && data) {
+        dbApps = data.map((d: any) => ({
+          ...d,
+          isCustom: true,
+        }));
+      } else if (error) {
+        console.warn('Supabase query warning in GET /api/apps:', error.message);
+      }
+    } catch (e) {
+      console.warn('Supabase client error in GET /api/apps:', e);
     }
+
+    // Merge default apps with database apps (database overrides static)
+    const appsMap = new Map<string, any>();
+
+    // 1. Seed with default apps
+    for (const app of ANDROID_APPS) {
+      appsMap.set(app.slug.toLowerCase(), { ...app });
+    }
+
+    // 2. Override or add from DB
+    for (const dbApp of dbApps) {
+      if (dbApp.slug) {
+        const key = dbApp.slug.toLowerCase();
+        const baseApp = appsMap.get(key) || {};
+        appsMap.set(key, {
+          ...baseApp,
+          ...dbApp,
+          isCustom: true,
+        });
+      }
+    }
+
+    const allApps = Array.from(appsMap.values());
 
     if (slug) {
-      const foundApp = customApps.find((a) => a.slug.toLowerCase() === slug);
+      const foundApp = allApps.find((a) => a.slug.toLowerCase() === slug);
       if (!foundApp) {
-        return NextResponse.json({ error: 'App not found' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'App not found' },
+          {
+            status: 404,
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            },
+          }
+        );
       }
-      return NextResponse.json({ app: foundApp });
+      return NextResponse.json(
+        { app: foundApp },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        }
+      );
     }
 
-    return NextResponse.json({ apps: customApps });
+    return NextResponse.json(
+      { apps: allApps },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error fetching apps:', error);
     return NextResponse.json(
       { error: 'Failed to fetch apps', details: error.message },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
     );
   }
 }
@@ -86,12 +139,6 @@ export async function POST(req: NextRequest) {
     if (!name || typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ error: 'App name is required.' }, { status: 400 });
     }
-    if (!downloadUrl || typeof downloadUrl !== 'string' || !downloadUrl.trim()) {
-      return NextResponse.json({ error: 'APK download URL is required.' }, { status: 400 });
-    }
-    if (!shortDescription || typeof shortDescription !== 'string' || !shortDescription.trim()) {
-      return NextResponse.json({ error: 'Short description is required.' }, { status: 400 });
-    }
 
     const generatedSlug =
       customSlug && typeof customSlug === 'string' && customSlug.trim()
@@ -108,7 +155,7 @@ export async function POST(req: NextRequest) {
 
     const fullDescArray = typeof fullDescription === 'string'
       ? fullDescription.split('\n\n').map((s: string) => s.trim()).filter(Boolean)
-      : Array.isArray(fullDescription) ? fullDescription : [shortDescription];
+      : Array.isArray(fullDescription) ? fullDescription : (shortDescription ? [shortDescription] : []);
 
     const screenshotsArray = Array.isArray(screenshots) && screenshots.length > 0 ? screenshots : [];
 
@@ -128,8 +175,8 @@ export async function POST(req: NextRequest) {
       bannerUrl: bannerUrl || '',
       githubUrl: githubUrl || '',
       techStack: techStackArray,
-      downloadUrl: downloadUrl.trim(),
-      shortDescription: shortDescription.trim(),
+      downloadUrl: downloadUrl ? downloadUrl.trim() : '',
+      shortDescription: shortDescription ? shortDescription.trim() : '',
       fullDescription: fullDescArray,
       features: featuresArray,
       createdAt: new Date().toISOString(),
@@ -143,13 +190,13 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('apps')
-      .insert([newAppDoc])
+      .upsert([newAppDoc], { onConflict: 'slug' })
       .select();
 
     if (error) {
-      console.error('Supabase insert error:', error);
+      console.error('Supabase upsert error:', error);
       return NextResponse.json(
-        { error: error.message || 'An internal error occurred while saving the app to Supabase.', details: error },
+        { error: error.message || 'An internal error occurred while saving the app to database.', details: error },
         { status: 500 }
       );
     }
@@ -157,10 +204,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         message: 'App uploaded successfully',
-        app: {
-          id: data && data.length > 0 ? data[0].id : generatedSlug,
-          ...newAppDoc,
-        },
+        app: data && data.length > 0 ? data[0] : newAppDoc,
       },
       { status: 201 }
     );
@@ -232,9 +276,9 @@ export async function PUT(req: NextRequest) {
 
     const fullDescArray = typeof fullDescription === 'string'
       ? fullDescription.split('\n\n').map((s: string) => s.trim()).filter(Boolean)
-      : Array.isArray(fullDescription) ? fullDescription : [];
+      : Array.isArray(fullDescription) ? fullDescription : (shortDescription ? [shortDescription] : []);
 
-    const updatedAppDoc = {
+    const updatedAppDoc: any = {
       slug: generatedSlug,
       name: name.trim(),
       tagline: tagline ? tagline.trim() : '',
@@ -250,47 +294,108 @@ export async function PUT(req: NextRequest) {
       bannerUrl: bannerUrl || '',
       githubUrl: githubUrl || '',
       techStack: techStackArray,
-      downloadUrl: downloadUrl.trim(),
-      shortDescription: shortDescription.trim(),
+      downloadUrl: downloadUrl ? downloadUrl.trim() : '',
+      shortDescription: shortDescription ? shortDescription.trim() : '',
       fullDescription: fullDescArray,
       features: featuresArray,
     };
     
     // Only update screenshots if they are explicitly passed
     if (screenshots && Array.isArray(screenshots)) {
-        (updatedAppDoc as any).screenshots = screenshots;
+      updatedAppDoc.screenshots = screenshots;
     }
 
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { data, error } = await supabase
+    // Look up existing app by originalSlug or generatedSlug (case-insensitive)
+    const { data: recordsByOriginal } = await supabase
       .from('apps')
-      .update(updatedAppDoc)
-      .eq('slug', originalSlug)
-      .select();
+      .select('*')
+      .ilike('slug', originalSlug.toLowerCase().trim());
 
-    if (error) {
-      console.error('Supabase update error:', error);
-      return NextResponse.json(
-        { error: error.message || 'An internal error occurred while updating the app.', details: error },
-        { status: 500 }
-      );
+    let existingApp = recordsByOriginal && recordsByOriginal.length > 0 ? recordsByOriginal[0] : null;
+
+    if (!existingApp && generatedSlug && generatedSlug !== originalSlug) {
+      const { data: recordsByGen } = await supabase
+        .from('apps')
+        .select('*')
+        .ilike('slug', generatedSlug.toLowerCase().trim());
+      if (recordsByGen && recordsByGen.length > 0) {
+        existingApp = recordsByGen[0];
+      }
     }
 
-    if (!data || data.length === 0) {
-      return NextResponse.json(
-        { error: 'App not found in database for update.' },
-        { status: 404 }
+    let savedApp: any = null;
+
+    if (existingApp) {
+      // Record exists in DB: Update it
+      const { data, error } = await supabase
+        .from('apps')
+        .update(updatedAppDoc)
+        .eq('slug', existingApp.slug)
+        .select();
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        return NextResponse.json(
+          { error: error.message || 'An internal error occurred while updating the app.', details: error },
+          {
+            status: 500,
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+            },
+          }
+        );
+      }
+      savedApp = data && data.length > 0 ? data[0] : updatedAppDoc;
+    } else {
+      // First time editing a seeded/default app: Upsert into DB
+      const defaultApp = ANDROID_APPS.find(
+        (a) =>
+          a.slug.toLowerCase() === originalSlug.toLowerCase() ||
+          a.slug.toLowerCase() === generatedSlug.toLowerCase()
       );
+
+      const insertDoc = {
+        ...(defaultApp || {}),
+        ...updatedAppDoc,
+        createdAt: new Date().toISOString(),
+        initialRating: defaultApp?.initialRating || 5.0,
+        initialReviewCount: defaultApp?.initialReviewCount || 0,
+      };
+
+      const { data, error } = await supabase
+        .from('apps')
+        .upsert([insertDoc], { onConflict: 'slug' })
+        .select();
+
+      if (error) {
+        console.error('Supabase insert/upsert error on edit:', error);
+        return NextResponse.json(
+          { error: error.message || 'An internal error occurred while saving the edited app.', details: error },
+          {
+            status: 500,
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+            },
+          }
+        );
+      }
+      savedApp = data && data.length > 0 ? data[0] : insertDoc;
     }
 
     return NextResponse.json(
       {
         message: 'App updated successfully',
-        app: data[0],
+        app: savedApp,
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
     );
   } catch (error: any) {
     console.error('Error updating app:', error);
@@ -338,14 +443,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    if (!data || data.length === 0) {
-      return NextResponse.json(
-        { error: 'App not found in database.' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ message: 'App deleted successfully.', app: data[0] });
+    return NextResponse.json({ message: 'App deleted successfully.', app: data && data.length > 0 ? data[0] : { slug } });
   } catch (error: any) {
     console.error('Error deleting app:', error);
     return NextResponse.json(
@@ -354,3 +452,4 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
