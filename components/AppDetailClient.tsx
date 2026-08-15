@@ -51,12 +51,14 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   // Fetch the latest fresh app details directly from the API on mount or slug change
   useEffect(() => {
     let isSubscribed = true;
+
     async function loadFreshAppDetails() {
       try {
-        const res = await fetch(`/api/apps?slug=${encodeURIComponent(initialApp.slug)}`, {
+        const res = await fetch(`/api/apps?slug=${encodeURIComponent(initialApp.slug)}&t=${Date.now()}`, {
           cache: 'no-store',
           headers: {
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
           },
         });
         if (res.ok && isSubscribed) {
@@ -69,11 +71,44 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
         console.warn('Could not fetch fresh app data from API:', err);
       }
     }
+
     loadFreshAppDetails();
+
+    const handleAppsUpdated = (e: any) => {
+      if (!e.detail?.slug || e.detail.slug.toLowerCase() === initialApp.slug.toLowerCase()) {
+        loadFreshAppDetails();
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'crazystore_apps_last_updated') {
+        loadFreshAppDetails();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadFreshAppDetails();
+      }
+    };
+
+    const handleFocus = () => {
+      loadFreshAppDetails();
+    };
+
+    window.addEventListener('apps_updated', handleAppsUpdated);
+    window.addEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+
     return () => {
       isSubscribed = false;
+      window.removeEventListener('apps_updated', handleAppsUpdated);
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
     };
-  }, [initialApp.slug]);
+  }, [initialApp]);
 
   const fetchReviews = useCallback(async () => {
     try {

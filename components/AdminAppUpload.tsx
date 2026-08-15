@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import { AndroidApp } from '@/lib/appsData';
@@ -90,6 +90,7 @@ export function AdminAppUpload() {
   const [slug, setSlug] = useState<string>('');
   const [tagline, setTagline] = useState<string>('');
   const [iconSymbol, setIconSymbol] = useState<string>('smartphone');
+  const [iconBg, setIconBg] = useState<string>('from-purple-600 to-indigo-600');
   const [description, setDescription] = useState<string>('');
   const [features, setFeatures] = useState<string>('');
   const [category, setCategory] = useState<string>('Tools & Utilities');
@@ -198,12 +199,16 @@ export function AdminAppUpload() {
     setScreenshotFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  const fetchApps = async () => {
+  const fetchApps = useCallback(async () => {
     setIsLoadingApps(true);
     try {
-      const res = await fetch('/api/apps', {
+      const timestamp = new Date().getTime();
+      const res = await fetch(`/api/apps?t=${timestamp}`, {
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
       });
       if (res.ok) {
         const data = await res.json();
@@ -214,14 +219,18 @@ export function AdminAppUpload() {
     } finally {
       setIsLoadingApps(false);
     }
-  };
+  }, []);
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     setIsLoadingReviews(true);
     try {
-      const res = await fetch('/api/reviews', {
+      const timestamp = new Date().getTime();
+      const res = await fetch(`/api/reviews?t=${timestamp}`, {
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
       });
       if (res.ok) {
         const data = await res.json();
@@ -232,7 +241,7 @@ export function AdminAppUpload() {
     } finally {
       setIsLoadingReviews(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -324,6 +333,7 @@ export function AdminAppUpload() {
     setSlug('');
     setTagline('');
     setIconSymbol('smartphone');
+    setIconBg('from-purple-600 to-indigo-600');
     setDescription('');
     setFeatures('');
     setCategory('Tools & Utilities');
@@ -349,6 +359,7 @@ export function AdminAppUpload() {
     setSlug(app.slug || '');
     setTagline(app.tagline || '');
     setIconSymbol(app.iconSymbol || 'smartphone');
+    setIconBg(app.iconBg || 'from-purple-600 to-indigo-600');
 
     const descText = app.shortDescription
       ? app.shortDescription
@@ -384,7 +395,7 @@ export function AdminAppUpload() {
     setLogoUrl(app.logoUrl || '');
     const parsedScreenshots = (app.screenshots || [])
       .map((s: any, idx: number) => ({
-        id: s.id || `preview-${idx}-${Date.now()}`,
+        id: s.id || `preview-${idx}-${app.slug || 'app'}`,
         title: s.title || `Preview #${idx + 1}`,
         subtitle: s.subtitle || 'App Preview',
         accentColor: s.accentColor || 'from-zinc-900/40 to-zinc-900/20',
@@ -425,7 +436,7 @@ export function AdminAppUpload() {
           const file = screenshotFiles[index];
           const url = await uploadFile(file);
           uploadedScreenshots.push({
-            id: `preview-${Date.now()}-${index}`,
+            id: `preview-${index}-${file.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
             title: `Preview #${existingScreenshots.length + index + 1}`,
             subtitle: 'App Preview',
             accentColor: 'from-zinc-900/40 to-zinc-900/20',
@@ -443,6 +454,7 @@ export function AdminAppUpload() {
         slug: slug.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         tagline,
         iconSymbol,
+        iconBg: iconBg || 'from-purple-600 to-indigo-600',
         shortDescription: description,
         fullDescription: description,
         features,
@@ -473,9 +485,45 @@ export function AdminAppUpload() {
         throw new Error(errData.error || 'Failed to save app');
       }
 
+      const resData = await res.json();
+      const savedApp = resData.app ? normalizeAppRecord(resData.app) : null;
+
       showToast(isEditing ? 'App updated successfully!' : 'App published to catalog!', 'success');
+
+      // Optimistically update local catalog state
+      if (savedApp) {
+        setApps((prevApps) => {
+          const matchTarget = (isEditing && editingSlug ? editingSlug : savedApp.slug).toLowerCase();
+          const index = prevApps.findIndex((a) => a.slug.toLowerCase() === matchTarget);
+          if (index >= 0) {
+            const updated = [...prevApps];
+            updated[index] = savedApp;
+            return updated;
+          }
+          return [savedApp, ...prevApps];
+        });
+      }
+
       resetForm();
       await fetchApps();
+
+      // Dispatch global synchronization events across all tabs and open views
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('apps_updated', {
+            detail: {
+              slug: savedApp?.slug || payload.slug,
+              action: isEditing ? 'update' : 'create',
+            },
+          })
+        );
+        try {
+          localStorage.setItem('crazystore_apps_last_updated', String(new Date().toISOString()));
+        } catch {
+          // Ignore
+        }
+      }
+
       setActiveTab('list');
     } catch (err: any) {
       console.error(err);
@@ -522,7 +570,20 @@ export function AdminAppUpload() {
       });
       if (res.ok) {
         showToast('App deleted successfully!', 'success');
-        fetchApps();
+        setApps((prev) => prev.filter((a) => a.slug.toLowerCase() !== slugToDelete.toLowerCase()));
+        await fetchApps();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('apps_updated', {
+              detail: { slug: slugToDelete, action: 'delete' },
+            })
+          );
+          try {
+            localStorage.setItem('crazystore_apps_last_updated', String(new Date().toISOString()));
+          } catch {
+            // Ignore
+          }
+        }
         if (isEditing && editingSlug === slugToDelete) {
           resetForm();
         }

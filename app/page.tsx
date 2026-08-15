@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AndroidApp } from '@/lib/appsData';
+import { normalizeAppRecord } from '@/lib/appUtils';
 import { StarRating } from '@/components/StarRating';
 import { AppCardSkeleton } from '@/components/AppCardSkeleton';
 import { Navbar } from '@/components/Navbar';
@@ -35,53 +36,100 @@ export default function HomePage() {
   const [categories, setCategories] = useState<string[]>(['All']);
 
   useEffect(() => {
-    async function loadApps() {
-      setIsLoading(true);
+    let isSubscribed = true;
+
+    async function loadApps(showLoading = false) {
+      if (showLoading) {
+        setIsLoading(true);
+      }
       try {
-        const res = await fetch('/api/apps', {
+        const res = await fetch(`/api/apps?t=${Date.now()}`, {
           cache: 'no-store',
           headers: {
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
           },
         });
-        if (res.ok) {
+        if (res.ok && isSubscribed) {
           const data = await res.json();
-          const fetchedApps = data.apps || [];
+          const fetchedApps = (data.apps || []).map((a: any) => normalizeAppRecord(a));
           setApps(fetchedApps);
 
           const uniqueCats = new Set<string>();
-          fetchedApps.forEach((a: AndroidApp) => uniqueCats.add(a.category));
+          fetchedApps.forEach((a: AndroidApp) => {
+            if (a.category) uniqueCats.add(a.category);
+          });
           setCategories(['All', ...Array.from(uniqueCats)]);
 
+          // Fetch reviews rating map in the background
           const results: Record<string, { avg: number; count: number }> = {};
           for (const app of fetchedApps) {
             try {
-              const reviewRes = await fetch(`/api/reviews?appSlug=${encodeURIComponent(app.slug)}`, {
+              const reviewRes = await fetch(`/api/reviews?appSlug=${encodeURIComponent(app.slug)}&t=${Date.now()}`, {
                 cache: 'no-store',
                 headers: {
-                  'Cache-Control': 'no-cache',
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                  'Pragma': 'no-cache',
                 },
               });
-              if (reviewRes.ok) {
+              if (reviewRes.ok && isSubscribed) {
                 const reviewData = await reviewRes.json();
                 results[app.slug] = {
-                  avg: reviewData.averageRating || 0,
-                  count: reviewData.totalCount || 0,
+                  avg: reviewData.averageRating || app.initialRating || 0,
+                  count: reviewData.totalCount || app.initialReviewCount || 0,
                 };
               }
             } catch {
-              results[app.slug] = { avg: 0, count: 0 };
+              results[app.slug] = { avg: app.initialRating || 0, count: app.initialReviewCount || 0 };
             }
           }
-          setRatingsMap(results);
+          if (isSubscribed) {
+            setRatingsMap(results);
+          }
         }
       } catch (err) {
         console.error('Error fetching apps:', err);
       } finally {
-        setIsLoading(false);
+        if (isSubscribed && showLoading) {
+          setIsLoading(false);
+        }
       }
     }
-    loadApps();
+
+    loadApps(true);
+
+    const handleAppsUpdated = () => {
+      loadApps(false);
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'crazystore_apps_last_updated') {
+        loadApps(false);
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadApps(false);
+      }
+    };
+
+    const handleFocus = () => {
+      loadApps(false);
+    };
+
+    window.addEventListener('apps_updated', handleAppsUpdated);
+    window.addEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      isSubscribed = false;
+      window.removeEventListener('apps_updated', handleAppsUpdated);
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const filteredApps =
