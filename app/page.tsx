@@ -8,6 +8,8 @@ import { AppCardSkeleton } from '@/components/AppCardSkeleton';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
+import { FavoriteButton } from '@/components/FavoriteButton';
+import { useFavorites } from '@/hooks/useFavorites';
 import { trackEvent } from '@/lib/analytics';
 import { FaGithub } from 'react-icons/fa';
 import {
@@ -25,6 +27,7 @@ import {
   Cpu,
   Lock,
   Boxes,
+  Heart,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -33,6 +36,7 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [ratingsMap, setRatingsMap] = useState<Record<string, { avg: number; count: number }>>({});
   const [categories, setCategories] = useState<string[]>(['All']);
+  const { favorites, isFavorite, count: favoritesCount } = useFavorites();
 
   useEffect(() => {
     async function loadApps() {
@@ -77,6 +81,8 @@ export default function HomePage() {
   const filteredApps =
     selectedCategory === 'All'
       ? apps
+      : selectedCategory === 'Favorites'
+      ? apps.filter((app) => favorites.includes(app.slug))
       : apps.filter((app) => app.category === selectedCategory);
 
   const getIconComponent = (symbol: string) => {
@@ -92,7 +98,7 @@ export default function HomePage() {
     }
   };
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://crazystore.app';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crazystore.app';
 
   const homeItemListJsonLd = {
     '@context': 'https://schema.org',
@@ -111,12 +117,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col font-sans text-zinc-900 dark:text-zinc-100">
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(homeItemListJsonLd) }}
-        />
-      </head>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeItemListJsonLd) }}
+      />
       <Navbar />
 
       <main className="flex-1">
@@ -209,7 +213,7 @@ export default function HomePage() {
                       details: `Filtered apps by "${cat}" category`,
                     });
                   }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                     selectedCategory === cat
                       ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
                       : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'
@@ -218,78 +222,136 @@ export default function HomePage() {
                   {cat}
                 </button>
               ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('Favorites');
+                  trackEvent({
+                    eventType: 'category_filter',
+                    details: 'Filtered apps by Favorites',
+                  });
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                  selectedCategory === 'Favorites'
+                    ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
+                    : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                }`}
+              >
+                <Heart className={`w-3.5 h-3.5 ${selectedCategory === 'Favorites' || favoritesCount > 0 ? 'fill-current' : ''}`} />
+                <span>Favorites</span>
+                {favoritesCount > 0 && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    selectedCategory === 'Favorites'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400'
+                  }`}>
+                    {favoritesCount}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
           {isLoading ? (
             <AppCardSkeleton count={6} />
+          ) : filteredApps.length === 0 ? (
+            <div className="text-center py-16 px-4 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+              <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-500 mx-auto flex items-center justify-center mb-4">
+                <Heart className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-bold mb-1 text-zinc-900 dark:text-zinc-100">
+                {selectedCategory === 'Favorites' ? 'No Favorited Apps Yet' : 'No Apps Found'}
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mx-auto mb-6">
+                {selectedCategory === 'Favorites'
+                  ? 'Click the heart icon on any app to bookmark and save it to your personal favorites list.'
+                  : 'There are currently no applications matching this category.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('All')}
+                className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition-all cursor-pointer"
+              >
+                Browse All Apps
+              </button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {filteredApps.map((app, idx) => (
-                <Link
-                  href={`/apps/${app.slug}`}
+                <div
                   key={app.slug}
-                  onClick={() => {
-                    trackEvent({
-                      eventType: 'app_view',
-                      appSlug: app.slug,
-                      appName: app.name,
-                      path: `/apps/${app.slug}`,
-                      details: `Explored App Details: ${app.name}`,
-                    });
-                  }}
-                  className="group flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:shadow-purple-900/10 hover:border-purple-300 dark:hover:border-purple-800/50 transition-all duration-300 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4"
+                  className="group relative flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:shadow-purple-900/10 hover:border-purple-300 dark:hover:border-purple-800/50 transition-all duration-300 overflow-hidden animate-in fade-in slide-in-from-bottom-4"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  {/* Decorative background blob */}
-                  <div className={`absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity`} />
+                  {/* Floating Favorite Button */}
+                  <div className="absolute top-5 right-5 z-20">
+                    <FavoriteButton slug={app.slug} name={app.name} size="sm" variant="floating" />
+                  </div>
 
-                  <div className="flex items-start justify-between mb-6">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} flex items-center justify-center shadow-lg shadow-purple-500/20 transform group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 shrink-0 overflow-hidden`}>
-                      {app.logoUrl ? (
-                        <img src={app.logoUrl} alt={app.name} className="w-full h-full object-cover" />
-                      ) : (
-                        getIconComponent(app.iconSymbol)
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                      <div className="flex items-center gap-1.5">
-                        {app.githubUrl && (
-                          <span className="px-2 py-0.5 rounded-md bg-zinc-900 text-white dark:bg-zinc-800 text-[10px] font-bold flex items-center gap-1">
-                            <FaGithub className="w-3 h-3" /> GitHub
-                          </span>
+                  <Link
+                    href={`/apps/${app.slug}`}
+                    onClick={() => {
+                      trackEvent({
+                        eventType: 'app_view',
+                        appSlug: app.slug,
+                        appName: app.name,
+                        path: `/apps/${app.slug}`,
+                        details: `Explored App Details: ${app.name}`,
+                      });
+                    }}
+                    className="flex-1 flex flex-col"
+                  >
+                    {/* Decorative background blob */}
+                    <div className={`absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity`} />
+
+                    <div className="flex items-start justify-between mb-6 pr-8">
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} flex items-center justify-center shadow-lg shadow-purple-500/20 transform group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 shrink-0 overflow-hidden`}>
+                        {app.logoUrl ? (
+                          <img src={app.logoUrl} alt={app.name} className="w-full h-full object-cover" />
+                        ) : (
+                          getIconComponent(app.iconSymbol)
                         )}
-                        <span className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
-                          {app.version}
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5">
+                        <div className="flex items-center gap-1.5">
+                          {app.githubUrl && (
+                            <span className="px-2 py-0.5 rounded-md bg-zinc-900 text-white dark:bg-zinc-800 text-[10px] font-bold flex items-center gap-1">
+                              <FaGithub className="w-3 h-3" /> GitHub
+                            </span>
+                          )}
+                          <span className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
+                            {app.version}
+                          </span>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40 text-[10px] font-bold">
+                          {app.badge || 'Kotlin + Compose'}
                         </span>
                       </div>
-                      <span className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40 text-[10px] font-bold">
-                        {app.badge || 'Kotlin + Compose'}
-                      </span>
                     </div>
-                  </div>
 
-                  <div className="flex-1">
-                    <h3 className="text-xl font-black mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                      {app.name}
-                    </h3>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 line-clamp-2">
-                      {app.tagline || app.shortDescription}
-                    </p>
-                  </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-black mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        {app.name}
+                      </h3>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 line-clamp-2">
+                        {app.tagline || app.shortDescription}
+                      </p>
+                    </div>
 
-                  <div className="pt-5 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <StarRating rating={ratingsMap[app.slug]?.avg || 5} />
-                      <span className="text-[10px] font-bold text-zinc-500">
-                        ({ratingsMap[app.slug]?.count || 0})
-                      </span>
+                    <div className="pt-5 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <StarRating rating={ratingsMap[app.slug]?.avg || 5} />
+                        <span className="text-[10px] font-bold text-zinc-500">
+                          ({ratingsMap[app.slug]?.count || 0})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform">
+                        View Details <ChevronRight className="w-3.5 h-3.5" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform">
-                      View Details <ChevronRight className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               ))}
             </div>
           )}

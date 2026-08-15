@@ -84,6 +84,16 @@ export const metadata: Metadata = {
     },
   },
   category: 'technology',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/icon', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: [
+      { url: '/apple-icon', type: 'image/png', sizes: '180x180' },
+    ],
+    shortcut: ['/icon'],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

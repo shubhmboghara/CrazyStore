@@ -2,9 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Smartphone } from 'lucide-react';
+import { Smartphone, Heart } from 'lucide-react';
+import { useFavorites } from '@/hooks/useFavorites';
 
 export function Navbar() {
+  const { count: favoritesCount } = useFavorites();
+
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -36,6 +39,18 @@ export function Navbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-3">
+          <Link
+            href="/#catalog"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold transition-all border border-zinc-200/60 dark:border-zinc-800"
+          >
+            <Heart className={`w-3.5 h-3.5 ${favoritesCount > 0 ? 'text-rose-500 fill-rose-500' : 'text-zinc-500'}`} />
+            <span className="hidden sm:inline">Favorites</span>
+            {favoritesCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white">
+                {favoritesCount}
+              </span>
+            )}
+          </Link>
         </div>
       </div>
     </header>
