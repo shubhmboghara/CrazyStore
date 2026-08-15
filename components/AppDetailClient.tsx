@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { AndroidApp } from '@/lib/appsData';
+import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
 import { StarRating } from '@/components/StarRating';
 import { ReviewForm } from '@/components/ReviewForm';
 import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
@@ -38,7 +39,7 @@ interface AppDetailClientProps {
 }
 
 export function AppDetailClient({ initialApp }: AppDetailClientProps) {
-  const [appData, setAppData] = useState<AndroidApp>(initialApp);
+  const [appData, setAppData] = useState<AndroidApp>(() => normalizeAppRecord(initialApp));
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(true);
   const [averageRating, setAverageRating] = useState<number>(initialApp.initialRating || 5.0);
@@ -61,7 +62,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
         if (res.ok && isSubscribed) {
           const data = await res.json();
           if (data.app) {
-            setAppData(data.app);
+            setAppData(normalizeAppRecord(data.app));
           }
         }
       } catch (err) {
@@ -227,7 +228,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
               {/* Download & GitHub CTA Buttons */}
               <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
                 <a
-                  href={appData.downloadUrl}
+                  href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => {
@@ -239,7 +240,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                       details: `Downloaded APK: ${appData.name} (${appData.version})`,
                     });
                   }}
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm text-center shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm text-center shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download className="w-5 h-5" /> Download APK
                 </a>

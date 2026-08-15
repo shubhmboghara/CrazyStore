@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import { AndroidApp } from '@/lib/appsData';
+import { formatDownloadUrl, getGoogleDriveDirectDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { FaGithub } from 'react-icons/fa6';
 import {
@@ -206,7 +207,7 @@ export function AdminAppUpload() {
       });
       if (res.ok) {
         const data = await res.json();
-        setApps(data.apps || []);
+        setApps((data.apps || []).map((a: any) => normalizeAppRecord(a)));
       }
     } catch (error) {
       console.error('Error fetching apps:', error);
@@ -340,7 +341,8 @@ export function AdminAppUpload() {
     setFormError(null);
   };
 
-  const startEditing = (app: any) => {
+  const startEditing = (rawApp: any) => {
+    const app = normalizeAppRecord(rawApp);
     setIsEditing(true);
     setEditingSlug(app.slug);
     setName(app.name || '');
@@ -366,7 +368,7 @@ export function AdminAppUpload() {
 
     setCategory(app.category || 'Tools & Utilities');
     setVersion(app.version || 'v1.0.0');
-    setDownloadUrl(app.downloadUrl || '');
+    setDownloadUrl(formatDownloadUrl(app.downloadUrl) || '');
     setSize(app.size || '15 MB');
     setMinAndroid(app.minAndroid || 'Android 8.0 (API 26)+');
     setBadge(app.badge || 'Kotlin + Compose');
@@ -757,13 +759,21 @@ export function AdminAppUpload() {
           </p>
 
           {/* Install CTA Simulation */}
-          <button
-            type="button"
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-3 font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-purple-600/30"
+          <a
+            href={formatDownloadUrl(downloadUrl) || '#'}
+            target={downloadUrl ? '_blank' : undefined}
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              if (!downloadUrl) {
+                e.preventDefault();
+                showToast('Please enter a download URL in Section 5 below to test.', 'info');
+              }
+            }}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-3 font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-purple-600/30 transition-all cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5 rotate-180" />
             <span>Install APK ({size || '15 MB'})</span>
-          </button>
+          </a>
 
           {/* Screenshots Preview Gallery */}
           {(existingScreenshots.length > 0 || screenshotFiles.length > 0) && (
@@ -1449,18 +1459,58 @@ export function AdminAppUpload() {
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
-                      Direct APK Download URL <span className="text-rose-500">*</span>
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                        Direct APK Download URL <span className="text-rose-500">*</span>
+                      </label>
+                      {downloadUrl && (
+                        <a
+                          href={formatDownloadUrl(downloadUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center gap-1 hover:underline"
+                        >
+                          <span>Test Link ↗</span>
+                        </a>
+                      )}
+                    </div>
                     <input
                       type="url"
                       required
                       value={downloadUrl}
                       onChange={(e) => setDownloadUrl(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-purple-600"
-                      placeholder="https://drive.google.com/uc?export=download&id=..."
+                      placeholder="https://drive.google.com/uc?export=download&id=... or https://drive.google.com/file/d/.../view"
                     />
-                    <p className="text-[10px] text-zinc-400">Google Drive direct link, GitHub Releases APK asset, or direct CDN URL.</p>
+
+                    {/* Google Drive Link Assistant */}
+                    {downloadUrl && downloadUrl.includes('drive.google.com') && (
+                      <div className="p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/50 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Google Drive Link Detected
+                          </span>
+                          {!downloadUrl.includes('export=download') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const direct = getGoogleDriveDirectDownloadUrl(downloadUrl);
+                                setDownloadUrl(direct);
+                                showToast('Converted to Direct Google Drive Download URL!', 'success');
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] transition-colors cursor-pointer shadow-sm"
+                            >
+                              Auto-Convert to Direct Download Link
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-purple-800 dark:text-purple-300 font-mono break-all">
+                          Final target: <span className="font-bold">{formatDownloadUrl(downloadUrl)}</span>
+                        </p>
+                      </div>
+                    )}
+
+                    <p className="text-[10px] text-zinc-400">Google Drive shareable or direct link, GitHub Releases APK asset, or direct CDN URL. Full URLs and short IDs are supported.</p>
                   </div>
 
                   <div className="space-y-1.5">
@@ -1623,6 +1673,23 @@ export function AdminAppUpload() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Download URL Quick Test in Admin List */}
+                  {app.downloadUrl && (
+                    <div className="px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 text-[11px]">
+                      <span className="text-zinc-500 truncate font-mono text-[10px]" title={app.downloadUrl}>
+                        {app.downloadUrl.replace(/^https?:\/\//, '')}
+                      </span>
+                      <a
+                        href={formatDownloadUrl(app.downloadUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-purple-600 hover:text-purple-700 dark:text-purple-400 font-bold shrink-0 flex items-center gap-0.5 hover:underline"
+                      >
+                        <span>Test APK ↗</span>
+                      </a>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
                     <Link

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { ANDROID_APPS, AndroidApp } from '@/lib/appsData';
+import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -21,10 +22,7 @@ export async function GET(req: NextRequest) {
         .order('createdAt', { ascending: false });
 
       if (!error && data) {
-        dbApps = data.map((d: any) => ({
-          ...d,
-          isCustom: true,
-        }));
+        dbApps = data.map((d: any) => normalizeAppRecord(d));
       } else if (error) {
         console.warn('Supabase query warning in GET /api/apps:', error.message);
       }
@@ -37,17 +35,18 @@ export async function GET(req: NextRequest) {
 
     // 1. Seed with default apps
     for (const app of ANDROID_APPS) {
-      appsMap.set(app.slug.toLowerCase(), { ...app });
+      appsMap.set(app.slug.toLowerCase(), normalizeAppRecord({ ...app }));
     }
 
     // 2. Override or add from DB
     for (const dbApp of dbApps) {
-      if (dbApp.slug) {
+      if (dbApp && dbApp.slug) {
         const key = dbApp.slug.toLowerCase();
         const baseApp = appsMap.get(key) || {};
         appsMap.set(key, {
           ...baseApp,
           ...dbApp,
+          downloadUrl: dbApp.downloadUrl ? formatDownloadUrl(dbApp.downloadUrl) : baseApp.downloadUrl,
           isCustom: true,
         });
       }
@@ -175,7 +174,7 @@ export async function POST(req: NextRequest) {
       bannerUrl: bannerUrl || '',
       githubUrl: githubUrl || '',
       techStack: techStackArray,
-      downloadUrl: downloadUrl ? downloadUrl.trim() : '',
+      downloadUrl: formatDownloadUrl(downloadUrl),
       shortDescription: shortDescription ? shortDescription.trim() : '',
       fullDescription: fullDescArray,
       features: featuresArray,
@@ -204,7 +203,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         message: 'App uploaded successfully',
-        app: data && data.length > 0 ? data[0] : newAppDoc,
+        app: data && data.length > 0 ? normalizeAppRecord(data[0]) : normalizeAppRecord(newAppDoc),
       },
       { status: 201 }
     );
@@ -294,7 +293,7 @@ export async function PUT(req: NextRequest) {
       bannerUrl: bannerUrl || '',
       githubUrl: githubUrl || '',
       techStack: techStackArray,
-      downloadUrl: downloadUrl ? downloadUrl.trim() : '',
+      downloadUrl: formatDownloadUrl(downloadUrl),
       shortDescription: shortDescription ? shortDescription.trim() : '',
       fullDescription: fullDescArray,
       features: featuresArray,
@@ -348,7 +347,7 @@ export async function PUT(req: NextRequest) {
           }
         );
       }
-      savedApp = data && data.length > 0 ? data[0] : updatedAppDoc;
+      savedApp = data && data.length > 0 ? normalizeAppRecord(data[0]) : normalizeAppRecord(updatedAppDoc);
     } else {
       // First time editing a seeded/default app: Upsert into DB
       const defaultApp = ANDROID_APPS.find(
@@ -358,7 +357,7 @@ export async function PUT(req: NextRequest) {
       );
 
       const insertDoc = {
-        ...(defaultApp || {}),
+        ...(defaultApp ? normalizeAppRecord(defaultApp) : {}),
         ...updatedAppDoc,
         createdAt: new Date().toISOString(),
         initialRating: defaultApp?.initialRating || 5.0,
@@ -382,7 +381,7 @@ export async function PUT(req: NextRequest) {
           }
         );
       }
-      savedApp = data && data.length > 0 ? data[0] : insertDoc;
+      savedApp = data && data.length > 0 ? normalizeAppRecord(data[0]) : normalizeAppRecord(insertDoc);
     }
 
     return NextResponse.json(

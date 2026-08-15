@@ -4,6 +4,7 @@ import { ANDROID_APPS, AndroidApp, getAppBySlug } from '@/lib/appsData';
 import { AppDetailClient } from '@/components/AppDetailClient';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
+import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -15,6 +16,7 @@ export const revalidate = 0;
 async function getApp(slug: string): Promise<AndroidApp | null> {
   const normalizedSlug = slug.toLowerCase().trim();
   const defaultApp = getAppBySlug(normalizedSlug);
+  const baseApp = defaultApp ? normalizeAppRecord(defaultApp) : null;
 
   try {
     const cookieStore = await cookies();
@@ -26,9 +28,11 @@ async function getApp(slug: string): Promise<AndroidApp | null> {
       .maybeSingle();
 
     if (!error && dbApp) {
+      const normalizedDbApp = normalizeAppRecord(dbApp);
       return {
-        ...(defaultApp || {}),
-        ...dbApp,
+        ...(baseApp || {}),
+        ...normalizedDbApp,
+        downloadUrl: normalizedDbApp.downloadUrl ? formatDownloadUrl(normalizedDbApp.downloadUrl) : (baseApp?.downloadUrl || ''),
         isCustom: true,
       } as AndroidApp;
     }
@@ -36,7 +40,7 @@ async function getApp(slug: string): Promise<AndroidApp | null> {
     console.warn('Error fetching app from Supabase:', err);
   }
 
-  return defaultApp || null;
+  return baseApp || null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
