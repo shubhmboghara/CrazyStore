@@ -42,6 +42,20 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
   });
 
   useEffect(() => {
+    setApps(initialApps);
+    
+    const uniqueCats = new Set<string>();
+    initialApps.forEach((a: AndroidApp) => {
+      if (a.category) uniqueCats.add(a.category);
+    });
+    setCategories(['All', ...Array.from(uniqueCats)]);
+  }, [initialApps]);
+
+  useEffect(() => {
+    setRatingsMap(initialRatingsMap);
+  }, [initialRatingsMap]);
+
+  useEffect(() => {
     let isSubscribed = true;
 
     async function loadApps(showLoading = false) {
