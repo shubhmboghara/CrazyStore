@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import { AndroidApp } from '@/lib/appsData';
@@ -57,6 +58,7 @@ const CATEGORIES = [
 
 export function AdminAppUpload() {
   const { showToast } = useToast();
+  const router = useRouter();
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passcode, setPasscode] = useState<string>('');
@@ -525,6 +527,9 @@ export function AdminAppUpload() {
       }
 
       setActiveTab('list');
+      
+      // Force Next.js to re-fetch Server Components (like the Home page) to update the client router cache
+      router.refresh();
     } catch (err: any) {
       console.error(err);
       if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
@@ -587,6 +592,7 @@ export function AdminAppUpload() {
         if (isEditing && editingSlug === slugToDelete) {
           resetForm();
         }
+        router.refresh();
       } else {
         const data = await res.json();
         alert(data.error || 'Failed to delete app');
