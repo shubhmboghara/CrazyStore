@@ -3,6 +3,9 @@ import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { AndroidApp } from '@/lib/appsData';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

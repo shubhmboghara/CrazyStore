@@ -9,9 +9,8 @@ import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
-import { FavoriteButton } from '@/components/FavoriteButton';
 import { trackEvent } from '@/lib/analytics';
-import { FaGithub } from 'react-icons/fa';
+import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
   ArrowLeft,
@@ -192,9 +191,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </div>
               </div>
 
-              {/* Download, Favorite & GitHub CTA Buttons */}
-              <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <FavoriteButton slug={appData.slug} name={appData.name} size="lg" variant="inline" />
+              {/* Download & GitHub CTA Buttons */}
+              <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
                 <a
                   href={appData.downloadUrl}
                   target="_blank"

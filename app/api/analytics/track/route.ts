@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Server-side real-time analytics global store
 declare global {
   var __analyticsStore: {

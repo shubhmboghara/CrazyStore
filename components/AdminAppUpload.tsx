@@ -1,10 +1,11 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import { AndroidApp } from '@/lib/appsData';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
-import { FaGithub } from 'react-icons/fa';
+import { FaGithub } from 'react-icons/fa6';
 import {
   Upload,
   PlusCircle,
@@ -27,32 +28,60 @@ import {
   ArrowRight,
   Eye,
   Sliders,
-  BarChart3,
   Activity,
+  Search,
+  CheckCircle2,
+  ShieldCheck,
+  Cpu,
+  Layers,
+  Sparkles,
+  RefreshCw,
+  Star,
+  KeyRound,
+  EyeOff,
+  FolderGit2,
+  Code2,
 } from 'lucide-react';
+
+const CATEGORIES = [
+  'Tools & Utilities',
+  'Productivity',
+  'Communication',
+  'Entertainment',
+  'Education',
+  'Finance',
+  'Health & Fitness',
+  'Customization',
+];
 
 export function AdminAppUpload() {
   const { showToast } = useToast();
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passcode, setPasscode] = useState<string>('');
+  const [showPasscode, setShowPasscode] = useState<boolean>(false);
   const [passcodeError, setPasscodeError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<'analytics' | 'editor' | 'list' | 'reviews'>('analytics');
 
   // Apps State
   const [apps, setApps] = useState<AndroidApp[]>([]);
   const [isLoadingApps, setIsLoadingApps] = useState<boolean>(false);
-  
+  const [catalogSearch, setCatalogSearch] = useState<string>('');
+  const [catalogCategory, setCatalogCategory] = useState<string>('All');
+
   // Reviews State
   const [reviews, setReviews] = useState<any[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(false);
   const [replyTexts, setReplyTexts] = useState<Record<number, string>>({});
+  const [reviewSearch, setReviewSearch] = useState<string>('');
+  const [reviewFilterRating, setReviewFilterRating] = useState<number | 'all'>('all');
 
   // Form State
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
-  
+
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
 
@@ -72,20 +101,12 @@ export function AdminAppUpload() {
   const [githubUrl, setGithubUrl] = useState<string>('');
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [screenshotFiles, setScreenshotFiles] = useState<File[]>([]);
-  
+
   const [logoUrl, setLogoUrl] = useState<string>('');
-  const [bannerUrl, setBannerUrl] = useState<string>('');
   const [existingScreenshots, setExistingScreenshots] = useState<any[]>([]);
   const [deletingScreenshotId, setDeletingScreenshotId] = useState<string | null>(null);
   const [isDeletingLogo, setIsDeletingLogo] = useState<boolean>(false);
-  const [isDeletingBanner, setIsDeletingBanner] = useState<boolean>(false);
-
-  useEffect(() => {
-    // Intentionally omitting automatic authentication check so the user is
-    // always prompted for the passcode when navigating to /admin.
-  }, []);
 
   const handleLogout = () => {
     setIsAuthenticated(false);
@@ -119,23 +140,6 @@ export function AdminAppUpload() {
       }
     }
     setLogoFile(null);
-  };
-
-  const handleRemoveBanner = async () => {
-    if (bannerUrl) {
-      setIsDeletingBanner(true);
-      try {
-        await deleteImageFromImageKit(bannerUrl);
-        setBannerUrl('');
-        showToast('Feature Banner removed and deleted from ImageKit', 'info');
-      } catch (err) {
-        console.error(err);
-        showToast('Failed to delete banner from ImageKit', 'error');
-      } finally {
-        setIsDeletingBanner(false);
-      }
-    }
-    setBannerFile(null);
   };
 
   const handleDeleteExistingScreenshot = async (screenshot: any, index: number) => {
@@ -232,7 +236,7 @@ export function AdminAppUpload() {
         try {
           const [appsRes, reviewsRes] = await Promise.all([
             fetch('/api/apps'),
-            fetch('/api/reviews')
+            fetch('/api/reviews'),
           ]);
           if (appsRes.ok && isMounted) {
             const appsData = await appsRes.json();
@@ -260,24 +264,29 @@ export function AdminAppUpload() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode.trim().length > 0) {
-      try {
-        const res = await fetch('/api/admin/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ passcode: passcode.trim() }),
-        });
-        if (res.ok) {
-          setIsAuthenticated(true);
-          setPasscodeError(null);
-        } else {
-          setPasscodeError('Invalid passcode. Please try again.');
-        }
-      } catch (err) {
-        setPasscodeError('Error verifying passcode.');
+    if (passcode.trim().length === 0) {
+      setPasscodeError('Please enter the admin passcode.');
+      return;
+    }
+    setIsVerifying(true);
+    setPasscodeError(null);
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode: passcode.trim() }),
+      });
+      if (res.ok) {
+        setIsAuthenticated(true);
+        setPasscodeError(null);
+        showToast('Admin access granted', 'success');
+      } else {
+        setPasscodeError('Invalid passcode. Please try again.');
       }
-    } else {
-      setPasscodeError('Please enter a passcode.');
+    } catch {
+      setPasscodeError('Error connecting to verification server.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -313,10 +322,8 @@ export function AdminAppUpload() {
     setTechStack('Kotlin, Jetpack Compose, Coroutines');
     setGithubUrl('');
     setLogoFile(null);
-    setBannerFile(null);
     setScreenshotFiles([]);
     setLogoUrl('');
-    setBannerUrl('');
     setExistingScreenshots([]);
     setFormError(null);
   };
@@ -324,39 +331,60 @@ export function AdminAppUpload() {
   const startEditing = (app: any) => {
     setIsEditing(true);
     setEditingSlug(app.slug);
-    setName(app.name);
-    setSlug(app.slug);
+    setName(app.name || '');
+    setSlug(app.slug || '');
     setTagline(app.tagline || '');
     setIconSymbol(app.iconSymbol || 'smartphone');
-    setDescription(app.shortDescription);
-    setFeatures(app.features ? app.features.join('\n') : '');
-    setCategory(app.category);
-    setVersion(app.version);
-    setDownloadUrl(app.downloadUrl);
-    setSize(app.size);
-    setMinAndroid(app.minAndroid);
-    setBadge(app.badge);
-    setTechStack(app.techStack ? app.techStack.join(', ') : '');
+
+    const descText = app.shortDescription
+      ? app.shortDescription
+      : Array.isArray(app.fullDescription)
+      ? app.fullDescription.join('\n\n')
+      : typeof app.fullDescription === 'string'
+      ? app.fullDescription
+      : '';
+    setDescription(descText);
+
+    const featText = Array.isArray(app.features)
+      ? app.features.join('\n')
+      : typeof app.features === 'string'
+      ? app.features
+      : '';
+    setFeatures(featText);
+
+    setCategory(app.category || 'Tools & Utilities');
+    setVersion(app.version || 'v1.0.0');
+    setDownloadUrl(app.downloadUrl || '');
+    setSize(app.size || '15 MB');
+    setMinAndroid(app.minAndroid || 'Android 8.0 (API 26)+');
+    setBadge(app.badge || 'Kotlin + Compose');
+
+    const techText = Array.isArray(app.techStack)
+      ? app.techStack.join(', ')
+      : typeof app.techStack === 'string'
+      ? app.techStack
+      : '';
+    setTechStack(techText);
     setGithubUrl(app.githubUrl || '');
-    
+
     setLogoUrl(app.logoUrl || '');
-    setBannerUrl(app.bannerUrl || '');
-    const parsedScreenshots = (app.screenshots || []).map((s: any, idx: number) => ({
-      id: s.id || `preview-${idx}-${Date.now()}`,
-      title: s.title || `Preview #${idx + 1}`,
-      subtitle: s.subtitle || 'App Preview',
-      accentColor: s.accentColor || 'from-zinc-900/40 to-zinc-900/20',
-      type: s.type || 'preview',
-      imageUrl: s.imageUrl || s.url || '',
-      url: s.url || s.imageUrl || '',
-    })).filter((s: any) => s.imageUrl || s.url);
+    const parsedScreenshots = (app.screenshots || [])
+      .map((s: any, idx: number) => ({
+        id: s.id || `preview-${idx}-${Date.now()}`,
+        title: s.title || `Preview #${idx + 1}`,
+        subtitle: s.subtitle || 'App Preview',
+        accentColor: s.accentColor || 'from-zinc-900/40 to-zinc-900/20',
+        type: s.type || 'preview',
+        imageUrl: s.imageUrl || s.url || '',
+        url: s.url || s.imageUrl || '',
+      }))
+      .filter((s: any) => s.imageUrl || s.url);
     setExistingScreenshots(parsedScreenshots);
-    
+
     setLogoFile(null);
-    setBannerFile(null);
     setScreenshotFiles([]);
     setFormError(null);
-    
+
     setActiveTab('editor');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -368,23 +396,15 @@ export function AdminAppUpload() {
 
     try {
       let finalLogoUrl = logoUrl;
-      let finalBannerUrl = bannerUrl;
       let screenshotsData: any[] = isEditing ? existingScreenshots : [];
 
       if (logoFile) {
-        // If replacing an existing logo, clean up the old one from ImageKit
         if (isEditing && logoUrl && logoUrl.includes('imagekit.io')) {
           deleteImageFromImageKit(logoUrl);
         }
         finalLogoUrl = await uploadFile(logoFile);
       }
-      if (bannerFile) {
-        // If replacing an existing banner, clean up the old one from ImageKit
-        if (isEditing && bannerUrl && bannerUrl.includes('imagekit.io')) {
-          deleteImageFromImageKit(bannerUrl);
-        }
-        finalBannerUrl = await uploadFile(bannerFile);
-      }
+
       if (screenshotFiles.length > 0) {
         const uploadedScreenshots: any[] = [];
         for (let index = 0; index < screenshotFiles.length; index++) {
@@ -406,7 +426,7 @@ export function AdminAppUpload() {
       const payload = {
         originalSlug: isEditing ? editingSlug : undefined,
         name,
-        slug,
+        slug: slug.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         tagline,
         iconSymbol,
         shortDescription: description,
@@ -421,7 +441,7 @@ export function AdminAppUpload() {
         techStack,
         githubUrl,
         logoUrl: finalLogoUrl,
-        bannerUrl: finalBannerUrl,
+        bannerUrl: '',
         screenshots: screenshotsData,
       };
 
@@ -439,13 +459,13 @@ export function AdminAppUpload() {
         throw new Error(errData.error || 'Failed to save app');
       }
 
-      showToast(isEditing ? 'App updated successfully!' : 'App uploaded successfully!', 'success');
+      showToast(isEditing ? 'App updated successfully!' : 'App published to catalog!', 'success');
       resetForm();
-      fetchApps();
+      await fetchApps();
       setActiveTab('list');
     } catch (err: any) {
       console.error(err);
-      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
         setFormError('Invalid admin passcode. Please log in again.');
         setIsAuthenticated(false);
       } else {
@@ -457,23 +477,22 @@ export function AdminAppUpload() {
   };
 
   const handleDelete = async (slugToDelete: string) => {
-    if (!confirm(`Are you sure you want to delete ${slugToDelete}? This will also clean up associated images.`)) return;
+    if (!confirm(`Are you sure you want to delete "${slugToDelete}"? This will permanently remove the app and associated ImageKit media.`)) return;
     try {
-      // Find app to clean up its images from ImageKit
-      const appToDelete = apps.find(a => a.slug === slugToDelete);
+      const appToDelete = apps.find((a) => a.slug === slugToDelete);
       if (appToDelete) {
         const imagesToDelete = [
           appToDelete.logoUrl,
           appToDelete.bannerUrl,
-          ...(appToDelete.screenshots?.map((s: any) => s.imageUrl || s.url) || [])
+          ...(appToDelete.screenshots?.map((s: any) => s.imageUrl || s.url) || []),
         ].filter(Boolean);
-        
+
         if (imagesToDelete.length > 0) {
           try {
             await fetch('/api/upload', {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ urls: imagesToDelete })
+              body: JSON.stringify({ urls: imagesToDelete }),
             });
           } catch (e) {
             console.warn('Could not clean up images:', e);
@@ -488,14 +507,14 @@ export function AdminAppUpload() {
         },
       });
       if (res.ok) {
-        showToast('App and associated media deleted successfully!', 'success');
+        showToast('App deleted successfully!', 'success');
         fetchApps();
         if (isEditing && editingSlug === slugToDelete) {
           resetForm();
         }
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to delete');
+        alert(data.error || 'Failed to delete app');
       }
     } catch (err) {
       console.error(err);
@@ -506,7 +525,7 @@ export function AdminAppUpload() {
   const handleReplyReview = async (reviewId: number) => {
     const replyText = replyTexts[reviewId];
     if (!replyText || replyText.trim() === '') return;
-    
+
     try {
       const res = await fetch('/api/reviews', {
         method: 'PUT',
@@ -516,13 +535,13 @@ export function AdminAppUpload() {
         },
         body: JSON.stringify({
           reviewId,
-          adminReply: replyText
+          adminReply: replyText,
         }),
       });
 
       if (res.ok) {
-        showToast('Reply submitted successfully!', 'success');
-        setReplyTexts(prev => ({ ...prev, [reviewId]: '' }));
+        showToast('Developer reply posted successfully!', 'success');
+        setReplyTexts((prev) => ({ ...prev, [reviewId]: '' }));
         fetchReviews();
       } else {
         const data = await res.json();
@@ -558,649 +577,744 @@ export function AdminAppUpload() {
     }
   };
 
+  // Filtered Lists
+  const filteredApps = useMemo(() => {
+    return apps.filter((app) => {
+      const matchesSearch =
+        catalogSearch.trim() === '' ||
+        app.name.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+        app.slug.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+        app.category.toLowerCase().includes(catalogSearch.toLowerCase());
+      const matchesCategory = catalogCategory === 'All' || app.category === catalogCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [apps, catalogSearch, catalogCategory]);
+
+  const filteredReviews = useMemo(() => {
+    return reviews.filter((r) => {
+      const matchesSearch =
+        reviewSearch.trim() === '' ||
+        (r.name && r.name.toLowerCase().includes(reviewSearch.toLowerCase())) ||
+        (r.reviewText && r.reviewText.toLowerCase().includes(reviewSearch.toLowerCase())) ||
+        (r.appSlug && r.appSlug.toLowerCase().includes(reviewSearch.toLowerCase()));
+      const matchesRating = reviewFilterRating === 'all' || r.rating === reviewFilterRating;
+      return matchesSearch && matchesRating;
+    });
+  }, [reviews, reviewSearch, reviewFilterRating]);
+
+  // --- Login Screen ---
   if (!isAuthenticated) {
     return (
-      <div className="w-full min-h-[60vh] flex items-center justify-center">
-        <div className="p-8 rounded-[2rem] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-black/50 text-center max-w-md w-full mx-auto space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-900 text-white mx-auto flex items-center justify-center shadow-lg shadow-zinc-900/30">
-            <Lock className="w-8 h-8" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-              Admin Portal
-            </h3>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-              Unlock the dashboard to manage your catalog, update apps, and reply to user reviews.
-            </p>
-          </div>
-          {passcodeError && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-sm font-medium border border-rose-100 dark:border-rose-900/50 flex items-center justify-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{passcodeError}</span>
+      <div className="w-full min-h-[70vh] flex items-center justify-center py-12 px-4">
+        <div className="relative w-full max-w-md">
+          {/* Subtle ambient background glow */}
+          <div className="absolute -top-10 -left-10 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 shadow-2xl shadow-purple-900/10 space-y-6">
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/30">
+                <KeyRound className="w-8 h-8" />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 text-xs font-bold mb-2">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Developer Console</span>
+                </div>
+                <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
+                  Admin Authorization
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs mx-auto">
+                  Enter your master security passcode to access publishing tools, media management, and analytics.
+                </p>
+              </div>
             </div>
-          )}
-          <form onSubmit={handleLogin} className="space-y-4 pt-2">
-            <input
-              type="password"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              placeholder="Enter secure passcode"
-              className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-center font-mono text-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-shadow"
-            />
-            <button
-              type="submit"
-              className="w-full py-3.5 rounded-xl bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-zinc-900 font-bold text-sm transition-colors"
-            >
-              Unlock Dashboard
-            </button>
-          </form>
+
+            {passcodeError && (
+              <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-semibold border border-rose-200 dark:border-rose-900/50 flex items-center gap-2.5 animate-in fade-in slide-in-from-top-1">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{passcodeError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+                  <span>Passcode</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasscode(!showPasscode)}
+                    className="text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    {showPasscode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    <span>{showPasscode ? 'Hide' : 'Show'}</span>
+                  </button>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPasscode ? 'text' : 'password'}
+                    value={passcode}
+                    onChange={(e) => setPasscode(e.target.value)}
+                    placeholder="Enter admin passcode"
+                    autoFocus
+                    className="w-full px-4 py-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-center font-mono text-base tracking-widest text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all shadow-inner"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isVerifying}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-purple-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isVerifying ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Unlock Dashboard</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 text-center">
+              <Link
+                href="/"
+                className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-purple-600 transition-colors"
+              >
+                ← Back to Public Store
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  // --- Live Preview Component ---
+  // --- Live Device Preview Component ---
   const renderLivePreview = () => (
-    <div className="w-full max-w-sm mx-auto bg-zinc-100 dark:bg-zinc-950 border-[8px] border-zinc-800 dark:border-zinc-800 rounded-[3rem] overflow-hidden shadow-2xl relative h-[720px] flex flex-col ring-1 ring-white/10">
-      {/* Mobile Notch/Island */}
-      <div className="absolute top-0 inset-x-0 h-7 flex justify-center z-20">
-        <div className="w-32 h-7 bg-zinc-800 rounded-b-3xl"></div>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-zinc-900 custom-scrollbar pb-10">
-        {/* Banner Area */}
-        <div className="relative h-56 bg-zinc-200 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800">
-          {(bannerFile || bannerUrl) ? (
-            <img src={bannerFile ? URL.createObjectURL(bannerFile) : bannerUrl} className="w-full h-full object-cover" alt="Banner" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-zinc-900/20 to-zinc-900/20 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600">
-              <ImageIcon className="w-10 h-10 mb-2 opacity-50" />
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">No Banner</span>
-            </div>
-          )}
-          {/* Overlay Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-zinc-900 via-transparent to-transparent"></div>
+    <div className="w-full max-w-[340px] mx-auto bg-zinc-950 border-[7px] border-zinc-800 rounded-[2.8rem] overflow-hidden shadow-2xl relative h-[680px] flex flex-col ring-1 ring-white/10">
+      {/* Device Top Speaker & Camera Island */}
+      <div className="absolute top-2 inset-x-0 flex items-center justify-between px-6 z-30 text-[10px] font-bold text-zinc-400">
+        <span>09:41</span>
+        <div className="w-20 h-4 bg-zinc-900 rounded-full flex items-center justify-center">
+          <div className="w-2 h-2 rounded-full bg-zinc-800" />
         </div>
+        <span>5G 100%</span>
+      </div>
 
-        <div className="px-5 -mt-12 relative z-10">
-          {/* App Logo */}
-          <div className="w-24 h-24 bg-white dark:bg-zinc-950 rounded-2xl shadow-xl border-4 border-white dark:border-zinc-900 overflow-hidden">
-            {(logoFile || logoUrl) ? (
-              <img src={logoFile ? URL.createObjectURL(logoFile) : logoUrl} className="w-full h-full object-cover" alt="Logo" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-zinc-100 to-zinc-100 dark:from-zinc-900/40 dark:to-zinc-900/40 flex items-center justify-center">
-                <Smartphone className="w-10 h-10 text-zinc-900 dark:text-zinc-100" />
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-zinc-900 custom-scrollbar pb-10 pt-12">
+        <div className="px-5 space-y-5">
+          {/* Header Identity Row */}
+          <div className="flex items-start gap-4">
+            <div className="w-20 h-20 bg-zinc-100 dark:bg-zinc-950 rounded-2xl shadow-md border border-zinc-200 dark:border-zinc-800 overflow-hidden shrink-0 flex items-center justify-center">
+              {logoFile ? (
+                <img src={URL.createObjectURL(logoFile)} className="w-full h-full object-cover" alt="Logo" />
+              ) : logoUrl ? (
+                <img src={logoUrl} className="w-full h-full object-cover" alt="Logo" />
+              ) : (
+                <Smartphone className="w-8 h-8 text-purple-600" />
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 truncate leading-tight">
+                {name || 'Application Name'}
+              </h3>
+              <p className="text-xs font-medium text-purple-600 dark:text-purple-400 truncate mt-0.5">
+                {category || 'Tools & Utilities'}
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
+                  {version || 'v1.0.0'}
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
+                  {size || '15 MB'}
+                </span>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Header Info */}
-          <div className="mt-4">
-            <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 leading-tight tracking-tight">
-              {name || 'Your App Name'}
-            </h2>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mt-1">
-              {tagline || 'Your catchy tagline will appear here.'}
-            </p>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2 mt-4 text-xs font-semibold">
-            <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-              {category || 'Category'}
-            </span>
-            <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-              {size || 'Size'}
-            </span>
-            <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-              {version || 'v1.0.0'}
-            </span>
-          </div>
+          {/* Tagline */}
+          <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
+            {tagline || 'A high performance open-source Android utility built with modern Kotlin & Jetpack Compose.'}
+          </p>
 
-          <button className="w-full bg-zinc-900 text-white rounded-2xl py-3.5 font-bold mt-6 flex items-center justify-center gap-2 shadow-lg shadow-zinc-900/20">
-            <Upload className="w-4 h-4 rotate-180" /> Install APK
+          {/* Install CTA Simulation */}
+          <button
+            type="button"
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-3 font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-purple-600/30"
+          >
+            <Upload className="w-3.5 h-3.5 rotate-180" />
+            <span>Install APK ({size || '15 MB'})</span>
           </button>
 
-          {/* Description */}
-          <div className="mt-8 space-y-3">
-            <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              About this app
-            </h3>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
-              {description || 'The full description of your application will be displayed here. Start typing in the form to see this preview update instantly.'}
+          {/* Screenshots Preview Gallery */}
+          {(existingScreenshots.length > 0 || screenshotFiles.length > 0) && (
+            <div className="space-y-2 pt-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Screenshots</span>
+              <div className="flex gap-2.5 overflow-x-auto pb-2 custom-scrollbar">
+                {existingScreenshots.map((s, i) => (
+                  <div key={i} className="w-24 h-44 rounded-xl overflow-hidden bg-zinc-950 shrink-0 border border-zinc-800">
+                    <img src={s.imageUrl || s.url} className="w-full h-full object-cover" alt="Preview" />
+                  </div>
+                ))}
+                {screenshotFiles.map((f, i) => (
+                  <div key={i} className="w-24 h-44 rounded-xl overflow-hidden bg-zinc-950 shrink-0 border border-purple-500/50">
+                    <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt="Pending" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* About Section */}
+          <div className="space-y-2 pt-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">About App</span>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed line-clamp-4">
+              {description || 'Comprehensive details and features will appear here as you type in the editor.'}
             </p>
           </div>
 
-          {/* Features */}
-          {features && (
-            <div className="mt-8 space-y-3">
-              <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">Key Features</h3>
-              <ul className="space-y-2">
-                {features.split('\n').map((f, i) => f.trim() && (
-                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-900 mt-2 shrink-0"></div>
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Tech Badge */}
+          <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Framework</span>
+            <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{badge || 'Kotlin + Compose'}</p>
+          </div>
         </div>
       </div>
     </div>
   );
 
   return (
-    <div className="w-full">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-zinc-200 dark:border-zinc-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-purple-600 text-white">
-              <Smartphone className="w-5 h-5" />
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Developer Admin Portal
+    <div className="w-full space-y-8 animate-in fade-in duration-300">
+      {/* Top Banner / Header */}
+      <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm overflow-hidden">
+        {/* Subtle decorative background gradients */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-purple-500/10 via-indigo-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 text-xs font-black tracking-wide border border-purple-200 dark:border-purple-800/60 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" /> CrazyStore Console
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Sync
+              </span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
+              Developer & Catalog Control Center
             </h1>
+            <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl leading-relaxed">
+              Publish and update open-source Kotlin Android apps, manage ImageKit CDN assets, monitor realtime telemetry, and moderate community reviews.
+            </p>
           </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Upload new Android apps, manage Google Drive APK download links, and monitor reviews catalog.
-          </p>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition-all border border-zinc-200/60 dark:border-zinc-700/60 shadow-xs"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Public Store</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-all border border-rose-200/60 dark:border-rose-800/40 cursor-pointer shadow-xs"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Lock Portal</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:text-purple-600 transition-colors"
-          >
-            View Public Site
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="text-xs font-semibold px-4 py-2 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors"
-          >
-            Logout
-          </button>
+        {/* Quick KPI Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800/80">
+          <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200/60 dark:border-zinc-800/60">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Catalog Apps</span>
+            <span className="text-xl font-black text-zinc-900 dark:text-zinc-100">{apps.length}</span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200/60 dark:border-zinc-800/60">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">User Reviews</span>
+            <span className="text-xl font-black text-zinc-900 dark:text-zinc-100">{reviews.length}</span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200/60 dark:border-zinc-800/60">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Media CDN</span>
+            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> ImageKit Active
+            </span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200/60 dark:border-zinc-800/60">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Status</span>
+            <span className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1 mt-1">
+              <Sparkles className="w-3.5 h-3.5" /> Production Ready
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="w-full space-y-6">
-      {/* Navigation Tabs */}
-      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-2">
-        <div className="flex space-x-6 overflow-x-auto custom-scrollbar">
+      {/* Navigation Segmented Tabs */}
+      <div className="flex items-center justify-between gap-4 p-1.5 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar w-full sm:w-auto">
           <button
+            type="button"
             onClick={() => setActiveTab('analytics')}
-            className={`pb-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === 'analytics'
-                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                ? 'bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-300 shadow-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
-            <Activity className="w-4 h-4 text-purple-500" />
-            Visitor Analytics & Activity
+            <Activity className="w-4 h-4" />
+            <span>Analytics & Traffic</span>
           </button>
+
           <button
+            type="button"
             onClick={() => setActiveTab('editor')}
-            className={`pb-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === 'editor'
-                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                ? 'bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-300 shadow-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
             {isEditing ? <Edit2 className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
-            {isEditing ? 'Edit App Details' : 'Add New App'}
+            <span>{isEditing ? `Editing: ${name || 'App'}` : 'Publish New App'}</span>
           </button>
+
           <button
+            type="button"
             onClick={() => setActiveTab('list')}
-            className={`pb-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === 'list'
-                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                ? 'bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-300 shadow-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
-            Manage Catalog
+            <span>Manage Catalog</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">
+              {apps.length}
+            </span>
           </button>
+
           <button
+            type="button"
             onClick={() => setActiveTab('reviews')}
-            className={`pb-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === 'reviews'
-                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                ? 'bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-300 shadow-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
             <MessageSquare className="w-4 h-4" />
-            User Reviews
+            <span>User Reviews</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">
+              {reviews.length}
+            </span>
           </button>
         </div>
 
         <button
-          onClick={handleLogout}
-          className="mb-3 px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-rose-100 dark:bg-zinc-800 dark:hover:bg-rose-950/50 text-zinc-600 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0"
-          title="Lock Admin Portal"
+          type="button"
+          onClick={() => {
+            fetchApps();
+            fetchReviews();
+            showToast('Refreshed apps & reviews data', 'info');
+          }}
+          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs font-bold transition-colors cursor-pointer border border-zinc-200/50 dark:border-zinc-700/50"
+          title="Refresh Data"
         >
-          <Lock className="w-3.5 h-3.5" />
-          Lock Portal
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Sync</span>
         </button>
       </div>
 
-      {activeTab === 'analytics' && (
-        <AdminAnalytics passcode={passcode} />
-      )}
+      {/* TAB 1: ANALYTICS */}
+      {activeTab === 'analytics' && <AdminAnalytics passcode={passcode} />}
 
+      {/* TAB 2: EDITOR (PUBLISH / EDIT) */}
       {activeTab === 'editor' && (
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           {/* Form Side */}
           <div className="xl:col-span-7 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100">
-                {isEditing ? 'Update App Details' : 'Publish New App'}
-              </h2>
+              <div>
+                <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  {isEditing ? <Edit2 className="w-5 h-5 text-purple-600" /> : <PlusCircle className="w-5 h-5 text-purple-600" />}
+                  <span>{isEditing ? `Edit "${editingSlug}"` : 'Publish New Android App'}</span>
+                </h2>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Configure metadata, Kotlin framework tags, Google Drive APK links, and preview screenshots.
+                </p>
+              </div>
+
               {isEditing && (
                 <button
+                  type="button"
                   onClick={resetForm}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-1"
+                  className="px-3.5 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <X className="w-3 h-3" /> Cancel Edit
+                  <X className="w-3.5 h-3.5" />
+                  <span>Cancel Edit</span>
                 </button>
               )}
             </div>
 
             {formError && (
-              <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-sm font-medium border border-rose-100 dark:border-rose-900/50 flex gap-3 items-start shadow-sm">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-semibold border border-rose-200 dark:border-rose-900/50 flex gap-3 items-start shadow-sm">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p>{formError}</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Info Section */}
+              {/* Card 1: Basic Identity */}
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-5">
-                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm border-b border-zinc-100 dark:border-zinc-800 pb-3">
-                  <Info className="w-4 h-4 text-zinc-900 dark:text-zinc-100" /> Core Identity
-                </h4>
+                <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                  <h3 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm">
+                    <Info className="w-4 h-4 text-purple-600" />
+                    <span>1. Core Identity & Category</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-zinc-400">Required Info</span>
+                </div>
+
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">App Name *</label>
-                      <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" placeholder="e.g. FocusFlow" />
+                      <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                        App Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={name}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          if (!isEditing && (!slug || slug === name.toLowerCase().replace(/[^a-z0-9]+/g, '-'))) {
+                            setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+                          }
+                        }}
+                        className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                        placeholder="e.g. Pixel Pulse"
+                      />
                     </div>
+
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Custom Slug (URL)</label>
-                      <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" placeholder="Leave blank to auto-generate" />
+                      <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                        Custom Slug (URL identifier)
+                      </label>
+                      <input
+                        type="text"
+                        value={slug}
+                        onChange={(e) => setSlug(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-purple-600"
+                        placeholder="pixel-pulse"
+                      />
                     </div>
                   </div>
+
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Tagline</label>
-                    <input type="text" value={tagline} onChange={(e) => setTagline(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" placeholder="e.g. The ultimate productivity tool" />
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                      Tagline / Brief Summary
+                    </label>
+                    <input
+                      type="text"
+                      value={tagline}
+                      onChange={(e) => setTagline(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
+                      placeholder="e.g. Modern Material 3 habit tracker for Android"
+                    />
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Category</label>
-                      <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm" />
+                      <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Category</label>
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
+                      >
+                        {CATEGORIES.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
                     </div>
+
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Version</label>
-                      <input type="text" value={version} onChange={(e) => setVersion(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm" />
+                      <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Version</label>
+                      <input
+                        type="text"
+                        value={version}
+                        onChange={(e) => setVersion(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm"
+                        placeholder="v1.0.0"
+                      />
                     </div>
+
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Size</label>
-                      <input type="text" value={size} onChange={(e) => setSize(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm" />
+                      <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">APK Size</label>
+                      <input
+                        type="text"
+                        value={size}
+                        onChange={(e) => setSize(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm"
+                        placeholder="18 MB"
+                      />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Description Section */}
+              {/* Card 2: Tech Specs & Android Target */}
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-5">
-                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm border-b border-zinc-100 dark:border-zinc-800 pb-3">
-                  <MessageSquare className="w-4 h-4 text-zinc-900 dark:text-zinc-100" /> Details & Content
-                </h4>
-                <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                  <h3 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm">
+                    <Cpu className="w-4 h-4 text-purple-600" />
+                    <span>2. Android Specifications & Tech Stack</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-zinc-400">Engine Details</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Full Description *</label>
-                    <textarea required value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 custom-scrollbar" placeholder="Describe your app..." />
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Min Android OS</label>
+                    <input
+                      type="text"
+                      value={minAndroid}
+                      onChange={(e) => setMinAndroid(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm"
+                      placeholder="Android 8.0 (API 26)+"
+                    />
                   </div>
+
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Key Features (One per line)</label>
-                    <textarea value={features} onChange={(e) => setFeatures(e.target.value)} rows={3} className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 custom-scrollbar" placeholder="Feature 1\nFeature 2" />
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Badge Label</label>
+                    <input
+                      type="text"
+                      value={badge}
+                      onChange={(e) => setBadge(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm"
+                      placeholder="Kotlin + Compose"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Tech Stack</label>
+                    <input
+                      type="text"
+                      value={techStack}
+                      onChange={(e) => setTechStack(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm"
+                      placeholder="Kotlin, Jetpack Compose, Room"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Media Section */}
+              {/* Card 3: Media & Screenshots Showcase */}
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-6">
                 <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
-                  <h4 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm">
-                    <ImageIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Branding & Media Management
-                  </h4>
-                  <span className="text-[11px] font-semibold text-zinc-400">
-                    Synced with ImageKit Storage
+                  <h3 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm">
+                    <ImageIcon className="w-4 h-4 text-purple-600" />
+                    <span>3. Branding & Media Assets</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Synced with ImageKit
                   </span>
                 </div>
 
                 <div className="space-y-6">
-                  {/* Top Grid: Logo & Feature Banner */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* App Logo Card */}
-                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between space-y-4">
+                  {/* App Logo Section */}
+                  <div className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                            <Upload className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" /> App Logo (1:1)
-                          </label>
-                          {logoFile ? (
-                            <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
-                              New File Selected
-                            </span>
-                          ) : logoUrl ? (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
-                              Live on ImageKit
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold">
-                              Using Default Icon
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-zinc-500 mb-3">Square icon for app cards and header.</p>
-
-                        {/* Logo Preview Container */}
-                        <div className="flex items-center gap-4">
-                          <div className="w-20 h-20 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-center overflow-hidden shrink-0 relative group">
-                            {logoFile ? (
-                              <img
-                                src={URL.createObjectURL(logoFile)}
-                                alt="Logo Preview"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : logoUrl ? (
-                              <img
-                                src={logoUrl}
-                                alt="Logo Preview"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Smartphone className="w-8 h-8 text-zinc-400" />
-                            )}
-                          </div>
-
-                          <div className="flex-1 space-y-2">
-                            <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold transition-all shadow-sm">
-                              <Upload className="w-3.5 h-3.5" />
-                              <span>{logoUrl || logoFile ? 'Change Logo' : 'Upload Logo'}</span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
-                              />
-                            </label>
-
-                            {(logoUrl || logoFile) && (
-                              <div>
-                                <button
-                                  type="button"
-                                  disabled={isDeletingLogo}
-                                  onClick={handleRemoveLogo}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-bold transition-colors"
-                                >
-                                  {isDeletingLogo ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  )}
-                                  <span>Remove Logo</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                        <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                          <Upload className="w-3.5 h-3.5 text-purple-600" /> App Logo (1:1 Ratio)
+                        </label>
+                        <p className="text-[11px] text-zinc-500 mt-0.5">High-DPI square icon for cards and store listing.</p>
                       </div>
+
+                      {logoFile ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold border border-blue-200 dark:border-blue-800/40">
+                          New File Staged
+                        </span>
+                      ) : logoUrl ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-200 dark:border-emerald-800/40">
+                          Live on ImageKit
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold">
+                          Using Default Icon
+                        </span>
+                      )}
                     </div>
 
-                    {/* Feature Banner Card */}
-                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between space-y-4">
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                            <Upload className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" /> Feature Banner (16:9)
-                          </label>
-                          {bannerFile ? (
-                            <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
-                              New File Selected
-                            </span>
-                          ) : bannerUrl ? (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
-                              Live on ImageKit
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold">
-                              No Banner
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-zinc-500 mb-3">Optional wide banner for detail showcase.</p>
+                    <div className="flex items-center gap-5">
+                      <div className="w-20 h-20 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                        {logoFile ? (
+                          <img src={URL.createObjectURL(logoFile)} alt="Logo Preview" className="w-full h-full object-cover" />
+                        ) : logoUrl ? (
+                          <img src={logoUrl} alt="Logo Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <Smartphone className="w-8 h-8 text-purple-600" />
+                        )}
+                      </div>
 
-                        {/* Banner Preview Frame */}
-                        <div className="w-full h-24 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-center overflow-hidden relative mb-3">
-                          {bannerFile ? (
-                            <img
-                              src={URL.createObjectURL(bannerFile)}
-                              alt="Banner Preview"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : bannerUrl ? (
-                            <img
-                              src={bannerUrl}
-                              alt="Banner Preview"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="text-center text-zinc-400 text-xs flex items-center gap-2">
-                              <ImageIcon className="w-4 h-4" />
-                              <span>No Banner Uploaded</span>
-                            </div>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-3">
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{logoUrl || logoFile ? 'Change Logo' : 'Upload Logo'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                          />
+                        </label>
 
-                        <div className="flex items-center gap-2">
-                          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold transition-all shadow-sm">
-                            <Upload className="w-3.5 h-3.5" />
-                            <span>{bannerUrl || bannerFile ? 'Change Banner' : 'Upload Banner'}</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => setBannerFile(e.target.files?.[0] || null)}
-                            />
-                          </label>
-
-                          {(bannerUrl || bannerFile) && (
-                            <button
-                              type="button"
-                              disabled={isDeletingBanner}
-                              onClick={handleRemoveBanner}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-bold transition-colors"
-                            >
-                              {isDeletingBanner ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-3.5 h-3.5" />
-                              )}
-                              <span>Remove Banner</span>
-                            </button>
-                          )}
-                        </div>
+                        {(logoUrl || logoFile) && (
+                          <button
+                            type="button"
+                            disabled={isDeletingLogo}
+                            onClick={handleRemoveLogo}
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            {isDeletingLogo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                            <span>Remove</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* App Previews (Multiple) Management Section */}
+                  {/* Screenshots Showcase */}
                   <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                          <ImageIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" /> App Previews Showcase Gallery
+                          <ImageIcon className="w-4 h-4 text-purple-600" /> App Screenshots Gallery
                         </label>
                         <p className="text-[11px] text-zinc-500 mt-0.5">
-                          Upload high-resolution preview images. Reorder images using the arrow controls (← / →) and remove individual previews from ImageKit anytime.
+                          High-resolution screenshots for the device carousel. Reorder using ← / → controls.
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2">
                         {existingScreenshots.length > 0 && (
-                          <span className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/40 shadow-xs">
-                            {existingScreenshots.length} Live on ImageKit
+                          <span className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/40">
+                            {existingScreenshots.length} Live
                           </span>
                         )}
                         {screenshotFiles.length > 0 && (
-                          <span className="px-3 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200 dark:border-blue-800/40 shadow-xs">
-                            {screenshotFiles.length} New to Upload
+                          <span className="px-3 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200 dark:border-blue-800/40">
+                            {screenshotFiles.length} Staged
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Saved Previews from ImageKit */}
+                    {/* Existing Live Screenshots */}
                     {existingScreenshots.length > 0 && (
-                      <div className="space-y-3 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-                            <Sliders className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                            Current Preview Sequence ({existingScreenshots.length} images)
-                          </span>
-                          <span className="text-[10px] text-zinc-400">
-                            Use ← → buttons to adjust display order on the public app page
-                          </span>
-                        </div>
-
+                      <div className="space-y-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {existingScreenshots.map((screenshot, idx) => (
                             <div
                               key={screenshot.id || idx}
-                              className="relative group rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all flex flex-col p-3 space-y-3"
-                            >
-                                {/* Top Bar with Reorder/Delete */}
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                                      {idx === 0 ? 'Primary Cover' : `Image ${idx + 1}`}
-                                    </span>
-                                  </div>
-
-                                  <div className="flex items-center gap-1">
-                                    {/* Move Left / Up */}
-                                    <button
-                                      type="button"
-                                      disabled={idx === 0}
-                                      onClick={() => moveExistingPreview(idx, idx - 1)}
-                                      className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                      title="Move Left in sequence"
-                                    >
-                                      <ArrowLeft className="w-3.5 h-3.5" />
-                                    </button>
-
-                                    {/* Move Right / Down */}
-                                    <button
-                                      type="button"
-                                      disabled={idx === existingScreenshots.length - 1}
-                                      onClick={() => moveExistingPreview(idx, idx + 1)}
-                                      className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                      title="Move Right in sequence"
-                                    >
-                                      <ArrowRight className="w-3.5 h-3.5" />
-                                    </button>
-
-                                    {/* Delete from ImageKit */}
-                                    <button
-                                      type="button"
-                                      disabled={deletingScreenshotId === (screenshot.id || String(idx))}
-                                      onClick={() => handleDeleteExistingScreenshot(screenshot, idx)}
-                                      className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-600 hover:text-white text-rose-600 dark:text-rose-400 transition-colors ml-1"
-                                      title="Permanently delete this preview image from ImageKit"
-                                    >
-                                      {deletingScreenshotId === (screenshot.id || String(idx)) ? (
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                      ) : (
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      )}
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Preview Frame Thumbnail */}
-                                <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-900 dark:bg-black border border-zinc-200 dark:border-zinc-800/80 flex items-center justify-center p-1">
-                                  <div
-                                    className="absolute inset-0 bg-cover bg-center blur-lg opacity-25 pointer-events-none"
-                                    style={{ backgroundImage: `url(${screenshot.imageUrl || screenshot.url})` }}
-                                  />
-                                  <img
-                                    src={screenshot.imageUrl || screenshot.url}
-                                    alt={screenshot.title || `Preview ${idx + 1}`}
-                                    className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-lg"
-                                  />
-                                  <div className="absolute bottom-2 right-2 z-20">
-                                    <a
-                                      href={screenshot.imageUrl || screenshot.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-colors inline-flex"
-                                      title="Open full image"
-                                    >
-                                      <Eye className="w-3.5 h-3.5" />
-                                    </a>
-                                  </div>
-                                </div>
-
-                                {/* Editable Title/Caption */}
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                                    Optional Caption
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={screenshot.title || ''}
-                                    onChange={(e) => updateExistingPreviewTitle(idx, e.target.value)}
-                                    placeholder="e.g. Dashboard Dark Mode"
-                                    className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-purple-600"
-                                  />
-                                </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Pending Selected Files Preview */}
-                    {screenshotFiles.length > 0 && (
-                      <div className="space-y-3 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                            New Uploads ({screenshotFiles.length} images queued)
-                          </span>
-                          <span className="text-[10px] text-zinc-400">
-                            Will be uploaded to ImageKit on save
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {screenshotFiles.map((file, idx) => (
-                            <div
-                              key={idx}
-                              className="relative group rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/60 shadow-sm flex flex-col p-3 space-y-3"
+                              className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 space-y-3 shadow-xs"
                             >
                               <div className="flex items-center justify-between">
-                                <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200 dark:border-blue-800/40">
-                                  Queued
+                                <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                                  {idx === 0 ? 'Cover' : `#${idx + 1}`}
                                 </span>
 
                                 <div className="flex items-center gap-1">
                                   <button
                                     type="button"
                                     disabled={idx === 0}
+                                    onClick={() => moveExistingPreview(idx, idx - 1)}
+                                    className="p-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950 disabled:opacity-30 cursor-pointer"
+                                  >
+                                    <ArrowLeft className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={idx === existingScreenshots.length - 1}
+                                    onClick={() => moveExistingPreview(idx, idx + 1)}
+                                    className="p-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-purple-100 dark:hover:bg-purple-950 disabled:opacity-30 cursor-pointer"
+                                  >
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={deletingScreenshotId === (screenshot.id || String(idx))}
+                                    onClick={() => handleDeleteExistingScreenshot(screenshot, idx)}
+                                    className="p-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
+                                  >
+                                    {deletingScreenshotId === (screenshot.id || String(idx)) ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-950 flex items-center justify-center">
+                                <img
+                                  src={screenshot.imageUrl || screenshot.url}
+                                  alt={screenshot.title || `Preview ${idx + 1}`}
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+
+                              <input
+                                type="text"
+                                value={screenshot.title || ''}
+                                onChange={(e) => updateExistingPreviewTitle(idx, e.target.value)}
+                                placeholder="Caption / Title"
+                                className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Staged New Files */}
+                    {screenshotFiles.length > 0 && (
+                      <div className="space-y-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 block">
+                          New Uploads ({screenshotFiles.length} Queued)
+                        </span>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {screenshotFiles.map((file, idx) => (
+                            <div
+                              key={idx}
+                              className="rounded-2xl bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/60 p-3 space-y-3 shadow-xs"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold">
+                                  Queued
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={idx === 0}
                                     onClick={() => movePendingPreview(idx, idx - 1)}
-                                    className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-blue-100 disabled:opacity-30 transition-colors"
-                                    title="Move Left"
+                                    className="p-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-blue-100 disabled:opacity-30 cursor-pointer"
                                   >
                                     <ArrowLeft className="w-3.5 h-3.5" />
                                   </button>
@@ -1208,41 +1322,36 @@ export function AdminAppUpload() {
                                     type="button"
                                     disabled={idx === screenshotFiles.length - 1}
                                     onClick={() => movePendingPreview(idx, idx + 1)}
-                                    className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-blue-100 disabled:opacity-30 transition-colors"
-                                    title="Move Right"
+                                    className="p-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-blue-100 disabled:opacity-30 cursor-pointer"
                                   >
                                     <ArrowRight className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => handleRemovePendingScreenshot(idx)}
-                                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition-colors ml-1"
-                                    title="Unselect"
+                                    className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
                                   >
                                     <X className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </div>
 
-                              <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-900 dark:bg-black border border-blue-100 dark:border-blue-900/40 flex items-center justify-center p-1">
+                              <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-zinc-950 flex items-center justify-center">
                                 <img
                                   src={URL.createObjectURL(file)}
                                   alt={`Pending ${file.name}`}
-                                  className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-lg"
+                                  className="w-full h-full object-contain"
                                 />
                               </div>
-
-                              <div className="text-[11px] text-zinc-500 font-mono truncate">
-                                {file.name}
-                              </div>
+                              <p className="text-[11px] text-zinc-500 font-mono truncate">{file.name}</p>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Add More Previews Picker Area */}
-                    <div className="p-5 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white/60 dark:bg-zinc-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    {/* File Picker Zone */}
+                    <div className="p-6 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white/60 dark:bg-zinc-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
                       <div className="flex items-center gap-3.5">
                         <div className="p-3 rounded-2xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 shrink-0">
                           <PlusCircle className="w-6 h-6" />
@@ -1250,18 +1359,16 @@ export function AdminAppUpload() {
                         <div>
                           <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
                             {existingScreenshots.length > 0 || screenshotFiles.length > 0
-                              ? 'Add More Preview Images'
-                              : 'Select Preview Images'}
+                              ? 'Add More Screenshots'
+                              : 'Select Screenshot Files'}
                           </span>
-                          <span className="text-[11px] text-zinc-500">
-                            Upload PNG, JPEG, or WebP. Hold Ctrl/Cmd to select multiple previews at once.
-                          </span>
+                          <span className="text-[11px] text-zinc-500">PNG, JPEG, WebP. Hold Ctrl/Cmd to pick multiple.</span>
                         </div>
                       </div>
 
                       <label className="cursor-pointer px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 inline-flex items-center gap-2 shrink-0">
                         <Upload className="w-4 h-4" />
-                        <span>Select Preview Files</span>
+                        <span>Select Files</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1278,254 +1385,417 @@ export function AdminAppUpload() {
                 </div>
               </div>
 
-              {/* Links Section */}
+              {/* Card 4: Description & Features */}
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-5">
-                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm border-b border-zinc-100 dark:border-zinc-800 pb-3">
-                  <LinkIcon className="w-4 h-4 text-zinc-900 dark:text-zinc-100" /> Download & Links
-                </h4>
+                <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                  <h3 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm">
+                    <MessageSquare className="w-4 h-4 text-purple-600" />
+                    <span>4. App Narrative & Feature List</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-zinc-400">Content</span>
+                </div>
+
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">APK Download URL *</label>
-                    <input type="url" required value={downloadUrl} onChange={(e) => setDownloadUrl(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono" placeholder="https://drive.google.com/..." />
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                      Full Description <span className="text-rose-500">*</span>
+                    </label>
+                    <textarea
+                      required
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={4}
+                      className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 leading-relaxed"
+                      placeholder="Write a clear, compelling description of what this application does, its unique advantages, and how to use it..."
+                    />
                   </div>
+
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">GitHub / Source URL (Optional)</label>
-                    <input type="url" value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono" placeholder="https://github.com/..." />
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                      Key Highlights & Features (One per line)
+                    </label>
+                    <textarea
+                      value={features}
+                      onChange={(e) => setFeatures(e.target.value)}
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
+                      placeholder="Modern Jetpack Compose UI&#10;Zero Ad Trackers & 100% Offline&#10;Material You Dynamic Theming"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Submit Button */}
+              {/* Card 5: Links & Distribution */}
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                  <h3 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 text-sm">
+                    <LinkIcon className="w-4 h-4 text-purple-600" />
+                    <span>5. Direct Download & GitHub Repository</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-zinc-400">Distribution</span>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                      Direct APK Download URL <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={downloadUrl}
+                      onChange={(e) => setDownloadUrl(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-purple-600"
+                      placeholder="https://drive.google.com/uc?export=download&id=..."
+                    />
+                    <p className="text-[10px] text-zinc-400">Google Drive direct link, GitHub Releases APK asset, or direct CDN URL.</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                      GitHub Source Code URL (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={githubUrl}
+                      onChange={(e) => setGithubUrl(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-purple-600"
+                      placeholder="https://github.com/developer/app"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Submit */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-zinc-900 font-black text-base shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-base shadow-xl shadow-purple-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Processing...
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Processing & Syncing Media...</span>
                   </>
                 ) : (
                   <>
-                    <Save className="w-5 h-5" /> {isEditing ? 'Save & Update Live App' : 'Publish App to Catalog'}
+                    <Save className="w-5 h-5" />
+                    <span>{isEditing ? 'Save & Update Live App' : 'Publish Application to Store'}</span>
                   </>
                 )}
               </button>
             </form>
           </div>
 
-          {/* Live Preview Side (Hidden on Mobile) */}
+          {/* Device Preview Side */}
           <div className="hidden xl:block xl:col-span-5 relative">
-            <div className="sticky top-10 space-y-4">
-               <div className="flex items-center justify-between px-2">
-                 <h3 className="font-black text-sm uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Live Device Preview</h3>
-               </div>
-               {renderLivePreview()}
+            <div className="sticky top-10 space-y-3">
+              <div className="flex items-center justify-between px-2">
+                <span className="font-bold text-xs uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5 text-purple-600" />
+                  Realtime Mobile Preview
+                </span>
+                <span className="text-[10px] text-zinc-500 font-mono">Pixel 8 Pro Frame</span>
+              </div>
+              {renderLivePreview()}
             </div>
           </div>
         </div>
       )}
 
+      {/* TAB 3: MANAGE CATALOG */}
       {activeTab === 'list' && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col min-h-[60vh]">
-          <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-6">
-            <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">Live Catalog</h3>
-            <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-950/80 text-zinc-700 dark:text-zinc-300">
-              {apps.length} Apps Published
-            </span>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+            <div>
+              <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <LayoutGrid className="w-5 h-5 text-purple-600" />
+                <span>Live Applications Catalog</span>
+              </h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Manage, test, edit, and maintain all published Android apps.</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                setActiveTab('editor');
+              }}
+              className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition-all flex items-center gap-2 cursor-pointer self-start sm:self-auto"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Add New App</span>
+            </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
-            {isLoadingApps ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map((n) => (
-                  <div
-                    key={n}
-                    className="p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 animate-pulse flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
-                      <div className="space-y-2">
-                        <div className="w-32 h-4 rounded bg-zinc-300 dark:bg-zinc-700" />
-                        <div className="w-24 h-3 rounded bg-zinc-200 dark:bg-zinc-800" />
+          {/* Search & Filter bar */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-zinc-400" />
+              <input
+                type="text"
+                value={catalogSearch}
+                onChange={(e) => setCatalogSearch(e.target.value)}
+                placeholder="Search apps by name, slug, or tag..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs focus:outline-none focus:ring-2 focus:ring-purple-600"
+              />
+            </div>
+
+            <select
+              value={catalogCategory}
+              onChange={(e) => setCatalogCategory(e.target.value)}
+              className="px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-600"
+            >
+              <option value="All">All Categories ({apps.length})</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {isLoadingApps ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <div key={n} className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 animate-pulse space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="space-y-1.5 flex-1">
+                      <div className="w-24 h-4 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                      <div className="w-16 h-3 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredApps.length === 0 ? (
+            <div className="text-center py-16 px-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-3">
+              <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 mx-auto flex items-center justify-center">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">No Apps Match Your Criteria</h4>
+              <p className="text-xs text-zinc-500 max-w-sm mx-auto">Try clearing your search query or publish a new app.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredApps.map((app) => (
+                <div
+                  key={app.slug}
+                  className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 shadow-xs hover:shadow-md hover:border-purple-300 dark:hover:border-purple-800/50 transition-all flex flex-col justify-between space-y-4 group"
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden shrink-0 flex items-center justify-center">
+                      {app.logoUrl ? (
+                        <img src={app.logoUrl} className="w-full h-full object-cover" alt={app.name} />
+                      ) : (
+                        <Smartphone className="w-6 h-6 text-purple-600" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-zinc-900 dark:text-zinc-100 truncate group-hover:text-purple-600 transition-colors">
+                        {app.name}
+                      </h4>
+                      <p className="text-xs text-zinc-500 truncate mt-0.5">{app.tagline || app.category}</p>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
+                          {app.version}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                          {app.size}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/60 text-[10px] font-bold text-purple-600 dark:text-purple-300 truncate max-w-[100px]">
+                          {app.category}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
-                      <div className="w-8 h-8 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
-                    </div>
                   </div>
-                ))}
-              </div>
-            ) : apps.length === 0 ? (
-              <div className="text-center py-20 px-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl">
-                <p className="text-base font-medium text-zinc-500 dark:text-zinc-400">Your catalog is empty.</p>
-                <button onClick={() => setActiveTab('editor')} className="mt-4 text-sm font-bold text-zinc-900 hover:underline">
-                  Publish your first app
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {apps.map((app) => (
-                  <div
-                    key={app.slug}
-                    className="flex flex-col justify-between gap-4 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md hover:border-zinc-200 dark:hover:border-zinc-900/50 transition-all"
-                  >
-                    <div className="flex items-start gap-4">
-                       <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden shrink-0">
-                         {app.logoUrl ? (
-                           <img src={app.logoUrl} className="w-full h-full object-cover" alt="Logo" />
-                         ) : (
-                           <div className="w-full h-full flex items-center justify-center text-zinc-900">
-                              <Smartphone className="w-6 h-6" />
-                           </div>
-                         )}
-                       </div>
-                       <div>
-                         <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1">{app.name}</h4>
-                         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-1">{app.tagline || app.category}</p>
-                         <div className="flex items-center gap-2 mt-2">
-                           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400">{app.version}</span>
-                           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">{app.size}</span>
-                         </div>
-                       </div>
-                    </div>
-                    
-                     <div className="flex items-center gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800/80">
-                      <Link href={`/apps/${app.slug}`} target="_blank" className="flex-1 py-2 text-center rounded-xl bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-1">
-                        View <ExternalLink className="w-3 h-3" />
-                      </Link>
-                      {app.githubUrl && (
-                        <a
-                          href={app.githubUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center justify-center"
-                          title="View GitHub Repository"
-                        >
-                          <FaGithub className="w-4 h-4" />
-                        </a>
-                      )}
-                      <button
-                        onClick={() => startEditing(app)}
-                        className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                        title="Edit App"
+
+                  <div className="flex items-center gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+                    <Link
+                      href={`/apps/${app.slug}`}
+                      target="_blank"
+                      className="flex-1 py-2 text-center rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold transition-colors flex items-center justify-center gap-1"
+                    >
+                      <span>View</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+
+                    {app.githubUrl && (
+                      <a
+                        href={app.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                        title="GitHub Repo"
                       >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(app.slug)}
-                        className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors"
-                        title="Delete App"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                        <FaGithub className="w-4 h-4" />
+                      </a>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => startEditing(app)}
+                      className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-colors cursor-pointer"
+                      title="Edit App"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(app.slug)}
+                      className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
+                      title="Delete App"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
+      {/* TAB 4: REVIEWS & USER FEEDBACK */}
       {activeTab === 'reviews' && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm min-h-[60vh]">
-          <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-6">
-            <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">User Feedback</h3>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+            <div>
+              <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-amber-500" />
+                <span>Community Feedback & Reviews</span>
+              </h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Read user reviews and reply as verified developer.</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-200 dark:border-amber-800/40">
+                {reviews.length} Total Reviews
+              </span>
+            </div>
           </div>
 
-          <div className="space-y-6">
-            {isLoadingReviews ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map((n) => (
-                  <div
-                    key={n}
-                    className="p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 animate-pulse space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <div className="w-28 h-4 rounded bg-zinc-300 dark:bg-zinc-700" />
-                        <div className="w-36 h-3 rounded bg-zinc-200 dark:bg-zinc-800" />
-                      </div>
-                      <div className="w-14 h-5 rounded-full bg-amber-100 dark:bg-amber-950/40" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="w-full h-3.5 rounded bg-zinc-200 dark:bg-zinc-800" />
-                      <div className="w-4/5 h-3.5 rounded bg-zinc-200 dark:bg-zinc-800" />
-                    </div>
-                  </div>
-                ))}
+          {/* Search & Rating Filter */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-zinc-400" />
+              <input
+                type="text"
+                value={reviewSearch}
+                onChange={(e) => setReviewSearch(e.target.value)}
+                placeholder="Search reviews by user name, comment text, or app slug..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs focus:outline-none focus:ring-2 focus:ring-purple-600"
+              />
+            </div>
+
+            <select
+              value={reviewFilterRating}
+              onChange={(e) => setReviewFilterRating(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+              className="px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-600"
+            >
+              <option value="all">All Star Ratings</option>
+              <option value="5">★★★★★ (5 Stars)</option>
+              <option value="4">★★★★☆ (4 Stars)</option>
+              <option value="3">★★★☆☆ (3 Stars)</option>
+              <option value="2">★★☆☆☆ (2 Stars)</option>
+              <option value="1">★☆☆☆☆ (1 Star)</option>
+            </select>
+          </div>
+
+          {isLoadingReviews ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 animate-pulse space-y-3">
+                  <div className="w-28 h-4 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                  <div className="w-full h-12 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : filteredReviews.length === 0 ? (
+            <div className="text-center py-16 px-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-3">
+              <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 mx-auto flex items-center justify-center">
+                <Star className="w-6 h-6" />
               </div>
-            ) : reviews.length === 0 ? (
-              <div className="text-center py-20 px-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl">
-                <p className="text-base font-medium text-zinc-500 dark:text-zinc-400">No reviews have been submitted yet.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {reviews.map((review) => (
-                  <div key={review.id} className="p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 shadow-sm flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-zinc-900 dark:text-zinc-100">{review.name}</span>
-                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-bold tracking-wider">
-                              ★ {review.rating}.0
-                            </span>
-                          </div>
-                          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                            App: <span className="font-mono text-zinc-900 dark:text-zinc-100">{review.appSlug}</span> • {new Date(review.createdAt).toLocaleDateString()}
-                          </div>
+              <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">No Reviews Found</h4>
+              <p className="text-xs text-zinc-500">No user reviews currently match your filter criteria.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {filteredReviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xs flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{review.name}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 text-xs font-bold">
+                            ★ {review.rating}.0
+                          </span>
                         </div>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">
+                          Target: <span className="font-mono text-purple-600 dark:text-purple-400 font-bold">{review.appSlug}</span> •{' '}
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteReviewAdmin(review.id)}
+                        className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
+                        title="Delete Review"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium">
+                      &quot;{review.reviewText}&quot;
+                    </p>
+                  </div>
+
+                  {/* Developer Reply Area */}
+                  <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                    {review.adminReply ? (
+                      <div className="p-3.5 rounded-2xl bg-purple-50/50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 flex gap-2.5 items-start">
+                        <CornerDownRight className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                            Verified Developer Response
+                          </span>
+                          <p className="text-xs text-zinc-800 dark:text-zinc-200 font-medium">{review.adminReply}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={replyTexts[review.id] || ''}
+                          onChange={(e) => setReplyTexts((prev) => ({ ...prev, [review.id]: e.target.value }))}
+                          placeholder="Type official reply..."
+                          className="flex-1 px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs focus:outline-none focus:ring-2 focus:ring-purple-600"
+                        />
                         <button
-                          onClick={() => handleDeleteReviewAdmin(review.id)}
-                          className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors"
-                          title="Delete this review"
+                          type="button"
+                          onClick={() => handleReplyReview(review.id)}
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer whitespace-nowrap"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          Reply
                         </button>
                       </div>
-                      <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">&quot;{review.reviewText}&quot;</p>
-                    </div>
-                    
-                    <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800/80">
-                      {review.adminReply ? (
-                        <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-100 dark:border-zinc-900/30 flex gap-3 items-start">
-                          <div className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-900/50 flex items-center justify-center shrink-0 mt-0.5">
-                            <CornerDownRight className="w-3 h-3 text-zinc-700 dark:text-zinc-400" />
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-400 block mb-1">Developer Reply</span>
-                            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200 leading-relaxed">{review.adminReply}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <input
-                            type="text"
-                            value={replyTexts[review.id] || ''}
-                            onChange={(e) => setReplyTexts(prev => ({ ...prev, [review.id]: e.target.value }))}
-                            placeholder="Type a developer reply..."
-                            className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-                          />
-                          <button
-                            onClick={() => handleReplyReview(review.id)}
-                            className="px-5 py-2.5 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-bold rounded-xl transition-colors whitespace-nowrap shadow-md"
-                          >
-                            Send Reply
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
-    </div>
     </div>
   );
 }

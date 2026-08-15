@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Smartphone } from 'lucide-react';
-import { FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa';
+import { FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa6';
 
 export function Footer() {
   return (
@@ -30,4 +30,5 @@ export function Footer() {
     </footer>
   );
 }
+
 
