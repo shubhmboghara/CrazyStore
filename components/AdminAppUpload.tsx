@@ -368,7 +368,7 @@ export function AdminAppUpload() {
 
     setCategory(app.category || 'Tools & Utilities');
     setVersion(app.version || 'v1.0.0');
-    setDownloadUrl(formatDownloadUrl(app.downloadUrl) || '');
+    setDownloadUrl(app.downloadUrl || '');
     setSize(app.size || '15 MB');
     setMinAndroid(app.minAndroid || 'Android 8.0 (API 26)+');
     setBadge(app.badge || 'Kotlin + Compose');

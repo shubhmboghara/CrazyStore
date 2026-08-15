@@ -1,8 +1,54 @@
 import { AndroidApp, ANDROID_APPS } from './appsData';
 
 /**
+ * Converts a Google Drive share/view link into a direct APK download link
+ * if a valid file ID is found.
+ */
+export function getGoogleDriveDirectDownloadUrl(url?: string): string {
+  if (!url) return '';
+  let clean = url.trim();
+  if (!clean) return '';
+
+  // Remove wrapping quotes if pasted with quotes
+  if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+    clean = clean.slice(1, -1).trim();
+  }
+
+  // Check if user entered just a raw Google Drive file ID (25-45 characters alphanumeric)
+  if (/^[a-zA-Z0-9_-]{25,45}$/.test(clean)) {
+    return `https://drive.google.com/uc?export=download&confirm=t&id=${clean}`;
+  }
+
+  // Prepend https:// if protocol is missing
+  if (!clean.startsWith('http://') && !clean.startsWith('https://') && !clean.startsWith('/')) {
+    clean = `https://${clean}`;
+  }
+
+  // Pattern 1: https://drive.google.com/file/d/{FILE_ID}/view... or /file/d/{FILE_ID}
+  const fileIdMatch = clean.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+  if (fileIdMatch && fileIdMatch[1]) {
+    return `https://drive.google.com/uc?export=download&confirm=t&id=${fileIdMatch[1]}`;
+  }
+
+  // Pattern 2: https://drive.google.com/open?id={FILE_ID} or query param id=
+  const openIdMatch = clean.match(/drive\.google\.com\/open\?.*id=([a-zA-Z0-9_-]+)/i) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
+  if (openIdMatch && openIdMatch[1] && clean.includes('drive.google.com')) {
+    return `https://drive.google.com/uc?export=download&confirm=t&id=${openIdMatch[1]}`;
+  }
+
+  // Pattern 3: https://drive.google.com/uc?...id={FILE_ID}
+  const ucIdMatch = clean.match(/drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/i);
+  if (ucIdMatch && ucIdMatch[1]) {
+    return `https://drive.google.com/uc?export=download&confirm=t&id=${ucIdMatch[1]}`;
+  }
+
+  return clean;
+}
+
+/**
  * Ensures that a download URL is well-formed with a protocol
- * so that clicking it never behaves as a relative app path.
+ * and converts Google Drive URLs to direct download links so clicking
+ * them immediately initiates APK downloads.
  */
 export function formatDownloadUrl(url?: string): string {
   if (!url) return '';
@@ -14,38 +60,14 @@ export function formatDownloadUrl(url?: string): string {
     clean = clean.slice(1, -1).trim();
   }
 
+  // If it is a Google Drive URL or Google Drive file ID, convert to direct download URL
+  if (clean.includes('drive.google.com') || /^[a-zA-Z0-9_-]{25,45}$/.test(clean)) {
+    return getGoogleDriveDirectDownloadUrl(clean);
+  }
+
   // Prepend https:// if protocol is missing
   if (!clean.startsWith('http://') && !clean.startsWith('https://') && !clean.startsWith('/')) {
     clean = `https://${clean}`;
-  }
-
-  return clean;
-}
-
-/**
- * Converts a Google Drive share link into a direct APK download link
- * if a valid file ID is found.
- */
-export function getGoogleDriveDirectDownloadUrl(url?: string): string {
-  if (!url) return '';
-  const clean = formatDownloadUrl(url);
-
-  // Pattern: https://drive.google.com/file/d/{FILE_ID}/view...
-  const fileIdMatch = clean.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch && fileIdMatch[1]) {
-    return `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
-  }
-
-  // Pattern: https://drive.google.com/open?id={FILE_ID}
-  const openIdMatch = clean.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  if (openIdMatch && openIdMatch[1]) {
-    return `https://drive.google.com/uc?export=download&id=${openIdMatch[1]}`;
-  }
-
-  // Pattern: https://drive.google.com/uc?id={FILE_ID} or similar
-  const ucIdMatch = clean.match(/drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/);
-  if (ucIdMatch && ucIdMatch[1]) {
-    return `https://drive.google.com/uc?export=download&id=${ucIdMatch[1]}`;
   }
 
   return clean;

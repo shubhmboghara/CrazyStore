@@ -329,11 +329,11 @@ export async function PUT(req: NextRequest) {
 
     if (existingApp) {
       // Record exists in DB: Update it
-      const { data, error } = await supabase
-        .from('apps')
-        .update(updatedAppDoc)
-        .eq('slug', existingApp.slug)
-        .select();
+      const updateQuery = existingApp.id
+        ? supabase.from('apps').update(updatedAppDoc).eq('id', existingApp.id)
+        : supabase.from('apps').update(updatedAppDoc).eq('slug', existingApp.slug);
+
+      const { data, error } = await updateQuery.select();
 
       if (error) {
         console.error('Supabase update error:', error);

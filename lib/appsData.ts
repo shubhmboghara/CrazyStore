@@ -46,7 +46,7 @@ export const ANDROID_APPS: AndroidApp[] = [
     iconSymbol: 'play',
     badge: 'Kotlin + Compose',
     techStack: ['Kotlin 2.0', 'Jetpack Compose', 'Coroutines', 'ExoPlayer', 'Material 3', 'Ktor'],
-    downloadUrl: 'https://drive.google.com/file/d/1x4bqGU1pdhn4gDvH_jcpweEIZilqUgsJ/view?usp=drivesdk',
+    downloadUrl: 'https://drive.google.com/uc?export=download&id=1sFcDuM0OEzCq2c9FEXilhcP0IbIymW3E',
     shortDescription:
       'VideoHub is a clean, lightning-fast YouTube client built from scratch using 100% native Kotlin and Jetpack Compose. Enjoy ad-free streaming, picture-in-picture, background audio mode, and SponsorBlock.',
     fullDescription: [

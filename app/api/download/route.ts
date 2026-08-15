@@ -20,11 +20,14 @@ export async function GET(req: NextRequest) {
     const supabase = createClient(cookieStore);
 
     // Fetch live app record from Supabase
-    const { data: dbApp, error } = await supabase
+    const { data, error } = await supabase
       .from('apps')
       .select('*')
       .ilike('slug', slug)
-      .maybeSingle();
+      .order('id', { ascending: false })
+      .limit(1);
+
+    const dbApp = data && data.length > 0 ? data[0] : null;
 
     let targetApp: any = null;
 
