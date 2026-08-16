@@ -48,10 +48,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tech'>('overview');
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    setAppData(normalizeAppRecord(initialApp));
-  }, [initialApp]);
-
   // Fetch the latest fresh app details directly from the API on mount or slug change
   useEffect(() => {
     let isSubscribed = true;

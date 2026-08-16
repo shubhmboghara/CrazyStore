@@ -209,7 +209,7 @@ export default async function Page({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchemaJsonLd) }}
       />
-      <AppDetailClient initialApp={app} />
+      <AppDetailClient key={`${app.slug}-${app.updatedAt || ''}-${app.downloadUrl || ''}`} initialApp={app} />
     </>
   );
 }
