@@ -117,34 +117,46 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Column 4: Admin & Developer */}
+          {/* Column 4: Open Source & Developer */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 mb-3">
-              Admin & Developer
+              Open Source & Devs
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link
-                  href="/admin"
-                  className="text-purple-600 dark:text-purple-400 font-semibold hover:underline inline-flex items-center gap-1"
+                <a
+                  href="https://github.com/shubhmboghara/CrazyStore"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-purple-500 transition-colors inline-flex items-center gap-1"
                 >
-                  <Lock className="w-3 h-3" /> Admin Console
+                  <FaGithub className="w-3 h-3" /> GitHub Repository
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/shubhmboghara/CrazyStore/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-purple-500 transition-colors"
+                >
+                  Report Issue / Bug
+                </a>
+              </li>
+              <li>
+                <Link href="/user" className="hover:text-purple-500 transition-colors">
+                  Request New App
                 </Link>
               </li>
               <li>
-                <Link href="/admin" className="hover:text-purple-500 transition-colors">
-                  Publish New App
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="hover:text-purple-500 transition-colors">
-                  Review Moderation Hub
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="hover:text-purple-500 transition-colors">
-                  Analytics & Telemetry
-                </Link>
+                <a
+                  href="https://developer.android.com/jetpack/compose"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-purple-500 transition-colors"
+                >
+                  Jetpack Compose Docs
+                </a>
               </li>
             </ul>
           </div>

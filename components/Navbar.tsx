@@ -77,15 +77,10 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/admin"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-              isAdminRoute
-                ? 'bg-purple-950/80 border-purple-800 text-purple-200'
-                : 'border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-purple-400 hover:border-purple-500/50'
-            }`}
+            href="/#catalog"
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
           >
-            <ShieldAlert className="w-3.5 h-3.5 text-purple-500" />
-            <span>Admin Console</span>
+            Categories
           </Link>
         </nav>
 
@@ -168,18 +163,11 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/admin"
+            href="/#catalog"
             onClick={() => setIsMobileMenuOpen(false)}
-            className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold border border-purple-500/30 ${
-              isAdminRoute
-                ? 'bg-purple-950 text-purple-300'
-                : 'text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/20'
-            }`}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900"
           >
-            <span className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-purple-500" /> Admin Console
-            </span>
-            <ArrowRight className="w-4 h-4" />
+            📂 Browse Categories
           </Link>
         </div>
       )}
