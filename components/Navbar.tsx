@@ -3,13 +3,11 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Smartphone, Heart, Menu, X, Sparkles } from 'lucide-react';
+import { Smartphone, Menu, X } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa6';
-import { useFavorites } from '@/hooks/useFavorites';
 
 export function Navbar() {
   const pathname = usePathname();
-  const { count: favoritesCount } = useFavorites();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isHomeRoute = pathname === '/';
@@ -66,21 +64,6 @@ export function Navbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-2.5">
-          {/* Wishlist Indicator */}
-          <Link
-            href="/#catalog"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold transition-all border border-zinc-200/60 dark:border-zinc-800"
-            title="Saved in Wishlist"
-          >
-            <Heart className={`w-3.5 h-3.5 ${favoritesCount > 0 ? 'text-rose-500 fill-rose-500' : 'text-zinc-500'}`} />
-            <span className="hidden sm:inline">Wishlist</span>
-            {favoritesCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white">
-                {favoritesCount}
-              </span>
-            )}
-          </Link>
-
           {/* GitHub Repo */}
           <a
             href="https://github.com/shubhmboghara/CrazyStore"

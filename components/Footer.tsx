@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Smartphone, ShieldCheck, Heart, Sparkles, ExternalLink } from 'lucide-react';
+import { Smartphone, ShieldCheck, Sparkles, ExternalLink } from 'lucide-react';
 import { FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa6';
 
 export function Footer() {
