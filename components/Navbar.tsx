@@ -3,18 +3,15 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Smartphone, Heart, HardDrive, ShieldAlert, Sparkles, Menu, X, ArrowRight, User } from 'lucide-react';
+import { Smartphone, Heart, Menu, X, Sparkles } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa6';
 import { useFavorites } from '@/hooks/useFavorites';
-import { useUserHub } from '@/hooks/useUserHub';
 
 export function Navbar() {
   const pathname = usePathname();
   const { count: favoritesCount } = useFavorites();
-  const { downloadCount, userPrefs } = useUserHub();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const isAdminRoute = pathname?.startsWith('/admin');
-  const isUserRoute = pathname?.startsWith('/user');
   const isHomeRoute = pathname === '/';
 
   return (
@@ -60,23 +57,6 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/user"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              isUserRoute
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>User Hub</span>
-            {(downloadCount > 0 || favoritesCount > 0) && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
-                {downloadCount + favoritesCount}
-              </span>
-            )}
-          </Link>
-
-          <Link
             href="/#catalog"
             className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
           >
@@ -86,9 +66,9 @@ export function Navbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-2.5">
-          {/* Wishlist Shortcut */}
+          {/* Wishlist Indicator */}
           <Link
-            href="/user"
+            href="/#catalog"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold transition-all border border-zinc-200/60 dark:border-zinc-800"
             title="Saved in Wishlist"
           >
@@ -101,23 +81,16 @@ export function Navbar() {
             )}
           </Link>
 
-          {/* User Avatar Mini Shortcut */}
-          <Link
-            href="/user"
-            className="hidden sm:flex items-center gap-2 p-1.5 pr-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition-all"
-            title="My Profile & Hub"
+          {/* GitHub Repo */}
+          <a
+            href="https://github.com/shubhmboghara/CrazyStore"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-all border border-zinc-200/60 dark:border-zinc-800"
+            aria-label="GitHub Repository"
           >
-            <div
-              className={`w-6 h-6 rounded-lg bg-gradient-to-tr ${
-                userPrefs.avatarColor || 'from-purple-500 to-indigo-600'
-              } flex items-center justify-center text-[10px] text-white font-bold`}
-            >
-              {userPrefs.username?.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 max-w-[90px] truncate">
-              {userPrefs.username || 'User'}
-            </span>
-          </Link>
+            <FaGithub className="w-4 h-4" />
+          </a>
 
           {/* Mobile menu hamburger button */}
           <button
@@ -143,23 +116,6 @@ export function Navbar() {
             }`}
           >
             🛍️ Storefront & Discover
-          </Link>
-
-          <Link
-            href="/user"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold ${
-              isUserRoute
-                ? 'bg-purple-600 text-white'
-                : 'text-zinc-700 dark:text-zinc-300'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <User className="w-4 h-4" /> User Hub (My Library)
-            </span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
-              {downloadCount} installed
-            </span>
           </Link>
 
           <Link

@@ -2,16 +2,16 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Smartphone, ShieldCheck, Heart, Sparkles, Lock, ExternalLink } from 'lucide-react';
+import { Smartphone, ShieldCheck, Heart, Sparkles, ExternalLink } from 'lucide-react';
 import { FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa6';
 
 export function Footer() {
   return (
     <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {/* Column 1: Brand */}
-          <div className="space-y-4 md:col-span-1">
+          <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white">
                 <Smartphone className="w-4 h-4" />
@@ -54,7 +54,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Column 2: User Storefront */}
+          {/* Column 2: Storefront */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 mb-3">
               Storefront & Discover
@@ -88,36 +88,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Column 3: User Hub */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 mb-3">
-              User Hub
-            </h4>
-            <ul className="space-y-2 text-xs">
-              <li>
-                <Link href="/user" className="hover:text-purple-500 transition-colors">
-                  My Library (Installed Apps)
-                </Link>
-              </li>
-              <li>
-                <Link href="/user" className="hover:text-purple-500 transition-colors">
-                  Saved Wishlist
-                </Link>
-              </li>
-              <li>
-                <Link href="/user" className="hover:text-purple-500 transition-colors">
-                  Community App Requests
-                </Link>
-              </li>
-              <li>
-                <Link href="/user" className="hover:text-purple-500 transition-colors">
-                  Preferences & Settings
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Open Source & Developer */}
+          {/* Column 3: Open Source & Developer */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 mb-3">
               Open Source & Devs
@@ -144,11 +115,6 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <Link href="/user" className="hover:text-purple-500 transition-colors">
-                  Request New App
-                </Link>
-              </li>
-              <li>
                 <a
                   href="https://developer.android.com/jetpack/compose"
                   target="_blank"
@@ -163,7 +129,7 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-400">
+        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col sm:row items-center justify-between gap-4 text-xs text-zinc-400">
           <div>
             © {new Date().getFullYear()} CrazyStore. Built with Next.js, Kotlin, and Tailwind CSS.
           </div>
