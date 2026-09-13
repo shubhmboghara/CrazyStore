@@ -66,7 +66,11 @@ export function AdminAppUpload() {
   const [passcodeError, setPasscodeError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'editor' | 'list' | 'reviews'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'editor' | 'list' | 'reviews' | 'requests'>('analytics');
+
+  // Community Requests State
+  const [requests, setRequests] = useState<any[]>([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState<boolean>(false);
 
   // Apps State
   const [apps, setApps] = useState<AndroidApp[]>([]);
@@ -245,19 +249,82 @@ export function AdminAppUpload() {
     }
   }, []);
 
+  const fetchRequests = useCallback(async () => {
+    setIsLoadingRequests(true);
+    try {
+      const res = await fetch(`/api/requests?t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRequests(data.requests || []);
+      }
+    } catch (err) {
+      console.error('Error fetching requests:', err);
+    } finally {
+      setIsLoadingRequests(false);
+    }
+  }, []);
+
+  const handleUpdateRequestStatus = async (id: string, status: string) => {
+    try {
+      const res = await fetch('/api/requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+      if (res.ok) {
+        setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+        showToast(`Request updated to ${status}`, 'success');
+      }
+    } catch {
+      showToast('Failed to update request', 'error');
+    }
+  };
+
+  const handleDeleteRequest = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this community request?')) return;
+    try {
+      const res = await fetch(`/api/requests?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (res.ok) {
+        setRequests((prev) => prev.filter((r) => r.id !== id));
+        showToast('Request deleted', 'info');
+      }
+    } catch {
+      showToast('Failed to delete request', 'error');
+    }
+  };
+
+  const handleConvertRequestToApp = (req: any) => {
+    setName(req.title);
+    setSlug(req.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
+    setCategory(req.category || 'Tools & Utilities');
+    setDescription(req.description || '');
+    setTagline(req.description?.slice(0, 80) || '');
+    if (req.githubUrl) setGithubUrl(req.githubUrl);
+    if (req.apkUrl) setDownloadUrl(req.apkUrl);
+    setIsEditing(false);
+    setEditingSlug(null);
+    setActiveTab('editor');
+    showToast(`Converted "${req.title}" into draft in Publishing Studio!`, 'success');
+  };
+
   useEffect(() => {
     let isMounted = true;
     if (isAuthenticated) {
       const loadInitial = async () => {
         setIsLoadingApps(true);
         setIsLoadingReviews(true);
+        setIsLoadingRequests(true);
         try {
-          const [appsRes, reviewsRes] = await Promise.all([
+          const [appsRes, reviewsRes, reqRes] = await Promise.all([
             fetch('/api/apps', {
               cache: 'no-store',
               headers: { 'Cache-Control': 'no-cache' },
             }),
             fetch('/api/reviews', {
+              cache: 'no-store',
+              headers: { 'Cache-Control': 'no-cache' },
+            }),
+            fetch('/api/requests', {
               cache: 'no-store',
               headers: { 'Cache-Control': 'no-cache' },
             }),
@@ -270,12 +337,17 @@ export function AdminAppUpload() {
             const revData = await reviewsRes.json();
             setReviews(revData.reviews || []);
           }
+          if (reqRes && reqRes.ok && isMounted) {
+            const rData = await reqRes.json();
+            setRequests(rData.requests || []);
+          }
         } catch (err) {
           console.error(err);
         } finally {
           if (isMounted) {
             setIsLoadingApps(false);
             setIsLoadingReviews(false);
+            setIsLoadingRequests(false);
           }
         }
       };
@@ -915,6 +987,14 @@ export function AdminAppUpload() {
               <span>Public Store</span>
             </Link>
 
+            <Link
+              href="/user"
+              className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-2xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 transition-all border border-purple-200/60 dark:border-purple-800/40 shadow-xs"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>User Hub</span>
+            </Link>
+
             <button
               type="button"
               onClick={handleLogout}
@@ -1011,6 +1091,22 @@ export function AdminAppUpload() {
               {reviews.length}
             </span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('requests')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+              activeTab === 'requests'
+                ? 'bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-300 shadow-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Community Requests</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">
+              {requests.length}
+            </span>
+          </button>
         </div>
 
         <button
@@ -1018,7 +1114,8 @@ export function AdminAppUpload() {
           onClick={() => {
             fetchApps();
             fetchReviews();
-            showToast('Refreshed apps & reviews data', 'info');
+            fetchRequests();
+            showToast('Refreshed apps, reviews & requests data', 'info');
           }}
           className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs font-bold transition-colors cursor-pointer border border-zinc-200/50 dark:border-zinc-700/50"
           title="Refresh Data"
@@ -1935,6 +2032,145 @@ export function AdminAppUpload() {
                         </button>
                       </div>
                     )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 5: COMMUNITY APP REQUESTS MODERATION */}
+      {activeTab === 'requests' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-zinc-900 border border-zinc-800 text-white">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  Community Demand
+                </span>
+                <span className="text-xs text-zinc-400">Total: {requests.length} Suggestions</span>
+              </div>
+              <h2 className="text-xl font-bold mt-1">Community App Requests & Wishlist</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Review submissions from the User Hub. Convert high-demand open-source apps directly into catalog releases with one click.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={fetchRequests}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingRequests ? 'animate-spin' : ''}`} />
+              <span>Refresh Requests</span>
+            </button>
+          </div>
+
+          {requests.length === 0 ? (
+            <div className="p-12 text-center rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
+              <Sparkles className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+              <p className="text-sm text-zinc-500 font-medium">No community app requests found.</p>
+              <p className="text-xs text-zinc-400 mt-1">Requests submitted by users from the User Hub will appear here.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {requests.map((req: any) => (
+                <div
+                  key={req.id}
+                  className="p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-zinc-900 dark:text-white text-base">{req.title}</h3>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                            {req.category}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">
+                          Submitted by <strong className="text-zinc-300">{req.requesterName || 'User'}</strong> • {new Date(req.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                          req.status === 'approved'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : req.status === 'in-review'
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            : req.status === 'rejected'
+                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                            : 'bg-zinc-500/20 text-zinc-400 border border-zinc-500/30'
+                        }`}
+                      >
+                        {req.status}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium bg-zinc-50 dark:bg-zinc-950/50 p-3 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                      &quot;{req.description}&quot;
+                    </p>
+
+                    {req.githubUrl && (
+                      <div className="text-xs pt-1">
+                        <a
+                          href={req.githubUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-purple-600 dark:text-purple-400 hover:underline font-semibold"
+                        >
+                          <FaGithub className="w-3.5 h-3.5" /> Source: {req.githubUrl}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions Bar */}
+                  <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateRequestStatus(req.id, 'approved')}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 transition-colors"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateRequestStatus(req.id, 'in-review')}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 hover:bg-amber-100 transition-colors"
+                      >
+                        In Review
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateRequestStatus(req.id, 'rejected')}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleConvertRequestToApp(req)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all"
+                        title="Open in Publishing Studio"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" /> Convert to App
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRequest(req.id)}
+                        className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                        title="Delete Request"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

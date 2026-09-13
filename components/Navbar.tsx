@@ -1,15 +1,24 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Smartphone, Heart } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Smartphone, Heart, HardDrive, ShieldAlert, Sparkles, Menu, X, ArrowRight, User } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useUserHub } from '@/hooks/useUserHub';
 
 export function Navbar() {
+  const pathname = usePathname();
   const { count: favoritesCount } = useFavorites();
+  const { downloadCount, userPrefs } = useUserHub();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const isAdminRoute = pathname?.startsWith('/admin');
+  const isUserRoute = pathname?.startsWith('/user');
+  const isHomeRoute = pathname === '/';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md transition-colors">
+    <header className="sticky top-0 z-40 border-b border-zinc-200 dark:border-zinc-800 bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo */}
         <Link
@@ -32,27 +41,148 @@ export function Navbar() {
               </span>
             </div>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400 -mt-1 hidden sm:block">
-              Kotlin & Jetpack Compose Apps
+              Open-Source Kotlin Store
             </p>
           </div>
         </Link>
 
-        {/* Right side controls */}
-        <div className="flex items-center gap-3">
+        {/* Desktop Navigation Links */}
+        <nav className="hidden md:flex items-center gap-1">
           <Link
-            href="/#catalog"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold transition-all border border-zinc-200/60 dark:border-zinc-800"
+            href="/"
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              isHomeRoute
+                ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900'
+            }`}
+          >
+            Storefront
+          </Link>
+
+          <Link
+            href="/user"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              isUserRoute
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900'
+            }`}
+          >
+            <User className="w-3.5 h-3.5" />
+            <span>User Hub</span>
+            {(downloadCount > 0 || favoritesCount > 0) && (
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
+                {downloadCount + favoritesCount}
+              </span>
+            )}
+          </Link>
+
+          <Link
+            href="/admin"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+              isAdminRoute
+                ? 'bg-purple-950/80 border-purple-800 text-purple-200'
+                : 'border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-purple-400 hover:border-purple-500/50'
+            }`}
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-purple-500" />
+            <span>Admin Console</span>
+          </Link>
+        </nav>
+
+        {/* Right side controls */}
+        <div className="flex items-center gap-2.5">
+          {/* Wishlist Shortcut */}
+          <Link
+            href="/user"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold transition-all border border-zinc-200/60 dark:border-zinc-800"
+            title="Saved in Wishlist"
           >
             <Heart className={`w-3.5 h-3.5 ${favoritesCount > 0 ? 'text-rose-500 fill-rose-500' : 'text-zinc-500'}`} />
-            <span className="hidden sm:inline">Favorites</span>
+            <span className="hidden sm:inline">Wishlist</span>
             {favoritesCount > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white">
                 {favoritesCount}
               </span>
             )}
           </Link>
+
+          {/* User Avatar Mini Shortcut */}
+          <Link
+            href="/user"
+            className="hidden sm:flex items-center gap-2 p-1.5 pr-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition-all"
+            title="My Profile & Hub"
+          >
+            <div
+              className={`w-6 h-6 rounded-lg bg-gradient-to-tr ${
+                userPrefs.avatarColor || 'from-purple-500 to-indigo-600'
+              } flex items-center justify-center text-[10px] text-white font-bold`}
+            >
+              {userPrefs.username?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 max-w-[90px] truncate">
+              {userPrefs.username || 'User'}
+            </span>
+          </Link>
+
+          {/* Mobile menu hamburger button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            aria-label="Toggle navigation menu"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Drawer */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 py-4 space-y-2 animate-in slide-in-from-top duration-200">
+          <Link
+            href="/"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`block px-4 py-2.5 rounded-xl text-sm font-bold ${
+              isHomeRoute
+                ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
+                : 'text-zinc-700 dark:text-zinc-300'
+            }`}
+          >
+            🛍️ Storefront & Discover
+          </Link>
+
+          <Link
+            href="/user"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold ${
+              isUserRoute
+                ? 'bg-purple-600 text-white'
+                : 'text-zinc-700 dark:text-zinc-300'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <User className="w-4 h-4" /> User Hub (My Library)
+            </span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
+              {downloadCount} installed
+            </span>
+          </Link>
+
+          <Link
+            href="/admin"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold border border-purple-500/30 ${
+              isAdminRoute
+                ? 'bg-purple-950 text-purple-300'
+                : 'text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/20'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-purple-500" /> Admin Console
+            </span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
     </header>
   );
 }

@@ -30,6 +30,7 @@ export interface AndroidApp {
   logoUrl?: string;
   bannerUrl?: string;
   githubUrl?: string;
+  description?: string;
 }
 
 export const ANDROID_APPS: AndroidApp[] = [

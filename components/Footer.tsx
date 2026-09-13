@@ -1,34 +1,167 @@
 'use client';
 
 import React from 'react';
-import { Smartphone } from 'lucide-react';
+import Link from 'next/link';
+import { Smartphone, ShieldCheck, Heart, Sparkles, Lock, ExternalLink } from 'lucide-react';
 import { FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa6';
 
 export function Footer() {
   return (
-    <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-      <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-24 py-12 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-2">
-          <Smartphone className="w-5 h-5 text-zinc-900 dark:text-zinc-100" />
-          <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">
-            CrazyStore
-          </span>
+    <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+          {/* Column 1: Brand */}
+          <div className="space-y-4 md:col-span-1">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white">
+                <Smartphone className="w-4 h-4" />
+              </div>
+              <span className="font-extrabold text-base text-zinc-900 dark:text-zinc-100 tracking-tight">
+                CrazyStore
+              </span>
+            </Link>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              Curated, high-performance Android applications built with Kotlin and Jetpack Compose. 100% open-source and free forever.
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <a
+                href="https://github.com/shubhmboghara/CrazyStore"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 flex items-center justify-center transition-colors"
+                aria-label="GitHub Repository"
+              >
+                <FaGithub className="w-4 h-4" />
+              </a>
+              <a
+                href="https://linkedin.com/in/shubham-boghara-60b4a1343"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 flex items-center justify-center transition-colors"
+                aria-label="LinkedIn"
+              >
+                <FaLinkedin className="w-4 h-4" />
+              </a>
+              <a
+                href="https://instagram.com/shubhambogharadotcom"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 flex items-center justify-center transition-colors"
+                aria-label="Instagram"
+              >
+                <FaInstagram className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+
+          {/* Column 2: User Storefront */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 mb-3">
+              Storefront & Discover
+            </h4>
+            <ul className="space-y-2 text-xs">
+              <li>
+                <Link href="/#catalog" className="hover:text-purple-500 transition-colors">
+                  All Android Applications
+                </Link>
+              </li>
+              <li>
+                <Link href="/#featured" className="hover:text-purple-500 transition-colors">
+                  Featured Kotlin Apps
+                </Link>
+              </li>
+              <li>
+                <Link href="/#categories" className="hover:text-purple-500 transition-colors">
+                  Categories & Tags
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/shubhmboghara/CrazyStore"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-purple-500 transition-colors inline-flex items-center gap-1"
+                >
+                  GitHub Releases <ExternalLink className="w-3 h-3" />
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: User Hub */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 mb-3">
+              User Hub
+            </h4>
+            <ul className="space-y-2 text-xs">
+              <li>
+                <Link href="/user" className="hover:text-purple-500 transition-colors">
+                  My Library (Installed Apps)
+                </Link>
+              </li>
+              <li>
+                <Link href="/user" className="hover:text-purple-500 transition-colors">
+                  Saved Wishlist
+                </Link>
+              </li>
+              <li>
+                <Link href="/user" className="hover:text-purple-500 transition-colors">
+                  Community App Requests
+                </Link>
+              </li>
+              <li>
+                <Link href="/user" className="hover:text-purple-500 transition-colors">
+                  Preferences & Settings
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Admin & Developer */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 mb-3">
+              Admin & Developer
+            </h4>
+            <ul className="space-y-2 text-xs">
+              <li>
+                <Link
+                  href="/admin"
+                  className="text-purple-600 dark:text-purple-400 font-semibold hover:underline inline-flex items-center gap-1"
+                >
+                  <Lock className="w-3 h-3" /> Admin Console
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin" className="hover:text-purple-500 transition-colors">
+                  Publish New App
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin" className="hover:text-purple-500 transition-colors">
+                  Review Moderation Hub
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin" className="hover:text-purple-500 transition-colors">
+                  Analytics & Telemetry
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <div className="flex items-center gap-5">
-          <a href="https://github.com/shubhmboghara" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" aria-label="GitHub">
-            <FaGithub className="w-5 h-5" />
-          </a>
-          <a href="https://linkedin.com/in/shubham-boghara-60b4a1343" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" aria-label="LinkedIn">
-            <FaLinkedin className="w-5 h-5" />
-          </a>
-          <a href="https://instagram.com/shubhambogharadotcom" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" aria-label="Instagram">
-            <FaInstagram className="w-5 h-5" />
-          </a>
+        {/* Bottom Bar */}
+        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-400">
+          <div>
+            © {new Date().getFullYear()} CrazyStore. Built with Next.js, Kotlin, and Tailwind CSS.
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1 text-emerald-500">
+              <ShieldCheck className="w-3.5 h-3.5" /> All APKs VirusTotal Scanned
+            </span>
+          </div>
         </div>
       </div>
     </footer>
   );
 }
-
-

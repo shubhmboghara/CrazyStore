@@ -102,6 +102,7 @@ export default async function Page({ params }: Props) {
 
   if (!app) {
     notFound();
+    return null;
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crazystore.app';
