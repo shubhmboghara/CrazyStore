@@ -49,16 +49,15 @@ export async function GET(req: NextRequest) {
 
     const verifiedDownloadUrl = formatDownloadUrl(targetApp.downloadUrl);
 
-    // Track download event in database asynchronously
     try {
-      await supabase.from('analytics').insert({
-        eventType: 'app_download',
-        appSlug: targetApp.slug,
-        appName: targetApp.name,
+      await supabase.from('analytics_events').insert({
+        event_type: 'app_download',
+        app_slug: targetApp.slug,
+        app_name: targetApp.name,
         path: `/api/download?slug=${targetApp.slug}`,
         details: `Direct Download Redirect: ${targetApp.name} (${targetApp.version})`,
-        isTaskCompleted: true,
-        createdAt: new Date().toISOString(),
+        is_task_completed: true,
+        created_at: new Date().toISOString(),
       });
     } catch (analyticsErr) {
       console.warn('Analytics tracking error during download redirect:', analyticsErr);
