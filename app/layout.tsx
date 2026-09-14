@@ -135,14 +135,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className="dark" style={{ colorScheme: 'dark' }} suppressHydrationWarning>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body suppressHydrationWarning className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 antialiased selection:bg-purple-500 selection:text-white">
+      <body suppressHydrationWarning className="bg-zinc-950 text-zinc-100 min-h-screen antialiased selection:bg-purple-500 selection:text-white">
         <ThemeProvider>
           <ToastProvider>
             <AnalyticsTracker />

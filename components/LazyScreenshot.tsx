@@ -73,7 +73,7 @@ export function LazyScreenshot({
     <div
       ref={containerRef}
       onClick={onClick}
-      className={`relative w-full ${aspectClass} rounded-3xl overflow-hidden bg-zinc-900 dark:bg-black border border-zinc-200/80 dark:border-zinc-800 shadow-md group-hover:shadow-2xl group-hover:border-purple-500/80 transition-all duration-300 transform group-hover:-translate-y-1.5 flex items-center justify-center p-2.5 sm:p-3`}
+      className={`relative w-full ${aspectClass} rounded-3xl overflow-hidden bg-black border border-zinc-800 shadow-md group-hover:shadow-2xl group-hover:border-purple-500/80 transition-all duration-300 transform group-hover:-translate-y-1.5 flex items-center justify-center p-2.5 sm:p-3`}
     >
       {/* Loading Skeleton Placeholder before image enters viewport or while loading */}
       {(!isInView || (!isLoaded && !hasError)) && (
@@ -99,8 +99,8 @@ export function LazyScreenshot({
         <>
           {/* Ambient Backdrop Glow */}
           <div
-            className={`absolute inset-0 bg-cover bg-center blur-2xl opacity-25 dark:opacity-35 scale-125 pointer-events-none transition-opacity duration-700 ${
-              isLoaded ? 'opacity-25 dark:opacity-35' : 'opacity-0'
+            className={`absolute inset-0 bg-cover bg-center blur-2xl opacity-30 scale-125 pointer-events-none transition-opacity duration-700 ${
+              isLoaded ? 'opacity-30' : 'opacity-0'
             }`}
             style={{ backgroundImage: `url(${src})` }}
           />

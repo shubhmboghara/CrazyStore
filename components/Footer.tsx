@@ -7,7 +7,7 @@ import { FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa6';
 
 export function Footer() {
   return (
-    <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400">
+    <footer className="border-t border-zinc-800 bg-zinc-950 text-zinc-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {/* Column 1: Brand */}
@@ -16,11 +16,11 @@ export function Footer() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white">
                 <Smartphone className="w-4 h-4" />
               </div>
-              <span className="font-extrabold text-base text-zinc-900 dark:text-zinc-100 tracking-tight">
+              <span className="font-extrabold text-base text-zinc-100 tracking-tight">
                 CrazyStore
               </span>
             </Link>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            <p className="text-xs text-zinc-400 leading-relaxed">
               Curated, high-performance Android applications built with Kotlin and Jetpack Compose. 100% open-source and free forever.
             </p>
             <div className="flex items-center gap-3 pt-2">
@@ -28,7 +28,7 @@ export function Footer() {
                 href="https://github.com/shubhmboghara/CrazyStore"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-zinc-900 hover:bg-purple-950/60 hover:text-purple-400 text-zinc-400 flex items-center justify-center transition-colors border border-zinc-800"
                 aria-label="GitHub Repository"
               >
                 <FaGithub className="w-4 h-4" />
@@ -37,7 +37,7 @@ export function Footer() {
                 href="https://linkedin.com/in/shubham-boghara-60b4a1343"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-zinc-900 hover:bg-purple-950/60 hover:text-purple-400 text-zinc-400 flex items-center justify-center transition-colors border border-zinc-800"
                 aria-label="LinkedIn"
               >
                 <FaLinkedin className="w-4 h-4" />
@@ -46,7 +46,7 @@ export function Footer() {
                 href="https://instagram.com/shubhambogharadotcom"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-purple-100 dark:hover:bg-purple-950/60 hover:text-purple-600 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-zinc-900 hover:bg-purple-950/60 hover:text-purple-400 text-zinc-400 flex items-center justify-center transition-colors border border-zinc-800"
                 aria-label="Instagram"
               >
                 <FaInstagram className="w-4 h-4" />
@@ -56,7 +56,7 @@ export function Footer() {
 
           {/* Column 2: Storefront */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 mb-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-100 mb-3">
               Storefront & Discover
             </h4>
             <ul className="space-y-2 text-xs">
@@ -90,7 +90,7 @@ export function Footer() {
 
           {/* Column 3: Open Source & Developer */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 mb-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-100 mb-3">
               Open Source & Devs
             </h4>
             <ul className="space-y-2 text-xs">
@@ -129,7 +129,7 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col sm:row items-center justify-between gap-4 text-xs text-zinc-400">
+        <div className="border-t border-zinc-800 pt-6 flex flex-col sm:row items-center justify-between gap-4 text-xs text-zinc-400">
           <div>
             © {new Date().getFullYear()} CrazyStore. Built with Next.js, Kotlin, and Tailwind CSS.
           </div>

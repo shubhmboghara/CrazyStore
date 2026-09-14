@@ -67,23 +67,23 @@ export function GeoKnowledgeBase({ app }: GeoKnowledgeBaseProps) {
       ];
 
   return (
-    <section className="bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-      <div className="flex items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-800/80 pb-5">
+    <section className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+      <div className="flex items-center justify-between gap-4 border-b border-zinc-800/80 pb-5">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40">
+          <div className="p-3 rounded-2xl bg-purple-950/60 text-purple-400 border border-purple-800/40">
             <HelpCircle className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100">
+            <h3 className="text-xl font-black text-zinc-100">
               {app ? `${app.name} Knowledge Base & FAQs` : 'Frequently Asked Questions & AI Knowledge'}
             </h3>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
+            <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
               Verified technical facts, installation guides, and safety overview
             </p>
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-bold border border-purple-200/60 dark:border-purple-800/40">
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-950/40 text-purple-300 text-xs font-bold border border-purple-800/40">
           <Sparkles className="w-3.5 h-3.5" /> Direct Answers
         </div>
       </div>
@@ -97,8 +97,8 @@ export function GeoKnowledgeBase({ app }: GeoKnowledgeBaseProps) {
               key={index}
               className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                 isOpen
-                  ? 'border-purple-300 dark:border-purple-800/80 bg-purple-50/20 dark:bg-purple-950/10'
-                  : 'border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 hover:border-zinc-300 dark:hover:border-zinc-700'
+                  ? 'border-purple-800/80 bg-purple-950/20'
+                  : 'border-zinc-800 bg-zinc-800/30 hover:border-zinc-700'
               }`}
             >
               <button
@@ -107,18 +107,18 @@ export function GeoKnowledgeBase({ app }: GeoKnowledgeBaseProps) {
                 aria-expanded={isOpen}
                 className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 text-left transition-colors cursor-pointer"
               >
-                <span className="font-bold text-sm sm:text-base text-zinc-900 dark:text-zinc-100">
+                <span className="font-bold text-sm sm:text-base text-zinc-100">
                   {faq.question}
                 </span>
                 <ChevronDown
                   className={`w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-200 ${
-                    isOpen ? 'rotate-180 text-purple-600 dark:text-purple-400' : ''
+                    isOpen ? 'rotate-180 text-purple-400' : ''
                   }`}
                 />
               </button>
 
               {isOpen && (
-                <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed border-t border-zinc-100 dark:border-zinc-800/60 mt-1 pt-3 animate-in fade-in duration-200">
+                <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 text-xs sm:text-sm text-zinc-300 leading-relaxed border-t border-zinc-800/60 mt-1 pt-3 animate-in fade-in duration-200">
                   <p>{faq.answer}</p>
                 </div>
               )}

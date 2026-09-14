@@ -13,7 +13,7 @@ export function Navbar() {
   const isHomeRoute = pathname === '/';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200 dark:border-zinc-800 bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md transition-colors">
+    <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/85 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo */}
         <Link
@@ -28,14 +28,14 @@ export function Navbar() {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-lg text-zinc-900 dark:text-zinc-100 tracking-tight">
+              <span className="font-extrabold text-lg text-zinc-100 tracking-tight">
                 CrazyStore
               </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50">
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800/50">
                 Android
               </span>
             </div>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 -mt-1 hidden sm:block">
+            <p className="text-[11px] text-zinc-400 -mt-1 hidden sm:block">
               Open-Source Kotlin Store
             </p>
           </div>
@@ -47,8 +47,8 @@ export function Navbar() {
             href="/"
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
               isHomeRoute
-                ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                ? 'bg-purple-950/60 text-purple-300'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
             }`}
           >
             Storefront
@@ -56,7 +56,7 @@ export function Navbar() {
 
           <Link
             href="/#catalog"
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all"
           >
             Categories
           </Link>
@@ -69,7 +69,7 @@ export function Navbar() {
             href="https://github.com/shubhmboghara/CrazyStore"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-all border border-zinc-200/60 dark:border-zinc-800"
+            className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 transition-all border border-zinc-800"
             aria-label="GitHub Repository"
           >
             <FaGithub className="w-4 h-4" />
@@ -78,7 +78,7 @@ export function Navbar() {
           {/* Mobile menu hamburger button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            className="md:hidden p-2 rounded-xl text-zinc-400 hover:bg-zinc-900"
             aria-label="Toggle navigation menu"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -88,14 +88,14 @@ export function Navbar() {
 
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 py-4 space-y-2 animate-in slide-in-from-top duration-200">
+        <div className="md:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-4 space-y-2 animate-in slide-in-from-top duration-200">
           <Link
             href="/"
             onClick={() => setIsMobileMenuOpen(false)}
             className={`block px-4 py-2.5 rounded-xl text-sm font-bold ${
               isHomeRoute
-                ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
-                : 'text-zinc-700 dark:text-zinc-300'
+                ? 'bg-purple-950/60 text-purple-300'
+                : 'text-zinc-300'
             }`}
           >
             🛍️ Storefront & Discover
@@ -104,7 +104,7 @@ export function Navbar() {
           <Link
             href="/#catalog"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900"
           >
             📂 Browse Categories
           </Link>

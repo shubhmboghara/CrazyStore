@@ -60,7 +60,7 @@ export function StarRating({
                   className={`${starSizes[size]} ${
                     isFilled
                       ? 'fill-amber-400 text-amber-400'
-                      : 'text-zinc-300 dark:text-zinc-600'
+                      : 'text-zinc-700'
                   }`}
                 />
                 {isHalf && (
@@ -74,12 +74,12 @@ export function StarRating({
         })}
       </div>
       {showNumber && (
-        <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm ml-1">
+        <span className="font-semibold text-zinc-100 text-sm ml-1">
           {rating > 0 ? rating.toFixed(1) : 'New'}
         </span>
       )}
       {reviewCount !== undefined && (
-        <span className="text-zinc-500 dark:text-zinc-400 text-xs font-normal">
+        <span className="text-zinc-400 text-xs font-normal">
           ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})
         </span>
       )}
