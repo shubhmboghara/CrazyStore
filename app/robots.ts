@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://crazy-store-rho.vercel.app').replace(/\/$/, '');
+
   return {
     rules: [
       {
@@ -29,7 +31,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin', '/api/admin/'],
       },
     ],
-    sitemap: 'https://crazystore.app/sitemap.xml',
-    host: 'https://crazystore.app',
+    sitemap: `${siteUrl}/sitemap.xml`,
+    host: siteUrl,
   };
 }

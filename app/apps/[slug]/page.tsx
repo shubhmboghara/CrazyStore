@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crazystore.app';
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://crazy-store-rho.vercel.app').replace(/\/$/, '');
   const pageUrl = `${siteUrl}/apps/${app.slug}`;
   const title = `${app.name} APK Download (${app.version}) - Ad-Free Android App | CrazyStore`;
   const description = `${app.tagline} Download verified ${app.name} APK (${app.size}) for Android. 100% free, open-source, and zero ads.`;
@@ -105,7 +105,7 @@ export default async function Page({ params }: Props) {
     return null;
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crazystore.app';
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://crazy-store-rho.vercel.app').replace(/\/$/, '');
 
   const appSchemaJsonLd = {
     '@context': 'https://schema.org',

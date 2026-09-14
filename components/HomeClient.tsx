@@ -157,7 +157,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
     }
   };
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crazystore.app';
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://crazy-store-rho.vercel.app').replace(/\/$/, '');
 
   const homeItemListJsonLd = {
     '@context': 'https://schema.org',

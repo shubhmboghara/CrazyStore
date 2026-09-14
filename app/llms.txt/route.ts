@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { ANDROID_APPS } from '@/lib/appsData';
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crazystore.app';
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://crazy-store-rho.vercel.app').replace(/\/$/, '');
 
   const appsListText = ANDROID_APPS.map(
     (app) => `- [${app.name}](${baseUrl}/apps/${app.slug}): ${app.tagline} (Version: ${app.version}, Size: ${app.size}, Min Android: ${app.minAndroid})`

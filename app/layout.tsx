@@ -4,7 +4,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { ToastProvider } from '@/components/Toast';
 import { AnalyticsTracker } from '@/components/AnalyticsTracker';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crazystore.app';
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://crazy-store-rho.vercel.app').replace(/\/$/, '');
 
 export const viewport: Viewport = {
   themeColor: '#7c3aed',

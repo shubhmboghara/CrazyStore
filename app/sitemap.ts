@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { ANDROID_APPS } from '@/lib/appsData';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crazystore.app';
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://crazy-store-rho.vercel.app').replace(/\/$/, '');
   const currentDate = new Date().toISOString();
 
   // Base routes
