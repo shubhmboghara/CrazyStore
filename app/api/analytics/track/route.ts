@@ -386,6 +386,7 @@ export async function POST(req: NextRequest) {
             country: geo.country,
             country_code: geo.countryCode,
             city: geo.city,
+            flag: geo.flag,
             ip: maskedIp,
             created_at: now.toISOString(),
           },
