@@ -89,8 +89,11 @@ export function LazyScreenshot({
       {/* Error State Fallback */}
       {hasError && (
         <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 text-zinc-500">
-          <ImageIcon className="w-10 h-10 text-zinc-600 mb-2" />
-          <span className="text-xs font-medium text-zinc-400">Preview Unavailable</span>
+          <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mb-2.5 shadow-inner">
+            <ImageIcon className="w-6 h-6 text-zinc-400" />
+          </div>
+          <span className="text-xs font-semibold text-zinc-300">{title || 'Screenshot Preview'}</span>
+          <span className="text-[11px] text-zinc-500 mt-0.5">Image preview unavailable</span>
         </div>
       )}
 

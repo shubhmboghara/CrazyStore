@@ -140,6 +140,41 @@ export function normalizeAppRecord(dbApp: any): any {
     }
   }
 
+  // Normalize screenshots array so both string URLs and object formats work seamlessly
+  const normalizedScreenshots = Array.isArray(screenshots)
+    ? screenshots
+        .map((s: any, idx: number) => {
+          if (typeof s === 'string') {
+            const trimmed = s.trim();
+            return trimmed
+              ? {
+                  id: `screenshot-${idx}`,
+                  url: trimmed,
+                  imageUrl: trimmed,
+                  title: `Screenshot ${idx + 1}`,
+                  subtitle: '',
+                }
+              : null;
+          }
+          if (s && typeof s === 'object') {
+            const rawUrl = s.imageUrl || s.url || '';
+            if (typeof rawUrl === 'string' && rawUrl.trim()) {
+              const trimmedUrl = rawUrl.trim();
+              return {
+                ...s,
+                id: s.id || `screenshot-${idx}`,
+                url: trimmedUrl,
+                imageUrl: trimmedUrl,
+                title: s.title || `Screenshot ${idx + 1}`,
+                subtitle: s.subtitle || '',
+              };
+            }
+          }
+          return null;
+        })
+        .filter(Boolean)
+    : [];
+
   return {
     ...dbApp,
     slug: dbApp.slug ? String(dbApp.slug).trim() : '',
@@ -161,7 +196,7 @@ export function normalizeAppRecord(dbApp: any): any {
     fullDescription,
     features,
     techStack,
-    screenshots,
+    screenshots: normalizedScreenshots,
     initialRating: dbApp.initialRating ?? dbApp.initial_rating ?? dbApp.initialrating ?? 5.0,
     initialReviewCount: dbApp.initialReviewCount ?? dbApp.initial_review_count ?? dbApp.initialreviewcount ?? 0,
     isCustom: dbApp.isCustom ?? dbApp.is_custom ?? dbApp.iscustom ?? true,

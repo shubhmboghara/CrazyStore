@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { AndroidApp } from '@/lib/appsData';
 import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
 import { StarRating } from '@/components/StarRating';
 import { ReviewForm } from '@/components/ReviewForm';
 import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
+import { LazyScreenshot } from '@/components/LazyScreenshot';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
@@ -32,6 +33,11 @@ import {
   Code2,
   Star,
   Check,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Maximize2,
+  ImageIcon,
 } from 'lucide-react';
 
 interface AppDetailClientProps {
@@ -45,8 +51,57 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [averageRating, setAverageRating] = useState<number>(initialApp.initialRating || 5.0);
   const [totalCount, setTotalCount] = useState<number>(initialApp.initialReviewCount || 0);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tech'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'screenshots' | 'reviews' | 'tech'>('overview');
   const [copied, setCopied] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [logoFailed, setLogoFailed] = useState(false);
+  const previewsContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Normalize valid screenshots uploaded by admin
+  const validPreviews = (appData.screenshots || [])
+    .map((s: any, idx: number) => {
+      if (typeof s === 'string') {
+        const trimmed = s.trim();
+        return trimmed
+          ? { id: `screenshot-${idx}`, url: trimmed, imageUrl: trimmed, title: `Screenshot ${idx + 1}`, subtitle: '' }
+          : null;
+      }
+      const rawUrl = s?.imageUrl || s?.url || '';
+      if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) return null;
+      return {
+        id: s.id || `screenshot-${idx}`,
+        url: rawUrl.trim(),
+        imageUrl: rawUrl.trim(),
+        title: s.title || `Screenshot ${idx + 1}`,
+        subtitle: s.subtitle || '',
+      };
+    })
+    .filter(Boolean) as { id: string; url: string; imageUrl: string; title: string; subtitle?: string }[];
+
+  // Keyboard navigation for screenshot lightbox
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxIndex(null);
+      } else if (e.key === 'ArrowLeft') {
+        setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validPreviews.length - 1));
+      } else if (e.key === 'ArrowRight') {
+        setLightboxIndex((prev) => (prev !== null && prev < validPreviews.length - 1 ? prev + 1 : 0));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, validPreviews.length]);
+
+  const scrollPreviews = (direction: 'left' | 'right') => {
+    if (previewsContainerRef.current) {
+      const scrollAmount = direction === 'left' ? -380 : 380;
+      previewsContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   // Fetch the latest fresh app details directly from the API on mount or slug change
   useEffect(() => {
@@ -212,9 +267,20 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
       <Navbar />
 
       <main className="flex-1 pb-16">
-        {/* Top Header Banner */}
-        <section className="bg-zinc-900 border-b border-zinc-800 py-10 sm:py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Top Header Banner with optional Admin Banner Backdrop */}
+        <section className="relative bg-zinc-900 border-b border-zinc-800 py-10 sm:py-12 overflow-hidden">
+          {appData.bannerUrl && (
+            <div className="absolute inset-0 pointer-events-none z-0">
+              <img
+                src={appData.bannerUrl}
+                alt={`${appData.name} Banner`}
+                className="w-full h-full object-cover object-center opacity-25 blur-xs scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/60 via-zinc-950/85 to-zinc-950" />
+            </div>
+          )}
+
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-400 hover:underline mb-6"
@@ -227,10 +293,15 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 <div
                   className={`w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br ${
                     appData.iconBg || 'from-purple-600 to-indigo-600'
-                  } flex items-center justify-center shadow-xl shadow-purple-500/20 shrink-0 overflow-hidden`}
+                  } flex items-center justify-center shadow-xl shadow-purple-500/20 shrink-0 overflow-hidden relative`}
                 >
-                  {appData.logoUrl ? (
-                    <img src={appData.logoUrl} alt={appData.name} className="w-full h-full object-cover" />
+                  {appData.logoUrl && !logoFailed ? (
+                    <img
+                      src={appData.logoUrl}
+                      alt={appData.name}
+                      onError={() => setLogoFailed(true)}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     getIconComponent(appData.iconSymbol)
                   )}
@@ -244,6 +315,11 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     <span className="px-2.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-bold">
                       {appData.version}
                     </span>
+                    {validPreviews.length > 0 && (
+                      <span className="px-2.5 py-0.5 rounded-md bg-zinc-800/80 text-purple-300 border border-purple-800/40 text-[10px] font-bold flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3 text-purple-400" /> {validPreviews.length} Screenshots
+                      </span>
+                    )}
                   </div>
 
                   <h1 className="text-2xl sm:text-4xl font-black text-zinc-100">
@@ -302,6 +378,100 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           </div>
         </section>
 
+        {/* App Screenshots / Visual Showcase Carousel */}
+        {validPreviews.length > 0 && (
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-xs">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-950/60 text-purple-400 border border-purple-800/40">
+                    <ImageIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-black text-zinc-100 flex items-center gap-2">
+                      App Screenshots & Visuals
+                    </h3>
+                    <p className="text-xs text-zinc-400">
+                      High-resolution captures uploaded by admin ({validPreviews.length} images) &bull; Tap any image to expand
+                    </p>
+                  </div>
+                </div>
+
+                {/* Carousel Navigation Arrows */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => scrollPreviews('left')}
+                    className="p-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors border border-zinc-700/50 cursor-pointer"
+                    aria-label="Scroll screenshots left"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollPreviews('right')}
+                    className="p-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors border border-zinc-700/50 cursor-pointer"
+                    aria-label="Scroll screenshots right"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Horizontal Scroll Carousel */}
+              <div
+                ref={previewsContainerRef}
+                className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {validPreviews.map((preview, idx) => {
+                  const hasCustomTitle = Boolean(
+                    preview.title &&
+                    !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
+                    !/^preview\s*\d*$/i.test(preview.title.trim())
+                  );
+
+                  return (
+                    <div
+                      key={preview.id || idx}
+                      onClick={() => {
+                        setLightboxIndex(idx);
+                        trackEvent({
+                          eventType: 'screenshot_view',
+                          appSlug: appData.slug,
+                          appName: appData.name,
+                          details: `Explored Visuals: ${hasCustomTitle ? preview.title : `Preview ${idx + 1}`} (${appData.name})`,
+                        });
+                      }}
+                      className="shrink-0 w-60 sm:w-64 md:w-72 group cursor-pointer snap-start flex flex-col items-center"
+                    >
+                      <LazyScreenshot
+                        src={preview.imageUrl || preview.url}
+                        alt={appData.name}
+                        title={preview.title}
+                        hasCustomTitle={hasCustomTitle}
+                        aspectClass="h-[420px] sm:h-[480px] md:h-[500px]"
+                        rootRef={previewsContainerRef}
+                        priority={idx < 3}
+                      />
+
+                      <div className="mt-3 text-center w-full px-2">
+                        <span className="text-xs sm:text-sm font-semibold text-zinc-300 block truncate group-hover:text-purple-400 transition-colors">
+                          {preview.title}
+                        </span>
+                        {preview.subtitle && (
+                          <span className="text-[11px] text-zinc-500 block truncate mt-0.5">
+                            {preview.subtitle}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Content Tabs & Main Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -320,6 +490,19 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 >
                   <Info className="w-4 h-4" /> About & Features
                 </button>
+                {validPreviews.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('screenshots')}
+                    className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+                      activeTab === 'screenshots'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
+                        : 'text-zinc-400 hover:bg-zinc-800/60'
+                    }`}
+                  >
+                    <ImageIcon className="w-4 h-4" /> Screenshots ({validPreviews.length})
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setActiveTab('reviews')}
@@ -459,6 +642,79 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
                   {/* GEO Knowledge Base & Instant Answers FAQ */}
                   <GeoKnowledgeBase app={appData} />
+                </div>
+              )}
+
+              {/* Tab: Screenshots & Visual Gallery */}
+              {activeTab === 'screenshots' && (
+                <div className="space-y-8 animate-in fade-in duration-300">
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-purple-950/60 text-purple-400 border border-purple-800/40">
+                          <ImageIcon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl sm:text-2xl font-black text-zinc-100">
+                            {appData.name} Screenshot Gallery
+                          </h3>
+                          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
+                            High-resolution UI captures &bull; Click any screenshot to view in full resolution
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-purple-950/60 text-purple-300 border border-purple-800/40 text-xs font-bold">
+                        {validPreviews.length} Images
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {validPreviews.map((preview, idx) => {
+                        const hasCustomTitle = Boolean(
+                          preview.title &&
+                          !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
+                          !/^preview\s*\d*$/i.test(preview.title.trim())
+                        );
+
+                        return (
+                          <div
+                            key={preview.id || idx}
+                            onClick={() => {
+                              setLightboxIndex(idx);
+                              trackEvent({
+                                eventType: 'screenshot_view',
+                                appSlug: appData.slug,
+                                appName: appData.name,
+                                details: `Explored Visuals: ${hasCustomTitle ? preview.title : `Preview ${idx + 1}`} (${appData.name})`,
+                              });
+                            }}
+                            className="group cursor-pointer flex flex-col items-center"
+                          >
+                            <LazyScreenshot
+                              src={preview.imageUrl || preview.url}
+                              alt={appData.name}
+                              title={preview.title}
+                              hasCustomTitle={hasCustomTitle}
+                              aspectClass="h-[440px] sm:h-[480px]"
+                              priority={idx < 3}
+                            />
+
+                            <div className="mt-3 text-center w-full px-2">
+                              <span className="text-xs sm:text-sm font-bold text-zinc-300 block truncate group-hover:text-purple-400 transition-colors">
+                                {preview.title}
+                              </span>
+                              {preview.subtitle && (
+                                <span className="text-[11px] text-zinc-500 block truncate mt-0.5">
+                                  {preview.subtitle}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -628,6 +884,135 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
             </div>
           </div>
         </section>
+
+        {/* Fullscreen Lightbox Modal (Google Play / App Store Style) */}
+        {lightboxIndex !== null && validPreviews[lightboxIndex] && (
+          <div
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 animate-in fade-in select-none"
+            onClick={() => setLightboxIndex(null)}
+          >
+            {/* Top Lightbox Bar */}
+            <div
+              className="w-full max-w-6xl flex items-center justify-between z-20 pb-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div>
+                  <span className="text-sm font-bold text-white block">
+                    {appData.name}
+                  </span>
+                  {validPreviews[lightboxIndex].title && (
+                    <span className="text-xs text-purple-300 font-medium block">
+                      {validPreviews[lightboxIndex].title} ({lightboxIndex + 1} of {validPreviews.length})
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Download / Open Original */}
+                <a
+                  href={validPreviews[lightboxIndex].imageUrl || validPreviews[lightboxIndex].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-md border border-white/10 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                  title="Open original image in new tab"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">Original</span>
+                </a>
+
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setLightboxIndex(null)}
+                  className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-md border border-white/10 cursor-pointer"
+                  title="Close (Esc)"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Central Stage */}
+            <div
+              className="relative flex-1 w-full flex items-center justify-center p-2 min-h-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Navigation Left */}
+              {validPreviews.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validPreviews.length - 1));
+                  }}
+                  className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-purple-600 text-white transition-all backdrop-blur-md border border-white/15 z-30 shadow-2xl hover:scale-105 cursor-pointer"
+                  title="Previous (Left Arrow)"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+              )}
+
+              {/* Central Zoomed Image */}
+              <div className="relative z-10 max-h-[78vh] flex items-center justify-center shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 bg-zinc-950">
+                <img
+                  src={validPreviews[lightboxIndex].imageUrl || validPreviews[lightboxIndex].url}
+                  alt={validPreviews[lightboxIndex].title || appData.name}
+                  className="max-h-[76vh] w-auto max-w-[85vw] object-contain rounded-2xl sm:rounded-3xl"
+                />
+              </div>
+
+              {/* Navigation Right */}
+              {validPreviews.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((prev) => (prev !== null && prev < validPreviews.length - 1 ? prev + 1 : 0));
+                  }}
+                  className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-purple-600 text-white transition-all backdrop-blur-md border border-white/15 z-30 shadow-2xl hover:scale-105 cursor-pointer"
+                  title="Next (Right Arrow)"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              )}
+            </div>
+
+            {/* Bottom thumbnail strip & Keyboard tip */}
+            <div
+              className="w-full max-w-4xl flex flex-col items-center gap-2.5 z-20 pt-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {validPreviews.length > 1 && (
+                <div className="flex items-center justify-center gap-2.5 px-3 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 overflow-x-auto hide-scrollbar max-w-full">
+                  {validPreviews.map((preview, idx) => (
+                    <button
+                      key={preview.id || idx}
+                      type="button"
+                      onClick={() => setLightboxIndex(idx)}
+                      className={`w-11 h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 relative cursor-pointer ${
+                        idx === lightboxIndex
+                          ? 'border-purple-500 scale-105 shadow-lg shadow-purple-500/50 ring-2 ring-purple-400'
+                          : 'border-white/20 opacity-50 hover:opacity-100 hover:border-white/60'
+                      }`}
+                    >
+                      <img
+                        src={preview.imageUrl || preview.url}
+                        alt={preview.title || `Screenshot thumbnail ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <span className="text-[11px] text-zinc-400 font-medium hidden sm:inline-block">
+                Use Left & Right Arrow keys to navigate &bull; Press Esc to close
+              </span>
+            </div>
+          </div>
+        )}
       </main>
       <Footer />
     </div>

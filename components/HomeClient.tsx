@@ -26,7 +26,31 @@ import {
   Cpu,
   Lock,
   Boxes,
+  ImageIcon,
 } from 'lucide-react';
+
+function AppLogoImage({
+  src,
+  alt,
+  fallback,
+}: {
+  src: string;
+  alt: string;
+  fallback: React.ReactNode;
+}) {
+  const [hasError, setHasError] = useState(false);
+  if (hasError || !src) {
+    return <>{fallback}</>;
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setHasError(true)}
+      className="w-full h-full object-cover"
+    />
+  );
+}
 
 export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: AndroidApp[], initialRatingsMap: Record<string, { avg: number; count: number }> }) {
   const [apps, setApps] = useState<AndroidApp[]>(initialApps);
@@ -304,13 +328,24 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                   className="group flex flex-col bg-zinc-900 border border-zinc-800 hover:border-purple-800/60 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:shadow-purple-900/20 transition-all duration-300 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  {/* Decorative background blob */}
-                  <div className={`absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity`} />
+                  {/* Decorative background banner / ambient glow */}
+                  {app.bannerUrl ? (
+                    <div className="absolute inset-0 pointer-events-none opacity-15 group-hover:opacity-25 transition-opacity overflow-hidden">
+                      <img src={app.bannerUrl} alt="" className="w-full h-full object-cover blur-sm scale-110" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/80 to-transparent" />
+                    </div>
+                  ) : (
+                    <div className={`absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity`} />
+                  )}
 
-                  <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-start justify-between mb-6 relative z-10">
                     <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} flex items-center justify-center shadow-lg shadow-purple-500/20 transform group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 shrink-0 overflow-hidden`}>
                       {app.logoUrl ? (
-                        <img src={app.logoUrl} alt={app.name} className="w-full h-full object-cover" />
+                        <AppLogoImage
+                          src={app.logoUrl}
+                          alt={app.name}
+                          fallback={getIconComponent(app.iconSymbol)}
+                        />
                       ) : (
                         getIconComponent(app.iconSymbol)
                       )}
@@ -326,9 +361,16 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                           {app.version}
                         </span>
                       </div>
-                      <span className="px-2.5 py-1 rounded-lg bg-purple-950/50 text-purple-300 border border-purple-800/40 text-[10px] font-bold">
-                        {app.badge || 'Kotlin + Compose'}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        {app.screenshots && app.screenshots.length > 0 && (
+                          <span className="px-2 py-0.5 rounded-lg bg-zinc-800/90 text-purple-300 border border-purple-800/40 text-[10px] font-bold flex items-center gap-1">
+                            <ImageIcon className="w-3 h-3 text-purple-400" /> {app.screenshots.length} Screens
+                          </span>
+                        )}
+                        <span className="px-2.5 py-1 rounded-lg bg-purple-950/50 text-purple-300 border border-purple-800/40 text-[10px] font-bold">
+                          {app.badge || 'Kotlin + Compose'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
