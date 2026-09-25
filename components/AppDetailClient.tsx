@@ -40,6 +40,37 @@ import {
   ImageIcon,
 } from 'lucide-react';
 
+function AppLogoImage({
+  src,
+  alt,
+  fallback,
+  className = 'w-full h-full object-cover',
+}: {
+  src?: string;
+  alt: string;
+  fallback: React.ReactNode;
+  className?: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
+
+  if (hasError || !src) {
+    return <>{fallback}</>;
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setHasError(true)}
+      className={className}
+    />
+  );
+}
+
 interface AppDetailClientProps {
   initialApp: AndroidApp;
 }
@@ -54,7 +85,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'screenshots' | 'reviews' | 'tech'>('overview');
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [logoFailed, setLogoFailed] = useState(false);
   const previewsContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Normalize valid screenshots uploaded by admin
@@ -295,16 +325,12 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     appData.iconBg || 'from-purple-600 to-indigo-600'
                   } flex items-center justify-center shadow-xl shadow-purple-500/20 shrink-0 overflow-hidden relative`}
                 >
-                  {appData.logoUrl && !logoFailed ? (
-                    <img
-                      src={appData.logoUrl}
-                      alt={appData.name}
-                      onError={() => setLogoFailed(true)}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    getIconComponent(appData.iconSymbol)
-                  )}
+                  <AppLogoImage
+                    key={appData.logoUrl || appData.slug}
+                    src={appData.logoUrl}
+                    alt={appData.name}
+                    fallback={getIconComponent(appData.iconSymbol)}
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -451,7 +477,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                         hasCustomTitle={hasCustomTitle}
                         aspectClass="h-[420px] sm:h-[480px] md:h-[500px]"
                         rootRef={previewsContainerRef}
-                        priority={idx < 3}
+                        priority={idx < 4}
                       />
 
                       <div className="mt-3 text-center w-full px-2">
@@ -788,6 +814,60 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
             {/* Right Sidebar Column (4 cols) */}
             <div className="lg:col-span-4 space-y-6">
+              {/* Quick Download Card */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-md space-y-5">
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${
+                      appData.iconBg || 'from-purple-600 to-indigo-600'
+                    } flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0 overflow-hidden relative`}
+                  >
+                    <AppLogoImage
+                      key={appData.logoUrl || appData.slug}
+                      src={appData.logoUrl}
+                      alt={appData.name}
+                      fallback={getIconComponent(appData.iconSymbol)}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-base text-zinc-100 truncate">
+                      {appData.name}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-800/50 text-[10px] font-bold">
+                        {appData.version}
+                      </span>
+                      <span className="text-xs text-zinc-400">
+                        {appData.size}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    trackEvent({
+                      eventType: 'app_download',
+                      appSlug: appData.slug,
+                      appName: appData.name,
+                      isTaskCompleted: true,
+                      details: `Downloaded APK from sidebar: ${appData.name} (${appData.version})`,
+                    });
+                  }}
+                  className="w-full py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm text-center shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-5 h-5" /> Download APK ({appData.size})
+                </a>
+
+                <div className="flex items-center justify-center gap-2 text-xs text-emerald-400 font-medium">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>100% Free &bull; Verified Safe &bull; No Ads</span>
+                </div>
+              </div>
+
               {/* Quick Info Bento Box */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-sm space-y-5">
                 <h4 className="font-bold text-sm text-zinc-100 flex items-center gap-2">
@@ -1013,6 +1093,50 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
             </div>
           </div>
         )}
+
+        {/* Mobile Sticky Download Action Bar */}
+        <div className="fixed bottom-0 inset-x-0 z-40 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800 px-4 py-3 sm:hidden flex items-center justify-between gap-3 shadow-2xl">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className={`w-11 h-11 rounded-xl bg-gradient-to-br ${
+                appData.iconBg || 'from-purple-600 to-indigo-600'
+              } flex items-center justify-center shrink-0 overflow-hidden relative shadow-md`}
+            >
+              <AppLogoImage
+                key={appData.logoUrl || appData.slug}
+                src={appData.logoUrl}
+                alt={appData.name}
+                fallback={getIconComponent(appData.iconSymbol)}
+              />
+            </div>
+            <div className="min-w-0">
+              <span className="font-bold text-sm text-zinc-100 block truncate">
+                {appData.name}
+              </span>
+              <span className="text-[11px] text-zinc-400 block">
+                {appData.version} &bull; {appData.size}
+              </span>
+            </div>
+          </div>
+
+          <a
+            href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              trackEvent({
+                eventType: 'app_download',
+                appSlug: appData.slug,
+                appName: appData.name,
+                isTaskCompleted: true,
+                details: `Downloaded APK from mobile bottom bar: ${appData.name}`,
+              });
+            }}
+            className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-lg shadow-purple-600/30 cursor-pointer"
+          >
+            <Download className="w-4 h-4" /> Download
+          </a>
+        </div>
       </main>
       <Footer />
     </div>

@@ -33,12 +33,19 @@ function AppLogoImage({
   src,
   alt,
   fallback,
+  className = "w-full h-full object-cover",
 }: {
   src: string;
   alt: string;
   fallback: React.ReactNode;
+  className?: string;
 }) {
   const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
+
   if (hasError || !src) {
     return <>{fallback}</>;
   }
@@ -47,7 +54,7 @@ function AppLogoImage({
       src={src}
       alt={alt}
       onError={() => setHasError(true)}
-      className="w-full h-full object-cover"
+      className={className}
     />
   );
 }
@@ -342,6 +349,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                     <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} flex items-center justify-center shadow-lg shadow-purple-500/20 transform group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 shrink-0 overflow-hidden`}>
                       {app.logoUrl ? (
                         <AppLogoImage
+                          key={app.logoUrl || app.slug}
                           src={app.logoUrl}
                           alt={app.name}
                           fallback={getIconComponent(app.iconSymbol)}

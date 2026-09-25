@@ -35,10 +35,17 @@ export function LazyScreenshot({
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
 
+  // Reset loading and error states whenever src changes
+  useEffect(() => {
+    setIsLoaded(false);
+    setHasError(false);
+  }, [src]);
+
   useEffect(() => {
     if (priority || isInView) return;
 
     if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+      setIsInView(true);
       return;
     }
 
@@ -57,14 +64,20 @@ export function LazyScreenshot({
       },
       {
         root: rootRef?.current || null,
-        rootMargin: '200px 100px', // Preload 200px ahead horizontally/vertically for smooth scrolling
+        rootMargin: '300px 200px', // Preload ahead horizontally/vertically for smooth scrolling
         threshold: 0.01,
       }
     );
 
     observer.observe(target);
 
+    // Safety fallback: ensure screenshot is displayed even if container observer is delayed
+    const fallbackTimer = setTimeout(() => {
+      setIsInView(true);
+    }, 2000);
+
     return () => {
+      clearTimeout(fallbackTimer);
       observer.disconnect();
     };
   }, [rootRef, priority, isInView]);
