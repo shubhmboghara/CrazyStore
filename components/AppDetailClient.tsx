@@ -12,7 +12,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
-import { Screenshots3DBackdrop, Card3DTilt } from '@/components/three';
+import { Screenshots3DBackdrop, Card3DTilt, Screenshots3DPhoneView } from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -84,7 +84,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [totalCount, setTotalCount] = useState<number>(initialApp.initialReviewCount || 0);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tech'>('overview');
-  const [screenshotView, setScreenshotView] = useState<'carousel' | 'grid'>('carousel');
+  const [screenshotView, setScreenshotView] = useState<'carousel' | 'grid' | '3d'>('carousel');
+  const [selected3DIdx, setSelected3DIdx] = useState<number>(0);
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const previewsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -538,15 +539,47 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
                 {/* Navigation Controls */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setScreenshotView((prev) => (prev === 'carousel' ? 'grid' : 'carousel'))}
-                    className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-purple-300 text-xs font-bold border border-zinc-800 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    title={screenshotView === 'carousel' ? 'Switch to Grid View' : 'Switch to Carousel View'}
-                  >
-                    <Layers className="w-3.5 h-3.5 text-purple-400" />
-                    <span>{screenshotView === 'carousel' ? 'Grid View' : 'Carousel View'}</span>
-                  </button>
+                  <div className="flex items-center gap-1 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setScreenshotView('carousel')}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        screenshotView === 'carousel'
+                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                      }`}
+                      title="Carousel View"
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span className="hidden xs:inline">Carousel</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScreenshotView('grid')}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        screenshotView === 'grid'
+                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                      }`}
+                      title="Grid View"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span className="hidden xs:inline">Grid</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScreenshotView('3d')}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        screenshotView === '3d'
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/40'
+                          : 'text-purple-300 hover:text-white hover:bg-purple-950/50'
+                      }`}
+                      title="3D Device View (WebGL)"
+                    >
+                      <Smartphone className="w-3.5 h-3.5 text-purple-400" />
+                      <span>3D Phone</span>
+                    </button>
+                  </div>
 
                   {screenshotView === 'carousel' && (
                     <div className="hidden sm:flex items-center gap-1.5">
@@ -630,7 +663,20 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
                             {/* Hover & Tap Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex flex-col justify-between p-2.5 sm:p-3 pointer-events-none rounded-xl sm:rounded-2xl">
-                              <div className="flex justify-end">
+                              <div className="flex justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelected3DIdx(idx);
+                                    setScreenshotView('3d');
+                                  }}
+                                  className="p-1.5 rounded-xl bg-purple-950/90 hover:bg-purple-800 border border-purple-800/60 text-purple-300 hover:text-white shadow-md backdrop-blur-md transition-all cursor-pointer pointer-events-auto flex items-center gap-1 text-[10px] font-bold"
+                                  title="View on 3D Device"
+                                >
+                                  <Smartphone className="w-3 h-3 text-purple-400" />
+                                  <span>3D</span>
+                                </button>
                                 <span className="p-1.5 sm:p-2 rounded-xl bg-purple-600/90 text-white shadow-lg backdrop-blur-md">
                                   <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </span>
@@ -684,7 +730,20 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                               draggable={false}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex flex-col justify-between p-2.5 pointer-events-none rounded-xl">
-                              <div className="flex justify-end">
+                              <div className="flex justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelected3DIdx(idx);
+                                    setScreenshotView('3d');
+                                  }}
+                                  className="p-1.5 rounded-xl bg-purple-950/90 hover:bg-purple-800 border border-purple-800/60 text-purple-300 hover:text-white shadow-md backdrop-blur-md transition-all cursor-pointer pointer-events-auto flex items-center gap-1 text-[10px] font-bold"
+                                  title="View on 3D Device"
+                                >
+                                  <Smartphone className="w-3 h-3 text-purple-400" />
+                                  <span>3D</span>
+                                </button>
                                 <span className="p-1.5 rounded-xl bg-purple-600/90 text-white shadow-lg backdrop-blur-md">
                                   <Maximize2 className="w-3.5 h-3.5" />
                                 </span>
@@ -703,6 +762,19 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* View 3: Interactive Three.js 3D Phone View */}
+              {screenshotView === '3d' && (
+                <div className="relative z-10 pt-1">
+                  <Screenshots3DPhoneView
+                    app={appData}
+                    screenshots={validPreviews}
+                    activeIdx={selected3DIdx}
+                    onSelectScreenshot={(idx) => setSelected3DIdx(idx)}
+                    onOpenLightbox={(idx) => setLightboxIndex(idx)}
+                  />
                 </div>
               )}
 

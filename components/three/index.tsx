@@ -68,3 +68,20 @@ export const Screenshots3DBackdrop = dynamic(
   }
 );
 
+export const Screenshots3DPhoneView = dynamic(
+  () => import('./Screenshots3DPhoneView').then((mod) => mod.Screenshots3DPhoneView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[420px] sm:h-[480px] rounded-2xl sm:rounded-3xl bg-zinc-950 border border-zinc-800 flex items-center justify-center animate-pulse">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-800/40 flex items-center justify-center">
+            <span className="text-xl">📱</span>
+          </div>
+          <span className="text-xs font-bold text-purple-300">Initializing 3D Device View...</span>
+        </div>
+      </div>
+    ),
+  }
+);
+
