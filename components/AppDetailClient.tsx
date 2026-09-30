@@ -12,7 +12,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
-import { Screenshots3DBackdrop, Card3DTilt, Screenshots3DPhoneView } from '@/components/three';
+import { Screenshots3DBackdrop, Screenshots3DPhoneView } from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -84,11 +84,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [totalCount, setTotalCount] = useState<number>(initialApp.initialReviewCount || 0);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tech'>('overview');
-  const [screenshotView, setScreenshotView] = useState<'carousel' | 'grid' | '3d'>('carousel');
   const [selected3DIdx, setSelected3DIdx] = useState<number>(0);
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const previewsContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Normalize valid screenshots uploaded by admin
   const validPreviews = (appData.screenshots || [])
@@ -135,68 +133,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
     };
   }, [lightboxIndex, validPreviews.length]);
 
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
-  // Mouse drag-to-scroll support for desktop
-  const isDraggingRef = useRef(false);
-  const startXRef = useRef(0);
-  const scrollLeftRef = useRef(0);
-  const hasDraggedRef = useRef(false);
-
-  const checkScrollBounds = useCallback(() => {
-    const el = previewsContainerRef.current;
-    if (!el) return;
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    setCanScrollLeft(scrollLeft > 10);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-  }, []);
-
-  useEffect(() => {
-    const el = previewsContainerRef.current;
-    if (!el) return;
-    checkScrollBounds();
-    el.addEventListener('scroll', checkScrollBounds, { passive: true });
-    window.addEventListener('resize', checkScrollBounds);
-    return () => {
-      el.removeEventListener('scroll', checkScrollBounds);
-      window.removeEventListener('resize', checkScrollBounds);
-    };
-  }, [checkScrollBounds, validPreviews.length]);
-
-  const scrollPreviews = (direction: 'left' | 'right') => {
-    if (previewsContainerRef.current) {
-      const scrollAmount = direction === 'left' ? -380 : 380;
-      previewsContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const el = previewsContainerRef.current;
-    if (!el) return;
-    isDraggingRef.current = true;
-    hasDraggedRef.current = false;
-    startXRef.current = e.pageX - el.offsetLeft;
-    scrollLeftRef.current = el.scrollLeft;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingRef.current) return;
-    const el = previewsContainerRef.current;
-    if (!el) return;
-    e.preventDefault();
-    const x = e.pageX - el.offsetLeft;
-    const walk = (x - startXRef.current) * 1.5;
-    if (Math.abs(walk) > 5) {
-      hasDraggedRef.current = true;
-    }
-    el.scrollLeft = scrollLeftRef.current - walk;
-  };
-
-  const handleMouseUpOrLeave = () => {
-    isDraggingRef.current = false;
-  };
-
   // Mobile touch gesture support for Lightbox
   const touchStartXRef = useRef<number | null>(null);
   const touchEndXRef = useRef<number | null>(null);
@@ -221,17 +157,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
     }
     touchStartXRef.current = null;
     touchEndXRef.current = null;
-  };
-
-  const handleScreenshotClick = (idx: number) => {
-    if (hasDraggedRef.current) return;
-    setLightboxIndex(idx);
-    trackEvent({
-      eventType: 'screenshot_view',
-      appSlug: appData.slug,
-      appName: appData.name,
-      details: `Explored Visuals: ${validPreviews[idx]?.title ?? `Preview ${idx + 1}`} (${appData.name})`,
-    });
   };
 
   // Fetch the latest fresh app details directly from the API on mount or slug change
@@ -505,7 +430,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           </div>
         </section>
 
-        {/* App Screenshots / Visual Showcase Carousel */}
+        {/* 3D Interactive Screenshots & Visuals Showcase (Three.js WebGL) */}
         {validPreviews.length > 0 && (
           <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-8">
             <div className="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-6 shadow-xl relative overflow-hidden backdrop-blur-sm">
@@ -513,10 +438,10 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
               <Screenshots3DBackdrop />
 
               {/* Section Header */}
-              <div className="relative z-10 flex items-center justify-between gap-3 mb-3.5 sm:mb-5 pb-3 border-b border-zinc-800/80">
+              <div className="relative z-10 flex items-center justify-between gap-3 mb-4 pb-3 border-b border-zinc-800/80">
                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                   <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-purple-950/60 text-purple-400 border border-purple-800/50 shadow-inner shrink-0">
-                    <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -526,257 +451,28 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                       <span className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-800/60 text-[10px] sm:text-xs font-bold text-purple-300 shrink-0">
                         {validPreviews.length}
                       </span>
-                      <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-800/40 text-[10px] font-bold text-purple-300 shrink-0">
-                        <Sparkles className="w-2.5 h-2.5 text-purple-400 animate-pulse" />
-                        3D Depth
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-950/80 to-indigo-950/80 border border-purple-700/50 text-[10px] sm:text-[11px] font-bold text-purple-300 shrink-0 shadow-xs">
+                        <Sparkles className="w-3 h-3 text-purple-400 animate-pulse" />
+                        3D WebGL Studio
                       </span>
                     </div>
                     <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate hidden xs:block">
-                      Tap any screenshot to expand full resolution &bull; Swipe to browse
+                      Interactive 3D device showcase &bull; Drag to rotate 360&deg; &bull; Tap any screenshot to inspect
                     </p>
                   </div>
                 </div>
-
-                {/* Navigation Controls */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="flex items-center gap-1 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setScreenshotView('carousel')}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                        screenshotView === 'carousel'
-                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
-                      }`}
-                      title="Carousel View"
-                    >
-                      <Layers className="w-3.5 h-3.5" />
-                      <span className="hidden xs:inline">Carousel</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setScreenshotView('grid')}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                        screenshotView === 'grid'
-                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
-                      }`}
-                      title="Grid View"
-                    >
-                      <Maximize2 className="w-3.5 h-3.5" />
-                      <span className="hidden xs:inline">Grid</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setScreenshotView('3d')}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                        screenshotView === '3d'
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/40'
-                          : 'text-purple-300 hover:text-white hover:bg-purple-950/50'
-                      }`}
-                      title="3D Device View (WebGL)"
-                    >
-                      <Smartphone className="w-3.5 h-3.5 text-purple-400" />
-                      <span>3D Phone</span>
-                    </button>
-                  </div>
-
-                  {screenshotView === 'carousel' && (
-                    <div className="hidden sm:flex items-center gap-1.5">
-                      <div className="h-5 w-[1px] bg-zinc-800 mx-1" />
-                      <button
-                        type="button"
-                        onClick={() => scrollPreviews('left')}
-                        disabled={!canScrollLeft}
-                        className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                          canScrollLeft
-                            ? 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
-                            : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
-                        }`}
-                        aria-label="Previous screenshots"
-                        title="Scroll left"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => scrollPreviews('right')}
-                        disabled={!canScrollRight}
-                        className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                          canScrollRight
-                            ? 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
-                            : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
-                        }`}
-                        aria-label="Next screenshots"
-                        title="Scroll right"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
 
-              {/* View 1: Horizontal Scroll Carousel */}
-              {screenshotView === 'carousel' && (
-                <div
-                  ref={previewsContainerRef}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUpOrLeave}
-                  onMouseLeave={handleMouseUpOrLeave}
-                  className="relative z-10 flex items-center gap-3 sm:gap-4 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scroll-smooth hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
-                  style={{ WebkitOverflowScrolling: 'touch' }}
-                >
-                  {validPreviews.map((preview, idx) => {
-                    const hasCustomTitle = Boolean(
-                      preview.title &&
-                        !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
-                        !/^preview\s*\d*$/i.test(preview.title.trim())
-                    );
-                    const displayTitle = hasCustomTitle ? preview.title : `Screenshot ${idx + 1}`;
-
-                    return (
-                      <div
-                        key={preview.id || idx}
-                        onClick={() => handleScreenshotClick(idx)}
-                        className="shrink-0 h-[280px] xs:h-[330px] sm:h-[400px] md:h-[450px] group cursor-pointer snap-start flex flex-col select-none"
-                      >
-                        <Card3DTilt maxTilt={6} scale={1.01} perspective={900} className="h-full">
-                          {/* Modern Clean Screenshot Frame (Zero Cropping, 100% Intact Image) */}
-                          <div className="relative h-full w-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-zinc-950 border border-zinc-800/90 group-hover:border-purple-500/80 shadow-md group-hover:shadow-2xl group-hover:shadow-purple-900/25 transition-all duration-300 flex items-center justify-center p-1 sm:p-1.5">
-                            {/* Ambient backdrop glow */}
-                            <div
-                              className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
-                              style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
-                            />
-
-                            {/* Full Screenshot Image (Never Cropped or Cut Off) */}
-                            <img
-                              src={preview.imageUrl || preview.url}
-                              alt={displayTitle}
-                              loading={idx < 3 ? 'eager' : 'lazy'}
-                              decoding="async"
-                              className="relative z-10 h-full w-auto max-w-[80vw] sm:max-w-none object-contain rounded-xl sm:rounded-2xl select-none group-hover:scale-[1.015] transition-transform duration-300 pointer-events-none drop-shadow-md"
-                              draggable={false}
-                            />
-
-                            {/* Hover & Tap Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex flex-col justify-between p-2.5 sm:p-3 pointer-events-none rounded-xl sm:rounded-2xl">
-                              <div className="flex justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelected3DIdx(idx);
-                                    setScreenshotView('3d');
-                                  }}
-                                  className="p-1.5 rounded-xl bg-purple-950/90 hover:bg-purple-800 border border-purple-800/60 text-purple-300 hover:text-white shadow-md backdrop-blur-md transition-all cursor-pointer pointer-events-auto flex items-center gap-1 text-[10px] font-bold"
-                                  title="View on 3D Device"
-                                >
-                                  <Smartphone className="w-3 h-3 text-purple-400" />
-                                  <span>3D</span>
-                                </button>
-                                <span className="p-1.5 sm:p-2 rounded-xl bg-purple-600/90 text-white shadow-lg backdrop-blur-md">
-                                  <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-[11px] font-bold text-white bg-black/75 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 truncate max-w-[80%]">
-                                  {displayTitle}
-                                </span>
-                                <span className="text-[10px] font-black text-purple-300 bg-purple-950/90 px-1.5 py-0.5 rounded-md border border-purple-800/50 shrink-0">
-                                  #{idx + 1}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </Card3DTilt>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* View 2: Responsive Grid View */}
-              {screenshotView === 'grid' && (
-                <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4.5 pt-1 animate-in fade-in duration-200">
-                  {validPreviews.map((preview, idx) => {
-                    const hasCustomTitle = Boolean(
-                      preview.title &&
-                        !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
-                        !/^preview\s*\d*$/i.test(preview.title.trim())
-                    );
-                    const displayTitle = hasCustomTitle ? preview.title : `Screenshot ${idx + 1}`;
-
-                    return (
-                      <div
-                        key={preview.id || idx}
-                        onClick={() => handleScreenshotClick(idx)}
-                        className="group cursor-pointer flex flex-col select-none"
-                      >
-                        <Card3DTilt maxTilt={7} scale={1.015} perspective={800}>
-                          <div className="relative h-[240px] xs:h-[280px] sm:h-[340px] md:h-[380px] w-full rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800/90 group-hover:border-purple-500/80 shadow-md group-hover:shadow-2xl group-hover:shadow-purple-900/25 transition-all duration-300 flex items-center justify-center p-1 sm:p-1.5">
-                            <div
-                              className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
-                              style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
-                            />
-                            <img
-                              src={preview.imageUrl || preview.url}
-                              alt={displayTitle}
-                              loading={idx < 4 ? 'eager' : 'lazy'}
-                              decoding="async"
-                              className="relative z-10 h-full w-auto max-w-full object-contain rounded-xl select-none group-hover:scale-[1.015] transition-transform duration-300 pointer-events-none drop-shadow-md"
-                              draggable={false}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex flex-col justify-between p-2.5 pointer-events-none rounded-xl">
-                              <div className="flex justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelected3DIdx(idx);
-                                    setScreenshotView('3d');
-                                  }}
-                                  className="p-1.5 rounded-xl bg-purple-950/90 hover:bg-purple-800 border border-purple-800/60 text-purple-300 hover:text-white shadow-md backdrop-blur-md transition-all cursor-pointer pointer-events-auto flex items-center gap-1 text-[10px] font-bold"
-                                  title="View on 3D Device"
-                                >
-                                  <Smartphone className="w-3 h-3 text-purple-400" />
-                                  <span>3D</span>
-                                </button>
-                                <span className="p-1.5 rounded-xl bg-purple-600/90 text-white shadow-lg backdrop-blur-md">
-                                  <Maximize2 className="w-3.5 h-3.5" />
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-[11px] font-bold text-white bg-black/75 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 truncate max-w-[80%]">
-                                  {displayTitle}
-                                </span>
-                                <span className="text-[10px] font-black text-purple-300 bg-purple-950/90 px-1.5 py-0.5 rounded-md border border-purple-800/50 shrink-0">
-                                  #{idx + 1}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </Card3DTilt>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* View 3: Interactive Three.js 3D Phone View */}
-              {screenshotView === '3d' && (
-                <div className="relative z-10 pt-1">
-                  <Screenshots3DPhoneView
-                    app={appData}
-                    screenshots={validPreviews}
-                    activeIdx={selected3DIdx}
-                    onSelectScreenshot={(idx) => setSelected3DIdx(idx)}
-                    onOpenLightbox={(idx) => setLightboxIndex(idx)}
-                  />
-                </div>
-              )}
+              {/* Pure Three.js 3D Smartphone Viewport */}
+              <div className="relative z-10 pt-1">
+                <Screenshots3DPhoneView
+                  app={appData}
+                  screenshots={validPreviews}
+                  activeIdx={selected3DIdx}
+                  onSelectScreenshot={(idx) => setSelected3DIdx(idx)}
+                  onOpenLightbox={(idx) => setLightboxIndex(idx)}
+                />
+              </div>
 
               {/* Ambient bottom glow decoration */}
               <div
