@@ -90,3 +90,18 @@ export const FloatingAndroid3D = dynamic(
     ssr: false,
   }
 );
+
+export const Screenshot3DGallery = dynamic(
+  () => import('./Screenshot3DGallery').then((mod) => mod.Screenshot3DGallery),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[420px] rounded-2xl bg-zinc-950/80 border border-purple-900/40 flex items-center justify-center animate-pulse">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+          <span className="text-xs font-black text-purple-400 tracking-widest">LOADING 3D GALLERY</span>
+        </div>
+      </div>
+    ),
+  }
+);

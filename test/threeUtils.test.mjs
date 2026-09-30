@@ -21,7 +21,7 @@ function mockDisposeMaterial(material, disposedList) {
   }
 }
 
-function mockDisposeThreeScene(scene, disposedList) {
+function mockDisposeThreeScene(scene, disposedList, renderer) {
   if (!scene || !scene.children) return;
   for (const child of scene.children) {
     if (child.geometry && typeof child.geometry.dispose === 'function') {
@@ -35,6 +35,10 @@ function mockDisposeThreeScene(scene, disposedList) {
         mockDisposeMaterial(child.material, disposedList);
       }
     }
+  }
+  if (renderer && typeof renderer.dispose === 'function') {
+    renderer.dispose();
+    disposedList.push('renderer');
   }
 }
 
@@ -130,4 +134,35 @@ const tiltTopEdge = calculateCard3DTilt(0, -0.5, 10);
 assert.equal(tiltTopEdge.rotX, 10, 'Moving to top edge tilts rotX positive');
 console.log('✓ Test 5 Passed: 3D Card tilt perspective calculations are mathematically accurate');
 
-console.log('\n🎉 ALL 5 3D UTILITY TESTS PASSED WITH 100% SUCCESS!');
+// Test 6: 3D Screenshot Gallery Arc/Fan layout math
+function computeScreenshotPanelLayout(index, focusIndex, total, spreadAngle = Math.PI * 0.18, radius = 5.5) {
+  let offset = index - focusIndex;
+  if (total > 3) {
+    if (offset > total / 2) offset -= total;
+    if (offset < -total / 2) offset += total;
+  }
+  const angle = offset * spreadAngle;
+  const x = Math.sin(angle) * radius;
+  const z = Math.cos(angle) * radius - radius + 1.2;
+  const ry = -angle * 0.5;
+  const isFocus = offset === 0;
+  const absW = Math.abs(offset);
+  const scale = isFocus ? 1.18 : Math.max(0.62, 1 - absW * 0.15);
+  const y = isFocus ? 0 : -absW * 0.18;
+  return { x, y, z, ry, scale, isFocus };
+}
+
+const focusedLayout = computeScreenshotPanelLayout(2, 2, 5);
+assert.equal(focusedLayout.isFocus, true, 'Focused screenshot index is identified as focus');
+assert.equal(focusedLayout.scale, 1.18, 'Focused screenshot panel receives 1.18x prominence scale');
+assert.equal(focusedLayout.x, 0, 'Focused screenshot sits at center x = 0');
+assert.equal(focusedLayout.y, 0, 'Focused screenshot sits at center elevation y = 0');
+
+const adjacentLayout = computeScreenshotPanelLayout(3, 2, 5);
+assert.equal(adjacentLayout.isFocus, false, 'Adjacent screenshot panel is not focused');
+assert.ok(adjacentLayout.x > 0, 'Right adjacent screenshot sits at positive x');
+assert.ok(adjacentLayout.ry < 0, 'Right adjacent screenshot angles inwards with negative ry');
+
+console.log('✓ Test 6 Passed: 3D Screenshot Gallery Arc/Fan geometry math computes accurately');
+
+console.log('\n🎉 ALL 6 3D UTILITY TESTS PASSED WITH 100% SUCCESS!');

@@ -12,7 +12,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
-import { AppDevice3DStudio, FloatingAndroid3D } from '@/components/three';
+import { AppDevice3DStudio, FloatingAndroid3D, Screenshot3DGallery } from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -420,96 +420,49 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           </div>
         </section>
 
-        {/* App Screenshots / Visual Showcase Carousel */}
+        {/* App Screenshots / Visual Showcase — Cinematic 3D Gallery */}
         {validPreviews.length > 0 && (
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-xs">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-purple-950/60 text-purple-400 border border-purple-800/40">
-                    <ImageIcon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-black text-zinc-100 flex items-center gap-2">
-                      App Screenshots & Visuals
-                    </h3>
-                    <p className="text-xs text-zinc-400">
-                      High-resolution captures uploaded by admin ({validPreviews.length} images) &bull; Tap any image to expand
-                    </p>
-                  </div>
+            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-xl overflow-hidden relative">
+              {/* Section header */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 rounded-xl bg-purple-950/60 text-purple-400 border border-purple-800/40">
+                  <ImageIcon className="w-5 h-5" />
                 </div>
-
-                {/* Carousel Navigation Arrows */}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => scrollPreviews('left')}
-                    className="p-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors border border-zinc-700/50 cursor-pointer"
-                    aria-label="Scroll screenshots left"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollPreviews('right')}
-                    className="p-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors border border-zinc-700/50 cursor-pointer"
-                    aria-label="Scroll screenshots right"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-zinc-100 flex items-center gap-2">
+                    App Screenshots &amp; Visuals
+                    <span className="px-2 py-0.5 rounded-full bg-purple-950 border border-purple-700/60 text-[10px] font-black text-purple-300 tracking-widest uppercase">
+                      3D
+                    </span>
+                  </h3>
+                  <p className="text-xs text-zinc-400">
+                    {validPreviews.length} high-res captures · Click any panel to focus · Drag in 3D space
+                  </p>
                 </div>
               </div>
 
-              {/* Horizontal Scroll Carousel */}
+              {/* 3D Gallery */}
+              <Screenshot3DGallery
+                screenshots={validPreviews}
+                appName={appData.name}
+                onScreenshotClick={(idx) => {
+                  setLightboxIndex(idx);
+                  trackEvent({
+                    eventType: 'screenshot_view',
+                    appSlug: appData.slug,
+                    appName: appData.name,
+                    details: `Explored Visuals: ${validPreviews[idx]?.title ?? `Preview ${idx + 1}`} (${appData.name})`,
+                  });
+                }}
+              />
+
+              {/* Ambient glow decoration */}
               <div
-                ref={previewsContainerRef}
-                className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-              >
-                {validPreviews.map((preview, idx) => {
-                  const hasCustomTitle = Boolean(
-                    preview.title &&
-                    !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
-                    !/^preview\s*\d*$/i.test(preview.title.trim())
-                  );
-
-                  return (
-                    <div
-                      key={preview.id || idx}
-                      onClick={() => {
-                        setLightboxIndex(idx);
-                        trackEvent({
-                          eventType: 'screenshot_view',
-                          appSlug: appData.slug,
-                          appName: appData.name,
-                          details: `Explored Visuals: ${hasCustomTitle ? preview.title : `Preview ${idx + 1}`} (${appData.name})`,
-                        });
-                      }}
-                      className="shrink-0 w-60 sm:w-64 md:w-72 group cursor-pointer snap-start flex flex-col items-center"
-                    >
-                      <LazyScreenshot
-                        src={preview.imageUrl || preview.url}
-                        alt={appData.name}
-                        title={preview.title}
-                        hasCustomTitle={hasCustomTitle}
-                        aspectClass="h-[420px] sm:h-[480px] md:h-[500px]"
-                        rootRef={previewsContainerRef}
-                        priority={idx < 4}
-                      />
-
-                      <div className="mt-3 text-center w-full px-2">
-                        <span className="text-xs sm:text-sm font-semibold text-zinc-300 block truncate group-hover:text-purple-400 transition-colors">
-                          {preview.title}
-                        </span>
-                        {preview.subtitle && (
-                          <span className="text-[11px] text-zinc-500 block truncate mt-0.5">
-                            {preview.subtitle}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                aria-hidden
+                className="pointer-events-none absolute -bottom-16 left-1/2 -translate-x-1/2 w-3/4 h-32 rounded-full opacity-20 blur-3xl"
+                style={{ background: 'radial-gradient(ellipse, #a855f7 0%, #06b6d4 100%)' }}
+              />
             </div>
           </section>
         )}

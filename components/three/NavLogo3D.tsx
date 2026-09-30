@@ -81,6 +81,19 @@ export function NavLogo3D() {
     dome.position.set(0, 0.1, 0.11);
     group.add(dome);
 
+    // Glowing Neon Orbit Ring around phone
+    const ringGeom = new THREE.TorusGeometry(1.4, 0.035, 12, 32);
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: 0xa855f7,
+      emissive: 0x06b6d4,
+      emissiveIntensity: 1.5,
+      roughness: 0.2,
+      metalness: 0.8,
+    });
+    const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+    ringMesh.rotation.x = Math.PI / 2.8;
+    group.add(ringMesh);
+
     // Initial tilt
     group.rotation.x = 0.25;
     group.rotation.y = -0.4;

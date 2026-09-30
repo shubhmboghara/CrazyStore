@@ -26,7 +26,7 @@ export function isWebGLAvailable(): boolean {
  * Recursively disposes of Three.js meshes, geometries, and materials
  * to prevent GPU and CPU memory leaks.
  */
-export function disposeThreeScene(scene: THREE.Object3D): void {
+export function disposeThreeScene(scene: THREE.Object3D, renderer?: THREE.WebGLRenderer): void {
   scene.traverse((object: any) => {
     if (!object) return;
 
@@ -44,6 +44,10 @@ export function disposeThreeScene(scene: THREE.Object3D): void {
       }
     }
   });
+
+  if (renderer && typeof renderer.dispose === 'function') {
+    renderer.dispose();
+  }
 }
 
 function disposeMaterial(material: any): void {
