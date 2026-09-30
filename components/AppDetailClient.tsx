@@ -189,6 +189,32 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
     isDraggingRef.current = false;
   };
 
+  // Mobile touch gesture support for Lightbox
+  const touchStartXRef = useRef<number | null>(null);
+  const touchEndXRef = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndXRef.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartXRef.current === null || touchEndXRef.current === null) return;
+    const distance = touchStartXRef.current - touchEndXRef.current;
+    if (distance > 50) {
+      // Swiped left -> next screenshot
+      setLightboxIndex((prev) => (prev !== null && prev < validPreviews.length - 1 ? prev + 1 : 0));
+    } else if (distance < -50) {
+      // Swiped right -> prev screenshot
+      setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validPreviews.length - 1));
+    }
+    touchStartXRef.current = null;
+    touchEndXRef.current = null;
+  };
+
   const handleScreenshotClick = (idx: number) => {
     if (hasDraggedRef.current) return;
     setLightboxIndex(idx);
@@ -488,69 +514,72 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
         {/* App Screenshots / Visual Showcase Carousel */}
         {validPreviews.length > 0 && (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-            <div className="bg-zinc-950/85 border border-zinc-800 rounded-3xl p-5 sm:p-7 shadow-xl overflow-hidden relative backdrop-blur-sm">
+          <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-8">
+            <div className="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-6 shadow-xl relative overflow-hidden backdrop-blur-sm">
               {/* Section Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-zinc-800/80">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-purple-950/60 text-purple-400 border border-purple-800/50 shadow-inner">
-                    <ImageIcon className="w-5 h-5" />
+              <div className="flex items-center justify-between gap-3 mb-3.5 sm:mb-5 pb-3 border-b border-zinc-800/80">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-purple-950/60 text-purple-400 border border-purple-800/50 shadow-inner shrink-0">
+                    <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-black text-zinc-100 flex items-center gap-2">
-                      App Screenshots &amp; Visuals
-                      <span className="px-2.5 py-0.5 rounded-full bg-purple-950/80 border border-purple-800/60 text-[10px] font-bold text-purple-300">
-                        {validPreviews.length} {validPreviews.length === 1 ? 'Capture' : 'Captures'}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-100 truncate">
+                        Screenshots &amp; Visuals
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-800/60 text-[10px] sm:text-xs font-bold text-purple-300 shrink-0">
+                        {validPreviews.length}
                       </span>
-                    </h3>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      Click any screenshot to view in full resolution &bull; Drag or use arrows to scroll
+                    </div>
+                    <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate hidden xs:block">
+                      Tap any screenshot to expand full resolution &bull; Swipe to browse
                     </p>
                   </div>
                 </div>
 
                 {/* Navigation Controls */}
-                <div className="flex items-center gap-2 self-end sm:self-auto">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => setActiveTab('screenshots')}
-                    className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-purple-300 text-xs font-bold border border-zinc-800 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-purple-300 text-xs font-bold border border-zinc-800 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
                     title="View all screenshots in grid layout"
                   >
                     <Layers className="w-3.5 h-3.5 text-purple-400" />
-                    <span>Grid View</span>
+                    <span className="hidden sm:inline">Grid View</span>
                   </button>
 
-                  <div className="h-6 w-[1px] bg-zinc-800 mx-1 hidden sm:block" />
-
-                  <button
-                    type="button"
-                    onClick={() => scrollPreviews('left')}
-                    disabled={!canScrollLeft}
-                    className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                      canScrollLeft
-                        ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
-                        : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
-                    }`}
-                    aria-label="Previous screenshots"
-                    title="Scroll left"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollPreviews('right')}
-                    disabled={!canScrollRight}
-                    className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                      canScrollRight
-                        ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
-                        : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
-                    }`}
-                    aria-label="Next screenshots"
-                    title="Scroll right"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                  <div className="hidden sm:flex items-center gap-1.5">
+                    <div className="h-5 w-[1px] bg-zinc-800 mx-1" />
+                    <button
+                      type="button"
+                      onClick={() => scrollPreviews('left')}
+                      disabled={!canScrollLeft}
+                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                        canScrollLeft
+                          ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
+                          : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
+                      }`}
+                      aria-label="Previous screenshots"
+                      title="Scroll left"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollPreviews('right')}
+                      disabled={!canScrollRight}
+                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                        canScrollRight
+                          ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
+                          : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
+                      }`}
+                      aria-label="Next screenshots"
+                      title="Scroll right"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -561,7 +590,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUpOrLeave}
                 onMouseLeave={handleMouseUpOrLeave}
-                className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scroll-smooth hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
+                className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scroll-smooth hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
+                style={{ WebkitOverflowScrolling: 'touch' }}
               >
                 {validPreviews.map((preview, idx) => {
                   const hasCustomTitle = Boolean(
@@ -575,60 +605,42 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     <div
                       key={preview.id || idx}
                       onClick={() => handleScreenshotClick(idx)}
-                      className="shrink-0 w-60 sm:w-68 md:w-72 group cursor-pointer snap-start flex flex-col items-center select-none"
+                      className="shrink-0 h-[280px] xs:h-[330px] sm:h-[400px] md:h-[450px] group cursor-pointer snap-start flex flex-col select-none"
                     >
-                      {/* Flagship Device Chassis (Upright, Crisp 2D Bezel) */}
-                      <div className="relative w-full aspect-[9/19] rounded-[34px] p-2.5 bg-gradient-to-b from-zinc-700/90 via-zinc-900 to-zinc-950 border-2 border-zinc-700/70 shadow-[0_16px_36px_rgba(0,0,0,0.7)] group-hover:shadow-[0_22px_50px_rgba(168,85,247,0.28)] group-hover:border-purple-500/80 group-hover:-translate-y-2 transition-all duration-300">
-                        {/* Dynamic Camera Notch / Pill */}
-                        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-14 h-3 bg-black rounded-full z-20 flex items-center justify-end px-1.5 border border-zinc-800/80 shadow-inner">
-                          <div className="w-1.5 h-1.5 rounded-full bg-zinc-900 border border-zinc-700/60" />
-                        </div>
+                      {/* Modern Clean Screenshot Frame (Zero Cropping, 100% Intact Image) */}
+                      <div className="relative h-full w-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-zinc-950 border border-zinc-800/90 group-hover:border-purple-500/80 shadow-md group-hover:shadow-2xl group-hover:shadow-purple-900/25 transition-all duration-300 flex items-center justify-center p-1 sm:p-1.5 group-hover:-translate-y-1">
+                        {/* Ambient backdrop glow */}
+                        <div
+                          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
+                          style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
+                        />
 
-                        {/* OLED Screen Bezel */}
-                        <div className="relative w-full h-full rounded-[26px] overflow-hidden bg-black border border-zinc-900 shadow-inner flex items-center justify-center">
-                          {/* Ambient glow matching screenshot */}
-                          <div
-                            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 scale-125 pointer-events-none group-hover:opacity-40 transition-opacity duration-500"
-                            style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
-                          />
+                        {/* Full Screenshot Image (Never Cropped or Cut Off) */}
+                        <img
+                          src={preview.imageUrl || preview.url}
+                          alt={displayTitle}
+                          loading={idx < 3 ? 'eager' : 'lazy'}
+                          decoding="async"
+                          className="relative z-10 h-full w-auto max-w-[80vw] sm:max-w-none object-contain rounded-xl sm:rounded-2xl select-none group-hover:scale-[1.015] transition-transform duration-300 pointer-events-none drop-shadow-md"
+                          draggable={false}
+                        />
 
-                          {/* Screenshot Image */}
-                          <img
-                            src={preview.imageUrl || preview.url}
-                            alt={displayTitle}
-                            loading={idx < 4 ? 'eager' : 'lazy'}
-                            decoding="async"
-                            className="relative z-10 w-full h-full object-cover object-top select-none group-hover:scale-[1.03] transition-transform duration-500 pointer-events-none"
-                            draggable={false}
-                          />
-
-                          {/* Hover Zoom Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex flex-col items-center justify-center gap-2 p-4 text-center pointer-events-none">
-                            <div className="p-3 rounded-2xl bg-purple-600/95 text-white shadow-xl backdrop-blur-md transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                              <Maximize2 className="w-5 h-5" />
-                            </div>
-                            <span className="text-xs font-bold text-white bg-black/75 px-3 py-1 rounded-full border border-purple-500/40 backdrop-blur-md">
-                              Expand Fullscreen
+                        {/* Hover & Tap Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex flex-col justify-between p-2.5 sm:p-3 pointer-events-none rounded-xl sm:rounded-2xl">
+                          <div className="flex justify-end">
+                            <span className="p-1.5 sm:p-2 rounded-xl bg-purple-600/90 text-white shadow-lg backdrop-blur-md">
+                              <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </span>
                           </div>
-
-                          {/* Index Badge */}
-                          <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md border border-white/10 text-[10px] font-black text-purple-300 z-20">
-                            #{idx + 1}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-bold text-white bg-black/75 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 truncate max-w-[80%]">
+                              {displayTitle}
+                            </span>
+                            <span className="text-[10px] font-black text-purple-300 bg-purple-950/90 px-1.5 py-0.5 rounded-md border border-purple-800/50 shrink-0">
+                              #{idx + 1}
+                            </span>
                           </div>
                         </div>
-                      </div>
-
-                      {/* Caption / Title */}
-                      <div className="mt-3 text-center w-full px-2">
-                        <span className="text-xs sm:text-sm font-bold text-zinc-300 block truncate group-hover:text-purple-400 transition-colors">
-                          {displayTitle}
-                        </span>
-                        {preview.subtitle && (
-                          <span className="text-[11px] text-zinc-500 block truncate mt-0.5">
-                            {preview.subtitle}
-                          </span>
-                        )}
                       </div>
                     </div>
                   );
@@ -638,7 +650,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
               {/* Ambient bottom glow decoration */}
               <div
                 aria-hidden
-                className="pointer-events-none absolute -bottom-16 left-1/2 -translate-x-1/2 w-2/3 h-28 rounded-full opacity-15 blur-3xl"
+                className="pointer-events-none absolute -bottom-16 left-1/2 -translate-x-1/2 w-2/3 h-24 rounded-full opacity-15 blur-3xl"
                 style={{ background: 'radial-gradient(ellipse, #a855f7 0%, #06b6d4 100%)' }}
               />
             </div>
@@ -887,7 +899,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                               alt={appData.name}
                               title={preview.title}
                               hasCustomTitle={hasCustomTitle}
-                              aspectClass="h-[440px] sm:h-[480px]"
+                              aspectClass="h-[300px] xs:h-[360px] sm:h-[440px] md:h-[480px]"
                               priority={idx < 3}
                             />
 
@@ -1183,6 +1195,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
             <div
               className="relative flex-1 w-full flex items-center justify-center p-2 min-h-0"
               onClick={(e) => e.stopPropagation()}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
               {/* Navigation Left */}
               {validPreviews.length > 1 && (
@@ -1204,7 +1219,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 <img
                   src={validPreviews[lightboxIndex].imageUrl || validPreviews[lightboxIndex].url}
                   alt={validPreviews[lightboxIndex].title || appData.name}
-                  className="max-h-[76vh] w-auto max-w-[85vw] object-contain rounded-2xl sm:rounded-3xl"
+                  className="max-h-[76vh] w-auto max-w-[92vw] sm:max-w-[85vw] object-contain rounded-2xl sm:rounded-3xl"
                 />
               </div>
 
