@@ -12,7 +12,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
-import { AppDevice3DStudio, Screenshot3DGallery } from '@/components/three';
+import { AppDevice3DStudio } from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -127,11 +127,77 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxIndex, validPreviews.length]);
 
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // Mouse drag-to-scroll support for desktop
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+  const hasDraggedRef = useRef(false);
+
+  const checkScrollBounds = useCallback(() => {
+    const el = previewsContainerRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    const el = previewsContainerRef.current;
+    if (!el) return;
+    checkScrollBounds();
+    el.addEventListener('scroll', checkScrollBounds, { passive: true });
+    window.addEventListener('resize', checkScrollBounds);
+    return () => {
+      el.removeEventListener('scroll', checkScrollBounds);
+      window.removeEventListener('resize', checkScrollBounds);
+    };
+  }, [checkScrollBounds, validPreviews.length]);
+
   const scrollPreviews = (direction: 'left' | 'right') => {
     if (previewsContainerRef.current) {
       const scrollAmount = direction === 'left' ? -380 : 380;
       previewsContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const el = previewsContainerRef.current;
+    if (!el) return;
+    isDraggingRef.current = true;
+    hasDraggedRef.current = false;
+    startXRef.current = e.pageX - el.offsetLeft;
+    scrollLeftRef.current = el.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current) return;
+    const el = previewsContainerRef.current;
+    if (!el) return;
+    e.preventDefault();
+    const x = e.pageX - el.offsetLeft;
+    const walk = (x - startXRef.current) * 1.5;
+    if (Math.abs(walk) > 5) {
+      hasDraggedRef.current = true;
+    }
+    el.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    isDraggingRef.current = false;
+  };
+
+  const handleScreenshotClick = (idx: number) => {
+    if (hasDraggedRef.current) return;
+    setLightboxIndex(idx);
+    trackEvent({
+      eventType: 'screenshot_view',
+      appSlug: appData.slug,
+      appName: appData.name,
+      details: `Explored Visuals: ${validPreviews[idx]?.title ?? `Preview ${idx + 1}`} (${appData.name})`,
+    });
   };
 
   // Fetch the latest fresh app details directly from the API on mount or slug change
@@ -420,47 +486,159 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           </div>
         </section>
 
-        {/* App Screenshots / Visual Showcase — Cinematic 3D Gallery */}
+        {/* App Screenshots / Visual Showcase Carousel */}
         {validPreviews.length > 0 && (
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-xl overflow-hidden relative">
-              {/* Section header */}
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 rounded-xl bg-purple-950/60 text-purple-400 border border-purple-800/40">
-                  <ImageIcon className="w-5 h-5" />
+            <div className="bg-zinc-950/85 border border-zinc-800 rounded-3xl p-5 sm:p-7 shadow-xl overflow-hidden relative backdrop-blur-sm">
+              {/* Section Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-zinc-800/80">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-purple-950/60 text-purple-400 border border-purple-800/50 shadow-inner">
+                    <ImageIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-black text-zinc-100 flex items-center gap-2">
+                      App Screenshots &amp; Visuals
+                      <span className="px-2.5 py-0.5 rounded-full bg-purple-950/80 border border-purple-800/60 text-[10px] font-bold text-purple-300">
+                        {validPreviews.length} {validPreviews.length === 1 ? 'Capture' : 'Captures'}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Click any screenshot to view in full resolution &bull; Drag or use arrows to scroll
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-black text-zinc-100 flex items-center gap-2">
-                    App Screenshots &amp; Visuals
-                    <span className="px-2 py-0.5 rounded-full bg-purple-950 border border-purple-700/60 text-[10px] font-black text-purple-300 tracking-widest uppercase">
-                      3D
-                    </span>
-                  </h3>
-                  <p className="text-xs text-zinc-400">
-                    {validPreviews.length} high-resolution captures &bull; Interactive 3D Flagship Stage &bull; Gyroscope tilt &bull; 3D Visual Flow
-                  </p>
+
+                {/* Navigation Controls */}
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('screenshots')}
+                    className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-purple-300 text-xs font-bold border border-zinc-800 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    title="View all screenshots in grid layout"
+                  >
+                    <Layers className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Grid View</span>
+                  </button>
+
+                  <div className="h-6 w-[1px] bg-zinc-800 mx-1 hidden sm:block" />
+
+                  <button
+                    type="button"
+                    onClick={() => scrollPreviews('left')}
+                    disabled={!canScrollLeft}
+                    className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                      canScrollLeft
+                        ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
+                        : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
+                    }`}
+                    aria-label="Previous screenshots"
+                    title="Scroll left"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollPreviews('right')}
+                    disabled={!canScrollRight}
+                    className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                      canScrollRight
+                        ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
+                        : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
+                    }`}
+                    aria-label="Next screenshots"
+                    title="Scroll right"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              {/* 3D Gallery */}
-              <Screenshot3DGallery
-                screenshots={validPreviews}
-                appName={appData.name}
-                onScreenshotClick={(idx) => {
-                  setLightboxIndex(idx);
-                  trackEvent({
-                    eventType: 'screenshot_view',
-                    appSlug: appData.slug,
-                    appName: appData.name,
-                    details: `Explored Visuals: ${validPreviews[idx]?.title ?? `Preview ${idx + 1}`} (${appData.name})`,
-                  });
-                }}
-              />
+              {/* Horizontal Scroll Carousel */}
+              <div
+                ref={previewsContainerRef}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUpOrLeave}
+                onMouseLeave={handleMouseUpOrLeave}
+                className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scroll-smooth hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
+              >
+                {validPreviews.map((preview, idx) => {
+                  const hasCustomTitle = Boolean(
+                    preview.title &&
+                      !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
+                      !/^preview\s*\d*$/i.test(preview.title.trim())
+                  );
+                  const displayTitle = hasCustomTitle ? preview.title : `Screenshot ${idx + 1}`;
 
-              {/* Ambient glow decoration */}
+                  return (
+                    <div
+                      key={preview.id || idx}
+                      onClick={() => handleScreenshotClick(idx)}
+                      className="shrink-0 w-60 sm:w-68 md:w-72 group cursor-pointer snap-start flex flex-col items-center select-none"
+                    >
+                      {/* Flagship Device Chassis (Upright, Crisp 2D Bezel) */}
+                      <div className="relative w-full aspect-[9/19] rounded-[34px] p-2.5 bg-gradient-to-b from-zinc-700/90 via-zinc-900 to-zinc-950 border-2 border-zinc-700/70 shadow-[0_16px_36px_rgba(0,0,0,0.7)] group-hover:shadow-[0_22px_50px_rgba(168,85,247,0.28)] group-hover:border-purple-500/80 group-hover:-translate-y-2 transition-all duration-300">
+                        {/* Dynamic Camera Notch / Pill */}
+                        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-14 h-3 bg-black rounded-full z-20 flex items-center justify-end px-1.5 border border-zinc-800/80 shadow-inner">
+                          <div className="w-1.5 h-1.5 rounded-full bg-zinc-900 border border-zinc-700/60" />
+                        </div>
+
+                        {/* OLED Screen Bezel */}
+                        <div className="relative w-full h-full rounded-[26px] overflow-hidden bg-black border border-zinc-900 shadow-inner flex items-center justify-center">
+                          {/* Ambient glow matching screenshot */}
+                          <div
+                            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 scale-125 pointer-events-none group-hover:opacity-40 transition-opacity duration-500"
+                            style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
+                          />
+
+                          {/* Screenshot Image */}
+                          <img
+                            src={preview.imageUrl || preview.url}
+                            alt={displayTitle}
+                            loading={idx < 4 ? 'eager' : 'lazy'}
+                            decoding="async"
+                            className="relative z-10 w-full h-full object-cover object-top select-none group-hover:scale-[1.03] transition-transform duration-500 pointer-events-none"
+                            draggable={false}
+                          />
+
+                          {/* Hover Zoom Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex flex-col items-center justify-center gap-2 p-4 text-center pointer-events-none">
+                            <div className="p-3 rounded-2xl bg-purple-600/95 text-white shadow-xl backdrop-blur-md transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                              <Maximize2 className="w-5 h-5" />
+                            </div>
+                            <span className="text-xs font-bold text-white bg-black/75 px-3 py-1 rounded-full border border-purple-500/40 backdrop-blur-md">
+                              Expand Fullscreen
+                            </span>
+                          </div>
+
+                          {/* Index Badge */}
+                          <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md border border-white/10 text-[10px] font-black text-purple-300 z-20">
+                            #{idx + 1}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Caption / Title */}
+                      <div className="mt-3 text-center w-full px-2">
+                        <span className="text-xs sm:text-sm font-bold text-zinc-300 block truncate group-hover:text-purple-400 transition-colors">
+                          {displayTitle}
+                        </span>
+                        {preview.subtitle && (
+                          <span className="text-[11px] text-zinc-500 block truncate mt-0.5">
+                            {preview.subtitle}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Ambient bottom glow decoration */}
               <div
                 aria-hidden
-                className="pointer-events-none absolute -bottom-16 left-1/2 -translate-x-1/2 w-3/4 h-32 rounded-full opacity-20 blur-3xl"
+                className="pointer-events-none absolute -bottom-16 left-1/2 -translate-x-1/2 w-2/3 h-28 rounded-full opacity-15 blur-3xl"
                 style={{ background: 'radial-gradient(ellipse, #a855f7 0%, #06b6d4 100%)' }}
               />
             </div>
