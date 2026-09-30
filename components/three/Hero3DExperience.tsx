@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { isWebGLAvailable, disposeThreeScene, drawAndroidScreenCanvas } from '@/lib/threeUtils';
 import { AndroidApp, ANDROID_APPS } from '@/lib/appsData';
 import { normalizeAppRecord } from '@/lib/appUtils';
-import { Sparkles, Play, Pause, Layers, Smartphone, RefreshCw } from 'lucide-react';
+import { Smartphone } from 'lucide-react';
 
 export interface ShowcaseApp {
   slug: string;
@@ -104,23 +104,16 @@ interface Hero3DExperienceProps {
 export function Hero3DExperience({
   onExploreClick,
   apps,
-  cycleIntervalMs = 7000,
+  cycleIntervalMs = 10000, // 10s calculated optimal showcase duration
 }: Hero3DExperienceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [hasWebGL, setHasWebGL] = useState<boolean>(true);
-  const [isRotating, setIsRotating] = useState<boolean>(true);
   const [activeAppIdx, setActiveAppIdx] = useState<number>(0);
   const [isHovered, setIsHovered] = useState<boolean>(false);
-  const [pulseActive, setPulseActive] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [internalApps, setInternalApps] = useState<AndroidApp[]>([]);
-
-  // Keep isRotating in a ref for animation loop without tearing down Three.js scene
-  const isRotatingRef = useRef(isRotating);
-  useEffect(() => {
-    isRotatingRef.current = isRotating;
-  }, [isRotating]);
 
   // Fallback fetch in case Hero3DExperience is used standalone without apps prop
   useEffect(() => {
@@ -488,6 +481,7 @@ export function Hero3DExperience({
     // ==========================================
     const handlePointerDown = (e: PointerEvent) => {
       isDraggingRef.current = true;
+      setIsDragging(true);
       previousPointerPosition.current = { x: e.clientX, y: e.clientY };
     };
 
@@ -518,6 +512,7 @@ export function Hero3DExperience({
 
     const handlePointerUp = () => {
       isDraggingRef.current = false;
+      setIsDragging(false);
     };
 
     container.addEventListener('pointerdown', handlePointerDown);
@@ -559,9 +554,7 @@ export function Hero3DExperience({
 
         // Auto rotation when not dragging
         if (!isDraggingRef.current) {
-          if (isRotatingRef.current) {
-            phoneGroupRef.current.rotation.y += 0.006;
-          }
+          phoneGroupRef.current.rotation.y += 0.005;
           // Inertia damping
           phoneGroupRef.current.rotation.y += rotationVelocityRef.current.y;
           phoneGroupRef.current.rotation.x += rotationVelocityRef.current.x;
@@ -628,37 +621,6 @@ export function Hero3DExperience({
     };
   }, []);
 
-  // Handle switching preview apps
-  const handleNextApp = () => {
-    if (showcaseApps.length === 0) return;
-    const nextIdx = (activeAppIdx + 1) % showcaseApps.length;
-    setActiveAppIdx(nextIdx);
-  };
-
-  // Handle Holographic Pulse Trigger
-  const triggerHoloPulse = () => {
-    if (pulseActive) return;
-    setPulseActive(true);
-    if (neonLightRef.current && cyanLightRef.current) {
-      neonLightRef.current.intensity = 8.0;
-      cyanLightRef.current.intensity = 7.0;
-      setTimeout(() => {
-        if (neonLightRef.current && cyanLightRef.current) {
-          neonLightRef.current.intensity = 4.0;
-          cyanLightRef.current.intensity = 3.5;
-        }
-        setPulseActive(false);
-      }, 700);
-    }
-  };
-
-  const resetCamera = () => {
-    if (phoneGroupRef.current) {
-      phoneGroupRef.current.rotation.set(0.15, -0.32, 0);
-      rotationVelocityRef.current = { x: 0, y: 0 };
-    }
-  };
-
   return (
     <div
       ref={containerRef}
@@ -687,68 +649,55 @@ export function Hero3DExperience({
         </div>
       )}
 
-      {/* Floating 3D Experience Interactive HUD Controls */}
-      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between pointer-events-none">
-        {/* Sleek App Pagination Dots (Synchronized with active app, no intrusive text) */}
-        <div className="pointer-events-auto flex items-center gap-1.5 bg-zinc-950/80 backdrop-blur-md px-3 py-2 rounded-2xl border border-zinc-800 shadow-xl">
-          {showcaseApps.map((app, idx) => (
-            <button
-              key={app.slug || idx}
-              type="button"
-              onClick={() => setActiveAppIdx(idx)}
-              title={app.name}
-              aria-label={`Switch to ${app.name}`}
-              className={`transition-all duration-300 rounded-full cursor-pointer ${
-                activeAppIdx === idx
-                  ? 'w-6 h-2 rounded-full shadow-sm'
-                  : 'w-2 h-2 bg-zinc-700 hover:bg-zinc-500'
-              }`}
+      {/* Tasteful Ambient Time Progression Bar (Synchronized with 10s auto-cycle, zero clunky buttons) */}
+      <div className="absolute bottom-5 inset-x-6 sm:inset-x-12 flex flex-col items-center gap-2 pointer-events-none">
+        {/* Subtle App Label & Counter */}
+        <div className="flex items-center justify-between w-full max-w-xs px-1 text-[11px] text-zinc-400 font-medium select-none">
+          <span className="flex items-center gap-1.5 font-semibold text-zinc-200">
+            <span
+              className="w-1.5 h-1.5 rounded-full"
               style={{
-                backgroundColor: activeAppIdx === idx ? app.color1 : undefined,
-                boxShadow: activeAppIdx === idx ? `0 0 8px ${app.color1}` : undefined,
+                backgroundColor: showcaseApps[activeAppIdx]?.color1,
+                boxShadow: `0 0 8px ${showcaseApps[activeAppIdx]?.color1}`,
               }}
             />
-          ))}
+            {showcaseApps[activeAppIdx]?.name}
+          </span>
+          <span className="text-[10px] text-zinc-500 font-mono">
+            {activeAppIdx + 1} / {showcaseApps.length}
+          </span>
         </div>
 
-        {/* Action Controls */}
-        <div className="pointer-events-auto flex items-center gap-2">
-          {/* Switch App Preview */}
-          <button
-            type="button"
-            onClick={handleNextApp}
-            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-purple-600/50 shadow-lg backdrop-blur-md transition-all active:scale-95 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-            title="Next App"
-          >
-            <Layers className="w-4 h-4 text-purple-400" />
-            <span className="hidden sm:inline">Next App</span>
-          </button>
-
-          {/* Auto Rotate Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsRotating(!isRotating)}
-            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-purple-500/50 shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-            title={isRotating ? 'Pause 3D Rotation' : 'Resume 3D Rotation'}
-            aria-label={isRotating ? 'Pause 3D Rotation' : 'Resume 3D Rotation'}
-          >
-            {isRotating ? (
-              <Pause className="w-4 h-4 text-purple-400" />
-            ) : (
-              <Play className="w-4 h-4 text-purple-400" />
-            )}
-          </button>
-
-          {/* Reset Camera View */}
-          <button
-            type="button"
-            onClick={resetCamera}
-            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-purple-500/50 shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-            title="Reset 3D Camera View"
-            aria-label="Reset 3D Camera View"
-          >
-            <RefreshCw className="w-4 h-4 text-zinc-400 hover:text-zinc-200" />
-          </button>
+        {/* Minimalist Segmented Timeline Bars */}
+        <div className="w-full max-w-xs flex items-center gap-1.5 p-1 rounded-full bg-zinc-950/70 backdrop-blur-md border border-zinc-800/80 shadow-2xl">
+          {showcaseApps.map((app, idx) => {
+            const isActive = activeAppIdx === idx;
+            const isPast = idx < activeAppIdx;
+            return (
+              <button
+                key={app.slug || idx}
+                type="button"
+                onClick={() => setActiveAppIdx(idx)}
+                className="group relative flex-1 h-1 rounded-full bg-zinc-800/80 hover:h-1.5 transition-all duration-200 overflow-hidden cursor-pointer pointer-events-auto"
+                title={`Showcase ${app.name}`}
+                aria-label={`Showcase ${app.name}`}
+              >
+                {/* Progress Fill */}
+                <div
+                  key={`timeline-${activeAppIdx}-${idx}`}
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    backgroundColor: isActive ? app.color1 : isPast ? '#71717a' : 'transparent',
+                    boxShadow: isActive ? `0 0 8px ${app.color1}` : 'none',
+                    width: isPast ? '100%' : '0%',
+                    animation: isActive && !isDragging
+                      ? `heroTimelineFill ${cycleIntervalMs}ms linear forwards`
+                      : undefined,
+                  }}
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

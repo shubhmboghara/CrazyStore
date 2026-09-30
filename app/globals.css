@@ -29,3 +29,12 @@ body {
   color: #f4f4f5;
 }
 
+@keyframes heroTimelineFill {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+

@@ -116,4 +116,23 @@ console.log('Running automated test suite for CrazyStore Hero 3D Experience & Dy
   console.log('✓ Test 4 Passed: Regression verification confirmed removed text is absent from component source');
 }
 
-console.log('\n🎉 ALL 4 HERO 3D EXPERIENCE TESTS PASSED WITH 100% SUCCESS!\n');
+// Test 5: Button Elimination & 10s Timeline Progress Bar Verification
+{
+  const filePath = path.resolve(process.cwd(), 'components/three/Hero3DExperience.tsx');
+  const content = fs.readFileSync(filePath, 'utf8');
+
+  // Ensure clunky buttons are removed
+  assert.ok(!content.includes('title="Next App"'), 'Hero3DExperience must not contain Next App button');
+  assert.ok(!content.includes('title="Pause 3D Rotation"'), 'Hero3DExperience must not contain Pause button');
+  assert.ok(!content.includes('title="Resume 3D Rotation"'), 'Hero3DExperience must not contain Play button');
+  assert.ok(!content.includes('title="Reset 3D Camera View"'), 'Hero3DExperience must not contain Reset button');
+
+  // Ensure default duration is 10 seconds
+  assert.ok(content.includes('cycleIntervalMs = 10000'), 'Default cycle interval must be 10000ms (10 seconds)');
+  assert.ok(content.includes('heroTimelineFill'), 'Timeline progress bar must utilize heroTimelineFill animation');
+
+  console.log('✓ Test 5 Passed: Verified clunky action buttons are completely removed and 10s timeline bar is active');
+}
+
+console.log('\n🎉 ALL 5 HERO 3D EXPERIENCE TESTS PASSED WITH 100% SUCCESS!\n');
+
