@@ -111,8 +111,6 @@ export function Hero3DExperience({
 
   const [hasWebGL, setHasWebGL] = useState<boolean>(true);
   const [activeAppIdx, setActiveAppIdx] = useState<number>(0);
-  const [isHovered, setIsHovered] = useState<boolean>(false);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [internalApps, setInternalApps] = useState<AndroidApp[]>([]);
 
   // Fallback fetch in case Hero3DExperience is used standalone without apps prop
@@ -481,7 +479,6 @@ export function Hero3DExperience({
     // ==========================================
     const handlePointerDown = (e: PointerEvent) => {
       isDraggingRef.current = true;
-      setIsDragging(true);
       previousPointerPosition.current = { x: e.clientX, y: e.clientY };
     };
 
@@ -512,7 +509,6 @@ export function Hero3DExperience({
 
     const handlePointerUp = () => {
       isDraggingRef.current = false;
-      setIsDragging(false);
     };
 
     container.addEventListener('pointerdown', handlePointerDown);
@@ -624,8 +620,6 @@ export function Hero3DExperience({
   return (
     <div
       ref={containerRef}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       className="relative w-full h-[520px] sm:h-[600px] flex items-center justify-center select-none overflow-hidden rounded-3xl"
       style={{ touchAction: 'none' }}
     >
@@ -648,58 +642,6 @@ export function Hero3DExperience({
           </p>
         </div>
       )}
-
-      {/* Tasteful Ambient Time Progression Bar (Synchronized with 10s auto-cycle, zero clunky buttons) */}
-      <div className="absolute bottom-5 inset-x-6 sm:inset-x-12 flex flex-col items-center gap-2 pointer-events-none">
-        {/* Subtle App Label & Counter */}
-        <div className="flex items-center justify-between w-full max-w-xs px-1 text-[11px] text-zinc-400 font-medium select-none">
-          <span className="flex items-center gap-1.5 font-semibold text-zinc-200">
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{
-                backgroundColor: showcaseApps[activeAppIdx]?.color1,
-                boxShadow: `0 0 8px ${showcaseApps[activeAppIdx]?.color1}`,
-              }}
-            />
-            {showcaseApps[activeAppIdx]?.name}
-          </span>
-          <span className="text-[10px] text-zinc-500 font-mono">
-            {activeAppIdx + 1} / {showcaseApps.length}
-          </span>
-        </div>
-
-        {/* Minimalist Segmented Timeline Bars */}
-        <div className="w-full max-w-xs flex items-center gap-1.5 p-1 rounded-full bg-zinc-950/70 backdrop-blur-md border border-zinc-800/80 shadow-2xl">
-          {showcaseApps.map((app, idx) => {
-            const isActive = activeAppIdx === idx;
-            const isPast = idx < activeAppIdx;
-            return (
-              <button
-                key={app.slug || idx}
-                type="button"
-                onClick={() => setActiveAppIdx(idx)}
-                className="group relative flex-1 h-1 rounded-full bg-zinc-800/80 hover:h-1.5 transition-all duration-200 overflow-hidden cursor-pointer pointer-events-auto"
-                title={`Showcase ${app.name}`}
-                aria-label={`Showcase ${app.name}`}
-              >
-                {/* Progress Fill */}
-                <div
-                  key={`timeline-${activeAppIdx}-${idx}`}
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    backgroundColor: isActive ? app.color1 : isPast ? '#71717a' : 'transparent',
-                    boxShadow: isActive ? `0 0 8px ${app.color1}` : 'none',
-                    width: isPast ? '100%' : '0%',
-                    animation: isActive && !isDragging
-                      ? `heroTimelineFill ${cycleIntervalMs}ms linear forwards`
-                      : undefined,
-                  }}
-                />
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

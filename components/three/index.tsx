@@ -61,3 +61,10 @@ export const FloatingAndroid3D = dynamic(
   }
 );
 
+export const Screenshots3DBackdrop = dynamic(
+  () => import('./Screenshots3DBackdrop').then((mod) => mod.Screenshots3DBackdrop),
+  {
+    ssr: false,
+  }
+);
+

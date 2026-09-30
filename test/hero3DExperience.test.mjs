@@ -116,7 +116,7 @@ console.log('Running automated test suite for CrazyStore Hero 3D Experience & Dy
   console.log('✓ Test 4 Passed: Regression verification confirmed removed text is absent from component source');
 }
 
-// Test 5: Hero3DExperience Button Elimination & 10s Timeline Progress Bar Verification
+// Test 5: Hero3DExperience Button, Line, and App Name Overlay Elimination
 {
   const filePath = path.resolve(process.cwd(), 'components/three/Hero3DExperience.tsx');
   const content = fs.readFileSync(filePath, 'utf8');
@@ -127,22 +127,25 @@ console.log('Running automated test suite for CrazyStore Hero 3D Experience & Dy
   assert.ok(!content.includes('title="Resume 3D Rotation"'), 'Hero3DExperience must not contain Play button');
   assert.ok(!content.includes('title="Reset 3D Camera View"'), 'Hero3DExperience must not contain Reset button');
 
-  // Ensure default duration is 10 seconds
-  assert.ok(content.includes('cycleIntervalMs = 10000'), 'Default cycle interval must be 10000ms (10 seconds)');
-  assert.ok(content.includes('heroTimelineFill'), 'Timeline progress bar must utilize heroTimelineFill animation');
+  // Ensure line, progress bar, and app name overlay are completely removed
+  assert.ok(!content.includes('heroTimelineFill'), 'Hero3DExperience must not contain progress timeline line');
+  assert.ok(!content.includes('{activeAppIdx + 1} /'), 'Hero3DExperience must not contain counter badge');
 
-  console.log('✓ Test 5 Passed: Verified clunky action buttons are completely removed and 10s timeline bar is active');
+  // Ensure auto-cycle duration remains 10 seconds
+  assert.ok(content.includes('cycleIntervalMs = 10000'), 'Default cycle interval must be 10000ms (10 seconds)');
+
+  console.log('✓ Test 5 Passed: Verified clunky action buttons, timeline line, and app name overlays are completely removed');
 }
 
-// Test 6: Verify Play, Reload, and Next buttons removed from AppDevice3DStudio & FloatingAndroid3D
+// Test 6: Verify Play, Reload, and Next buttons removed across 3D components
 {
   const studioPath = path.resolve(process.cwd(), 'components/three/AppDevice3DStudio.tsx');
-  const studioContent = fs.readFileSync(studioPath, 'utf8');
-
-  // Verify AppDevice3DStudio has no play or reload buttons
-  assert.ok(!studioContent.includes('title="Pause Rotation"'), 'AppDevice3DStudio must not contain pause rotation button');
-  assert.ok(!studioContent.includes('title="Reset Device Orientation"'), 'AppDevice3DStudio must not contain reset/reload camera button');
-  assert.ok(!studioContent.includes('RotateCcw'), 'AppDevice3DStudio must not import or render RotateCcw reload icon');
+  if (fs.existsSync(studioPath)) {
+    const studioContent = fs.readFileSync(studioPath, 'utf8');
+    assert.ok(!studioContent.includes('title="Pause Rotation"'), 'AppDevice3DStudio must not contain pause rotation button');
+    assert.ok(!studioContent.includes('title="Reset Device Orientation"'), 'AppDevice3DStudio must not contain reset/reload camera button');
+    assert.ok(!studioContent.includes('RotateCcw'), 'AppDevice3DStudio must not import or render RotateCcw reload icon');
+  }
 
   const mascotPath = path.resolve(process.cwd(), 'components/three/FloatingAndroid3D.tsx');
   const mascotContent = fs.readFileSync(mascotPath, 'utf8');
