@@ -10,6 +10,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
+import { Hero3DExperience, Card3DTilt, FloatingAndroid3D } from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -214,34 +215,70 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
       <Navbar />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative py-16 sm:py-24 overflow-hidden">
-          {/* Background Ambient Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
+        {/* 3D WebGL Hero Section */}
+        <section className="relative py-12 sm:py-20 overflow-hidden">
+          {/* Background Ambient Glows */}
+          <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="absolute top-1/2 right-10 w-[450px] h-[450px] bg-indigo-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/60 border border-purple-800/50 text-purple-300 text-xs font-bold mb-6 animate-in fade-in slide-in-from-bottom-2">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              100% Free & Open Source
-            </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              {/* Left Column: Headline, Highlights & Actions */}
+              <div className="lg:col-span-6 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/70 border border-purple-800/50 text-purple-300 text-xs font-bold mb-6 animate-in fade-in slide-in-from-bottom-2">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                  <span>3D Interactive Showcase • 100% Free & Open Source</span>
+                </div>
 
-            <h1 className="text-4xl sm:text-6xl font-black tracking-tight mb-6 leading-tight">
-              Premium Android Apps, <br className="hidden sm:block" />
-              Built with <span className="text-transparent bg-clip-text bg-gradient-to-br from-purple-500 to-indigo-500">Compose</span>
-            </h1>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-[1.1]">
+                  Premium Android Apps, <br />
+                  Built with <span className="text-transparent bg-clip-text bg-gradient-to-br from-purple-400 via-indigo-400 to-fuchsia-400">Compose</span>
+                </h1>
 
-            <p className="max-w-2xl mx-auto text-sm sm:text-base text-zinc-400 mb-8 leading-relaxed font-medium">
-              A curated vault of high-performance, ad-free Android applications crafted natively in Kotlin.
-              Download secure APKs directly and leave verified reviews.
-            </p>
+                <p className="max-w-xl mx-auto lg:mx-0 text-sm sm:text-base text-zinc-400 mb-8 leading-relaxed font-medium">
+                  A curated vault of high-performance, ad-free Android applications crafted natively in Kotlin.
+                  Interact with apps live in 3D WebGL, download verified APKs, and review open-source code.
+                </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="#catalog"
-                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm shadow-xl shadow-purple-900/20 hover:scale-105 transition-all"
-              >
-                Browse Catalog
-              </Link>
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
+                  <Link
+                    href="#catalog"
+                    className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm shadow-xl shadow-purple-900/20 hover:scale-105 active:scale-95 transition-all text-center"
+                  >
+                    Browse Catalog
+                  </Link>
+
+                  <Link
+                    href={`/apps/${apps[0]?.slug || 'videohub'}`}
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-purple-950/60 hover:bg-purple-900/60 text-purple-200 font-bold text-sm border border-purple-800/60 shadow-lg hover:border-purple-600 transition-all text-center flex items-center justify-center gap-2"
+                  >
+                    <span>📱 3D Device Studio</span>
+                  </Link>
+                </div>
+
+                {/* Micro Highlights */}
+                <div className="grid grid-cols-3 gap-3 pt-6 border-t border-zinc-800/80 max-w-md mx-auto lg:mx-0 text-left">
+                  <div>
+                    <span className="block text-lg font-black text-zinc-100">0%</span>
+                    <span className="text-[11px] text-zinc-400 font-medium">Zero Telemetry</span>
+                  </div>
+                  <div>
+                    <span className="block text-lg font-black text-purple-400">120Hz</span>
+                    <span className="text-[11px] text-zinc-400 font-medium">Compose Native</span>
+                  </div>
+                  <div>
+                    <span className="block text-lg font-black text-indigo-400">3D</span>
+                    <span className="text-[11px] text-zinc-400 font-medium">WebGL Live View</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Interactive 3D WebGL Phone Experience */}
+              <div className="lg:col-span-6 relative flex items-center justify-center">
+                <div className="w-full max-w-[560px] relative">
+                  <Hero3DExperience />
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -320,89 +357,90 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {filteredApps.map((app, idx) => (
-                <Link
-                  href={`/apps/${app.slug}`}
-                  key={app.slug}
-                  onClick={() => {
-                    trackEvent({
-                      eventType: 'app_view',
-                      appSlug: app.slug,
-                      appName: app.name,
-                      path: `/apps/${app.slug}`,
-                      details: `Explored App Details: ${app.name}`,
-                    });
-                  }}
-                  className="group flex flex-col bg-zinc-900 border border-zinc-800 hover:border-purple-800/60 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:shadow-purple-900/20 transition-all duration-300 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4"
-                  style={{ animationDelay: `${idx * 100}ms` }}
-                >
-                  {/* Decorative background banner / ambient glow */}
-                  {app.bannerUrl ? (
-                    <div className="absolute inset-0 pointer-events-none opacity-15 group-hover:opacity-25 transition-opacity overflow-hidden">
-                      <img src={app.bannerUrl} alt="" className="w-full h-full object-cover blur-sm scale-110" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/80 to-transparent" />
-                    </div>
-                  ) : (
-                    <div className={`absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity`} />
-                  )}
+                <Card3DTilt key={app.slug} className="h-full">
+                  <Link
+                    href={`/apps/${app.slug}`}
+                    onClick={() => {
+                      trackEvent({
+                        eventType: 'app_view',
+                        appSlug: app.slug,
+                        appName: app.name,
+                        path: `/apps/${app.slug}`,
+                        details: `Explored App Details: ${app.name}`,
+                      });
+                    }}
+                    className="group flex flex-col h-full bg-zinc-900 border border-zinc-800 hover:border-purple-800/60 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:shadow-purple-900/20 transition-all duration-300 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4"
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                  >
+                    {/* Decorative background banner / ambient glow */}
+                    {app.bannerUrl ? (
+                      <div className="absolute inset-0 pointer-events-none opacity-15 group-hover:opacity-25 transition-opacity overflow-hidden">
+                        <img src={app.bannerUrl} alt="" className="w-full h-full object-cover blur-sm scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/80 to-transparent" />
+                      </div>
+                    ) : (
+                      <div className={`absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity`} />
+                    )}
 
-                  <div className="flex items-start justify-between mb-6 relative z-10">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} flex items-center justify-center shadow-lg shadow-purple-500/20 transform group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 shrink-0 overflow-hidden`}>
-                      {app.logoUrl ? (
-                        <AppLogoImage
-                          key={app.logoUrl || app.slug}
-                          src={app.logoUrl}
-                          alt={app.name}
-                          fallback={getIconComponent(app.iconSymbol)}
-                        />
-                      ) : (
-                        getIconComponent(app.iconSymbol)
-                      )}
+                    <div className="flex items-start justify-between mb-6 relative z-10">
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} flex items-center justify-center shadow-lg shadow-purple-500/20 transform group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 shrink-0 overflow-hidden`}>
+                        {app.logoUrl ? (
+                          <AppLogoImage
+                            key={app.logoUrl || app.slug}
+                            src={app.logoUrl}
+                            alt={app.name}
+                            fallback={getIconComponent(app.iconSymbol)}
+                          />
+                        ) : (
+                          getIconComponent(app.iconSymbol)
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5">
+                        <div className="flex items-center gap-1.5">
+                          {app.githubUrl && (
+                            <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700/50 text-[10px] font-bold flex items-center gap-1">
+                              <FaGithub className="w-3 h-3" /> GitHub
+                            </span>
+                          )}
+                          <span className="px-2.5 py-1 rounded-lg bg-zinc-800/80 border border-zinc-700/40 text-[10px] font-bold text-zinc-400">
+                            {app.version}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                          {app.screenshots && app.screenshots.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-lg bg-zinc-800/90 text-purple-300 border border-purple-800/40 text-[10px] font-bold flex items-center gap-1">
+                              <ImageIcon className="w-3 h-3 text-purple-400" /> {app.screenshots.length} Screens
+                            </span>
+                          )}
+                          <span className="px-2.5 py-1 rounded-lg bg-purple-950/50 text-purple-300 border border-purple-800/40 text-[10px] font-bold">
+                            {app.badge || 'Kotlin + Compose'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1.5">
+
+                    <div className="flex-1">
+                      <h3 className="text-xl font-black mb-2 text-zinc-100 group-hover:text-purple-400 transition-colors">
+                        {app.name}
+                      </h3>
+                      <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
+                        {app.tagline || app.shortDescription}
+                      </p>
+                    </div>
+
+                    <div className="pt-5 border-t border-zinc-800 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        {app.githubUrl && (
-                          <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700/50 text-[10px] font-bold flex items-center gap-1">
-                            <FaGithub className="w-3 h-3" /> GitHub
-                          </span>
-                        )}
-                        <span className="px-2.5 py-1 rounded-lg bg-zinc-800/80 border border-zinc-700/40 text-[10px] font-bold text-zinc-400">
-                          {app.version}
+                        <StarRating rating={ratingsMap[app.slug]?.avg || 5} />
+                        <span className="text-[10px] font-bold text-zinc-400">
+                          ({ratingsMap[app.slug]?.count || 0})
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                        {app.screenshots && app.screenshots.length > 0 && (
-                          <span className="px-2 py-0.5 rounded-lg bg-zinc-800/90 text-purple-300 border border-purple-800/40 text-[10px] font-bold flex items-center gap-1">
-                            <ImageIcon className="w-3 h-3 text-purple-400" /> {app.screenshots.length} Screens
-                          </span>
-                        )}
-                        <span className="px-2.5 py-1 rounded-lg bg-purple-950/50 text-purple-300 border border-purple-800/40 text-[10px] font-bold">
-                          {app.badge || 'Kotlin + Compose'}
-                        </span>
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-purple-400 group-hover:translate-x-1 transition-transform">
+                        View Details <ChevronRight className="w-3.5 h-3.5" />
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex-1">
-                    <h3 className="text-xl font-black mb-2 text-zinc-100 group-hover:text-purple-400 transition-colors">
-                      {app.name}
-                    </h3>
-                    <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
-                      {app.tagline || app.shortDescription}
-                    </p>
-                  </div>
-
-                  <div className="pt-5 border-t border-zinc-800 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <StarRating rating={ratingsMap[app.slug]?.avg || 5} />
-                      <span className="text-[10px] font-bold text-zinc-400">
-                        ({ratingsMap[app.slug]?.count || 0})
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-purple-400 group-hover:translate-x-1 transition-transform">
-                      View Details <ChevronRight className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                </Link>
+                  </Link>
+                </Card3DTilt>
               ))}
             </div>
           )}
@@ -471,6 +509,9 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
         <section className="py-16 sm:py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <GeoKnowledgeBase />
         </section>
+
+        {/* Interactive 3D Android Companion */}
+        <FloatingAndroid3D />
       </main>
 
       <Footer />

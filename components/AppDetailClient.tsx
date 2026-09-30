@@ -12,6 +12,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
+import { AppDevice3DStudio, FloatingAndroid3D } from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -82,7 +83,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [averageRating, setAverageRating] = useState<number>(initialApp.initialRating || 5.0);
   const [totalCount, setTotalCount] = useState<number>(initialApp.initialReviewCount || 0);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'screenshots' | 'reviews' | 'tech'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'screenshots' | 'reviews' | 'tech' | '3d-studio'>('overview');
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const previewsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -381,6 +382,21 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 >
                   <Download className="w-5 h-5" /> Download APK
                 </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('3d-studio');
+                    trackEvent({
+                      eventType: '3d_studio_open',
+                      appSlug: appData.slug,
+                      appName: appData.name,
+                      details: `Opened 3D Studio for ${appData.name}`,
+                    });
+                  }}
+                  className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-purple-950/70 hover:bg-purple-900/80 text-purple-200 font-bold text-sm text-center border border-purple-800/60 shadow-lg hover:border-purple-500 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Smartphone className="w-5 h-5 text-purple-400" /> 3D Studio
+                </button>
                 {appData.githubUrl && (
                   <a
                     href={appData.githubUrl}
@@ -542,6 +558,17 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setActiveTab('3d-studio')}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+                    activeTab === '3d-studio'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
+                      : 'text-purple-300 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/40'
+                  }`}
+                >
+                  <Smartphone className="w-4 h-4 text-purple-400" /> 3D Device Studio
+                </button>
+                <button
+                  type="button"
                   onClick={() => setActiveTab('tech')}
                   className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
                     activeTab === 'tech'
@@ -552,6 +579,13 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   <Code2 className="w-4 h-4" /> Tech Stack & Source
                 </button>
               </div>
+
+              {/* Tab: 3D Interactive Device Studio */}
+              {activeTab === '3d-studio' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <AppDevice3DStudio app={appData} />
+                </div>
+              )}
 
               {/* Tab 1: Overview & About */}
               {activeTab === 'overview' && (
@@ -1137,6 +1171,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
             <Download className="w-4 h-4" /> Download
           </a>
         </div>
+
+        {/* 3D Mascot Companion */}
+        <FloatingAndroid3D />
       </main>
       <Footer />
     </div>

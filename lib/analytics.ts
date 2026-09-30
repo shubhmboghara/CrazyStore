@@ -15,6 +15,7 @@ export type ActivityType =
   | 'theme_toggle'
   | 'early_exit'
   | 'session_ping'
+  | '3d_studio_open'
   | 'task_completed';
 
 export interface TrackPayload {

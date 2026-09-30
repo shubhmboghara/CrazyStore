@@ -60,6 +60,14 @@ export function Navbar() {
           >
             Categories
           </Link>
+
+          <Link
+            href="/apps/videohub"
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-purple-300 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/40 transition-all flex items-center gap-1.5"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+            3D Studio
+          </Link>
         </nav>
 
         {/* Right side controls */}
@@ -107,6 +115,14 @@ export function Navbar() {
             className="block px-4 py-2.5 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900"
           >
             📂 Browse Categories
+          </Link>
+
+          <Link
+            href="/apps/videohub"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-purple-300 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/40"
+          >
+            📱 3D Device Studio
           </Link>
         </div>
       )}
