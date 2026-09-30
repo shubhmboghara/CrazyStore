@@ -6,12 +6,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { isWebGLAvailable, disposeThreeScene, drawAndroidScreenCanvas } from '@/lib/threeUtils';
 import { AndroidApp } from '@/lib/appsData';
 import {
-  RotateCcw,
   Sparkles,
   Maximize2,
   Minimize2,
-  Play,
-  Pause,
   ImageIcon,
   Smartphone,
   ChevronLeft,
@@ -373,12 +370,6 @@ export function AppDevice3DStudio({ app, onClose }: AppDevice3DStudioProps) {
     updateDeviceScreen(url);
   };
 
-  const handleResetCamera = () => {
-    if (controlsRef.current) {
-      controlsRef.current.reset();
-    }
-  };
-
   return (
     <div
       className={`relative w-full rounded-3xl bg-zinc-950 border border-zinc-800 overflow-hidden flex flex-col shadow-2xl transition-all duration-300 ${
@@ -477,29 +468,6 @@ export function AppDevice3DStudio({ app, onClose }: AppDevice3DStudioProps) {
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Left-drag to Orbit • Scroll to Zoom • Right-drag to Pan</span>
           </div>
-        </div>
-
-        {/* Bottom Floating Actions */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-2">
-          <button
-            onClick={() => setIsAutoRotating(!isAutoRotating)}
-            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 backdrop-blur-md shadow-lg transition-all active:scale-95"
-            title={isAutoRotating ? 'Pause Rotation' : 'Auto Rotate 360°'}
-          >
-            {isAutoRotating ? (
-              <Pause className="w-4 h-4 text-purple-400" />
-            ) : (
-              <Play className="w-4 h-4 text-purple-400" />
-            )}
-          </button>
-
-          <button
-            onClick={handleResetCamera}
-            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 backdrop-blur-md shadow-lg transition-all active:scale-95"
-            title="Reset Device Orientation"
-          >
-            <RotateCcw className="w-4 h-4 text-zinc-400 hover:text-zinc-200" />
-          </button>
         </div>
       </div>
 

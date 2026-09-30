@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { isWebGLAvailable, disposeThreeScene } from '@/lib/threeUtils';
-import { X, Sparkles, MessageCircle, Heart, ChevronDown } from 'lucide-react';
+import { X, Sparkles, MessageCircle, ChevronDown } from 'lucide-react';
 
 const MASCOT_MESSAGES = [
   '🤖 100% Open-Source & Verified!',
@@ -20,7 +20,6 @@ export function FloatingAndroid3D() {
   const [hasWebGL, setHasWebGL] = useState(true);
   const [isOpen, setIsOpen] = useState(true);
   const [messageIdx, setMessageIdx] = useState(0);
-  const [heartCount, setHeartCount] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
   // Three.js refs
@@ -234,8 +233,16 @@ export function FloatingAndroid3D() {
 
   const handleNextMessage = () => {
     setMessageIdx((prev) => (prev + 1) % MASCOT_MESSAGES.length);
-    setHeartCount((c) => c + 1);
   };
+
+  // Auto advance mascot tips every 10s seamlessly
+  useEffect(() => {
+    if (!isOpen) return;
+    const interval = setInterval(() => {
+      setMessageIdx((prev) => (prev + 1) % MASCOT_MESSAGES.length);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
 
   return (
     <aside
@@ -260,12 +267,6 @@ export function FloatingAndroid3D() {
         <p className="text-[11px] font-semibold text-zinc-200 leading-snug">
           {MASCOT_MESSAGES[messageIdx]}
         </p>
-        <button
-          onClick={handleNextMessage}
-          className="mt-1 self-start px-2 py-0.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-800/50 text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95"
-        >
-          <Heart className="w-2.5 h-2.5 text-pink-400 fill-pink-400" /> Next Tip ({heartCount})
-        </button>
       </div>
 
       {/* 3D Canvas Box */}

@@ -116,12 +116,12 @@ console.log('Running automated test suite for CrazyStore Hero 3D Experience & Dy
   console.log('✓ Test 4 Passed: Regression verification confirmed removed text is absent from component source');
 }
 
-// Test 5: Button Elimination & 10s Timeline Progress Bar Verification
+// Test 5: Hero3DExperience Button Elimination & 10s Timeline Progress Bar Verification
 {
   const filePath = path.resolve(process.cwd(), 'components/three/Hero3DExperience.tsx');
   const content = fs.readFileSync(filePath, 'utf8');
 
-  // Ensure clunky buttons are removed
+  // Ensure clunky buttons are removed from Hero3DExperience
   assert.ok(!content.includes('title="Next App"'), 'Hero3DExperience must not contain Next App button');
   assert.ok(!content.includes('title="Pause 3D Rotation"'), 'Hero3DExperience must not contain Pause button');
   assert.ok(!content.includes('title="Resume 3D Rotation"'), 'Hero3DExperience must not contain Play button');
@@ -134,5 +134,25 @@ console.log('Running automated test suite for CrazyStore Hero 3D Experience & Dy
   console.log('✓ Test 5 Passed: Verified clunky action buttons are completely removed and 10s timeline bar is active');
 }
 
-console.log('\n🎉 ALL 5 HERO 3D EXPERIENCE TESTS PASSED WITH 100% SUCCESS!\n');
+// Test 6: Verify Play, Reload, and Next buttons removed from AppDevice3DStudio & FloatingAndroid3D
+{
+  const studioPath = path.resolve(process.cwd(), 'components/three/AppDevice3DStudio.tsx');
+  const studioContent = fs.readFileSync(studioPath, 'utf8');
+
+  // Verify AppDevice3DStudio has no play or reload buttons
+  assert.ok(!studioContent.includes('title="Pause Rotation"'), 'AppDevice3DStudio must not contain pause rotation button');
+  assert.ok(!studioContent.includes('title="Reset Device Orientation"'), 'AppDevice3DStudio must not contain reset/reload camera button');
+  assert.ok(!studioContent.includes('RotateCcw'), 'AppDevice3DStudio must not import or render RotateCcw reload icon');
+
+  const mascotPath = path.resolve(process.cwd(), 'components/three/FloatingAndroid3D.tsx');
+  const mascotContent = fs.readFileSync(mascotPath, 'utf8');
+
+  // Verify FloatingAndroid3D has no Next Tip button
+  assert.ok(!mascotContent.includes('Next Tip'), 'FloatingAndroid3D must not contain Next Tip button');
+
+  console.log('✓ Test 6 Passed: Verified all play, reload, and next buttons are eliminated across 3D components');
+}
+
+console.log('\n🎉 ALL 6 3D EXPERIENCE TESTS PASSED WITH 100% SUCCESS!\n');
+
 
