@@ -12,7 +12,6 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
-import { AppDevice3DStudio } from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -83,7 +82,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [averageRating, setAverageRating] = useState<number>(initialApp.initialRating || 5.0);
   const [totalCount, setTotalCount] = useState<number>(initialApp.initialReviewCount || 0);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'screenshots' | 'reviews' | 'tech' | '3d-studio'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tech'>('overview');
+  const [screenshotView, setScreenshotView] = useState<'carousel' | 'grid'>('carousel');
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const previewsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -474,21 +474,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 >
                   <Download className="w-5 h-5" /> Download APK
                 </a>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('3d-studio');
-                    trackEvent({
-                      eventType: '3d_studio_open',
-                      appSlug: appData.slug,
-                      appName: appData.name,
-                      details: `Opened 3D Studio for ${appData.name}`,
-                    });
-                  }}
-                  className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-purple-950/70 hover:bg-purple-900/80 text-purple-200 font-bold text-sm text-center border border-purple-800/60 shadow-lg hover:border-purple-500 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Smartphone className="w-5 h-5 text-purple-400" /> 3D Studio
-                </button>
                 {appData.githubUrl && (
                   <a
                     href={appData.githubUrl}
@@ -541,111 +526,167 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => setActiveTab('screenshots')}
+                    onClick={() => setScreenshotView((prev) => (prev === 'carousel' ? 'grid' : 'carousel'))}
                     className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-purple-300 text-xs font-bold border border-zinc-800 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    title="View all screenshots in grid layout"
+                    title={screenshotView === 'carousel' ? 'Switch to Grid View' : 'Switch to Carousel View'}
                   >
                     <Layers className="w-3.5 h-3.5 text-purple-400" />
-                    <span className="hidden sm:inline">Grid View</span>
+                    <span>{screenshotView === 'carousel' ? 'Grid View' : 'Carousel View'}</span>
                   </button>
 
-                  <div className="hidden sm:flex items-center gap-1.5">
-                    <div className="h-5 w-[1px] bg-zinc-800 mx-1" />
-                    <button
-                      type="button"
-                      onClick={() => scrollPreviews('left')}
-                      disabled={!canScrollLeft}
-                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                        canScrollLeft
-                          ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
-                          : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
-                      }`}
-                      aria-label="Previous screenshots"
-                      title="Scroll left"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => scrollPreviews('right')}
-                      disabled={!canScrollRight}
-                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                        canScrollRight
-                          ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
-                          : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
-                      }`}
-                      aria-label="Next screenshots"
-                      title="Scroll right"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {screenshotView === 'carousel' && (
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      <div className="h-5 w-[1px] bg-zinc-800 mx-1" />
+                      <button
+                        type="button"
+                        onClick={() => scrollPreviews('left')}
+                        disabled={!canScrollLeft}
+                        className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                          canScrollLeft
+                            ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
+                            : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
+                        }`}
+                        aria-label="Previous screenshots"
+                        title="Scroll left"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scrollPreviews('right')}
+                        disabled={!canScrollRight}
+                        className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                          canScrollRight
+                            ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700/80 hover:border-purple-500/50 shadow-sm hover:scale-105 active:scale-95'
+                            : 'bg-zinc-900/40 text-zinc-600 border-zinc-800/50 cursor-not-allowed opacity-40'
+                        }`}
+                        aria-label="Next screenshots"
+                        title="Scroll right"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Horizontal Scroll Carousel */}
-              <div
-                ref={previewsContainerRef}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUpOrLeave}
-                onMouseLeave={handleMouseUpOrLeave}
-                className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scroll-smooth hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
-                style={{ WebkitOverflowScrolling: 'touch' }}
-              >
-                {validPreviews.map((preview, idx) => {
-                  const hasCustomTitle = Boolean(
-                    preview.title &&
-                      !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
-                      !/^preview\s*\d*$/i.test(preview.title.trim())
-                  );
-                  const displayTitle = hasCustomTitle ? preview.title : `Screenshot ${idx + 1}`;
+              {/* View 1: Horizontal Scroll Carousel */}
+              {screenshotView === 'carousel' && (
+                <div
+                  ref={previewsContainerRef}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUpOrLeave}
+                  onMouseLeave={handleMouseUpOrLeave}
+                  className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scroll-smooth hide-scrollbar no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
+                  {validPreviews.map((preview, idx) => {
+                    const hasCustomTitle = Boolean(
+                      preview.title &&
+                        !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
+                        !/^preview\s*\d*$/i.test(preview.title.trim())
+                    );
+                    const displayTitle = hasCustomTitle ? preview.title : `Screenshot ${idx + 1}`;
 
-                  return (
-                    <div
-                      key={preview.id || idx}
-                      onClick={() => handleScreenshotClick(idx)}
-                      className="shrink-0 h-[280px] xs:h-[330px] sm:h-[400px] md:h-[450px] group cursor-pointer snap-start flex flex-col select-none"
-                    >
-                      {/* Modern Clean Screenshot Frame (Zero Cropping, 100% Intact Image) */}
-                      <div className="relative h-full w-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-zinc-950 border border-zinc-800/90 group-hover:border-purple-500/80 shadow-md group-hover:shadow-2xl group-hover:shadow-purple-900/25 transition-all duration-300 flex items-center justify-center p-1 sm:p-1.5 group-hover:-translate-y-1">
-                        {/* Ambient backdrop glow */}
-                        <div
-                          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
-                          style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
-                        />
+                    return (
+                      <div
+                        key={preview.id || idx}
+                        onClick={() => handleScreenshotClick(idx)}
+                        className="shrink-0 h-[280px] xs:h-[330px] sm:h-[400px] md:h-[450px] group cursor-pointer snap-start flex flex-col select-none"
+                      >
+                        {/* Modern Clean Screenshot Frame (Zero Cropping, 100% Intact Image) */}
+                        <div className="relative h-full w-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-zinc-950 border border-zinc-800/90 group-hover:border-purple-500/80 shadow-md group-hover:shadow-2xl group-hover:shadow-purple-900/25 transition-all duration-300 flex items-center justify-center p-1 sm:p-1.5 group-hover:-translate-y-1">
+                          {/* Ambient backdrop glow */}
+                          <div
+                            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
+                            style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
+                          />
 
-                        {/* Full Screenshot Image (Never Cropped or Cut Off) */}
-                        <img
-                          src={preview.imageUrl || preview.url}
-                          alt={displayTitle}
-                          loading={idx < 3 ? 'eager' : 'lazy'}
-                          decoding="async"
-                          className="relative z-10 h-full w-auto max-w-[80vw] sm:max-w-none object-contain rounded-xl sm:rounded-2xl select-none group-hover:scale-[1.015] transition-transform duration-300 pointer-events-none drop-shadow-md"
-                          draggable={false}
-                        />
+                          {/* Full Screenshot Image (Never Cropped or Cut Off) */}
+                          <img
+                            src={preview.imageUrl || preview.url}
+                            alt={displayTitle}
+                            loading={idx < 3 ? 'eager' : 'lazy'}
+                            decoding="async"
+                            className="relative z-10 h-full w-auto max-w-[80vw] sm:max-w-none object-contain rounded-xl sm:rounded-2xl select-none group-hover:scale-[1.015] transition-transform duration-300 pointer-events-none drop-shadow-md"
+                            draggable={false}
+                          />
 
-                        {/* Hover & Tap Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex flex-col justify-between p-2.5 sm:p-3 pointer-events-none rounded-xl sm:rounded-2xl">
-                          <div className="flex justify-end">
-                            <span className="p-1.5 sm:p-2 rounded-xl bg-purple-600/90 text-white shadow-lg backdrop-blur-md">
-                              <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-bold text-white bg-black/75 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 truncate max-w-[80%]">
-                              {displayTitle}
-                            </span>
-                            <span className="text-[10px] font-black text-purple-300 bg-purple-950/90 px-1.5 py-0.5 rounded-md border border-purple-800/50 shrink-0">
-                              #{idx + 1}
-                            </span>
+                          {/* Hover & Tap Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex flex-col justify-between p-2.5 sm:p-3 pointer-events-none rounded-xl sm:rounded-2xl">
+                            <div className="flex justify-end">
+                              <span className="p-1.5 sm:p-2 rounded-xl bg-purple-600/90 text-white shadow-lg backdrop-blur-md">
+                                <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-bold text-white bg-black/75 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 truncate max-w-[80%]">
+                                {displayTitle}
+                              </span>
+                              <span className="text-[10px] font-black text-purple-300 bg-purple-950/90 px-1.5 py-0.5 rounded-md border border-purple-800/50 shrink-0">
+                                #{idx + 1}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* View 2: Responsive Grid View */}
+              {screenshotView === 'grid' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4.5 pt-1 animate-in fade-in duration-200">
+                  {validPreviews.map((preview, idx) => {
+                    const hasCustomTitle = Boolean(
+                      preview.title &&
+                        !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
+                        !/^preview\s*\d*$/i.test(preview.title.trim())
+                    );
+                    const displayTitle = hasCustomTitle ? preview.title : `Screenshot ${idx + 1}`;
+
+                    return (
+                      <div
+                        key={preview.id || idx}
+                        onClick={() => handleScreenshotClick(idx)}
+                        className="group cursor-pointer flex flex-col select-none"
+                      >
+                        <div className="relative h-[240px] xs:h-[280px] sm:h-[340px] md:h-[380px] w-full rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800/90 group-hover:border-purple-500/80 shadow-md group-hover:shadow-2xl group-hover:shadow-purple-900/25 transition-all duration-300 flex items-center justify-center p-1 sm:p-1.5 group-hover:-translate-y-1">
+                          <div
+                            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
+                            style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
+                          />
+                          <img
+                            src={preview.imageUrl || preview.url}
+                            alt={displayTitle}
+                            loading={idx < 4 ? 'eager' : 'lazy'}
+                            decoding="async"
+                            className="relative z-10 h-full w-auto max-w-full object-contain rounded-xl select-none group-hover:scale-[1.015] transition-transform duration-300 pointer-events-none drop-shadow-md"
+                            draggable={false}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex flex-col justify-between p-2.5 pointer-events-none rounded-xl">
+                            <div className="flex justify-end">
+                              <span className="p-1.5 rounded-xl bg-purple-600/90 text-white shadow-lg backdrop-blur-md">
+                                <Maximize2 className="w-3.5 h-3.5" />
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-bold text-white bg-black/75 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 truncate max-w-[80%]">
+                                {displayTitle}
+                              </span>
+                              <span className="text-[10px] font-black text-purple-300 bg-purple-950/90 px-1.5 py-0.5 rounded-md border border-purple-800/50 shrink-0">
+                                #{idx + 1}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Ambient bottom glow decoration */}
               <div
@@ -673,21 +714,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                       : 'text-zinc-400 hover:bg-zinc-800/60'
                   }`}
                 >
-                  <Info className="w-4 h-4" /> About & Features
+                  <Info className="w-4 h-4" /> About &amp; Features
                 </button>
-                {validPreviews.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('screenshots')}
-                    className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
-                      activeTab === 'screenshots'
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
-                        : 'text-zinc-400 hover:bg-zinc-800/60'
-                    }`}
-                  >
-                    <ImageIcon className="w-4 h-4" /> Screenshots ({validPreviews.length})
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() => setActiveTab('reviews')}
@@ -701,17 +729,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('3d-studio')}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
-                    activeTab === '3d-studio'
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
-                      : 'text-purple-300 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/40'
-                  }`}
-                >
-                  <Smartphone className="w-4 h-4 text-purple-400" /> 3D Device Studio
-                </button>
-                <button
-                  type="button"
                   onClick={() => setActiveTab('tech')}
                   className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
                     activeTab === 'tech'
@@ -719,16 +736,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                       : 'text-zinc-400 hover:bg-zinc-800/60'
                   }`}
                 >
-                  <Code2 className="w-4 h-4" /> Tech Stack & Source
+                  <Code2 className="w-4 h-4" /> Tech Stack &amp; Source
                 </button>
               </div>
-
-              {/* Tab: 3D Interactive Device Studio */}
-              {activeTab === '3d-studio' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <AppDevice3DStudio app={appData} />
-                </div>
-              )}
 
               {/* Tab 1: Overview & About */}
               {activeTab === 'overview' && (
@@ -845,79 +855,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
                   {/* GEO Knowledge Base & Instant Answers FAQ */}
                   <GeoKnowledgeBase app={appData} />
-                </div>
-              )}
-
-              {/* Tab: Screenshots & Visual Gallery */}
-              {activeTab === 'screenshots' && (
-                <div className="space-y-8 animate-in fade-in duration-300">
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-5">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-2xl bg-purple-950/60 text-purple-400 border border-purple-800/40">
-                          <ImageIcon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl sm:text-2xl font-black text-zinc-100">
-                            {appData.name} Screenshot Gallery
-                          </h3>
-                          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
-                            High-resolution UI captures &bull; Click any screenshot to view in full resolution
-                          </p>
-                        </div>
-                      </div>
-
-                      <span className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-purple-950/60 text-purple-300 border border-purple-800/40 text-xs font-bold">
-                        {validPreviews.length} Images
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {validPreviews.map((preview, idx) => {
-                        const hasCustomTitle = Boolean(
-                          preview.title &&
-                          !/^screenshot\s*\d*$/i.test(preview.title.trim()) &&
-                          !/^preview\s*\d*$/i.test(preview.title.trim())
-                        );
-
-                        return (
-                          <div
-                            key={preview.id || idx}
-                            onClick={() => {
-                              setLightboxIndex(idx);
-                              trackEvent({
-                                eventType: 'screenshot_view',
-                                appSlug: appData.slug,
-                                appName: appData.name,
-                                details: `Explored Visuals: ${hasCustomTitle ? preview.title : `Preview ${idx + 1}`} (${appData.name})`,
-                              });
-                            }}
-                            className="group cursor-pointer flex flex-col items-center"
-                          >
-                            <LazyScreenshot
-                              src={preview.imageUrl || preview.url}
-                              alt={appData.name}
-                              title={preview.title}
-                              hasCustomTitle={hasCustomTitle}
-                              aspectClass="h-[300px] xs:h-[360px] sm:h-[440px] md:h-[480px]"
-                              priority={idx < 3}
-                            />
-
-                            <div className="mt-3 text-center w-full px-2">
-                              <span className="text-xs sm:text-sm font-bold text-zinc-300 block truncate group-hover:text-purple-400 transition-colors">
-                                {preview.title}
-                              </span>
-                              {preview.subtitle && (
-                                <span className="text-[11px] text-zinc-500 block truncate mt-0.5">
-                                  {preview.subtitle}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
               )}
 
