@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Smartphone, Menu, X } from 'lucide-react';
+import { Smartphone, Menu, X, Sparkles } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa6';
+import { NavLogo3D } from '@/components/three';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -15,28 +16,24 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/85 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand Logo */}
+        {/* Brand Logo with Three.js 3D Emblem */}
         <Link
           href="/"
           id="nav-logo"
           className="flex items-center gap-3 group transition-transform hover:scale-[1.02]"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-500 p-0.5 shadow-md shadow-purple-500/20 flex items-center justify-center">
-            <div className="w-full h-full bg-zinc-950 rounded-[10px] flex items-center justify-center">
-              <Smartphone className="w-5 h-5 text-purple-400 group-hover:rotate-6 transition-transform" />
-            </div>
-          </div>
+          <NavLogo3D />
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-lg text-zinc-100 tracking-tight">
+              <span className="font-extrabold text-lg text-zinc-100 tracking-tight flex items-center gap-1">
                 CrazyStore
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800/50">
-                Android
+                3D FOSS
               </span>
             </div>
             <p className="text-[11px] text-zinc-400 -mt-1 hidden sm:block">
-              Open-Source Kotlin Store
+              Open-Source 3D Kotlin Store
             </p>
           </div>
         </Link>

@@ -10,7 +10,14 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
-import { Hero3DExperience, Card3DTilt, FloatingAndroid3D } from '@/components/three';
+import {
+  Hero3DExperience,
+  Card3DTilt,
+  FloatingAndroid3D,
+  Global3DBackground,
+  Feature3DCanvas,
+  AppOrbit3DGallery,
+} from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -28,6 +35,7 @@ import {
   Lock,
   Boxes,
   ImageIcon,
+  Layers,
 } from 'lucide-react';
 
 function AppLogoImage({
@@ -64,6 +72,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
   const [apps, setApps] = useState<AndroidApp[]>(initialApps);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [catalogViewMode, setCatalogViewMode] = useState<'both' | 'carousel' | 'grid'>('both');
   const [ratingsMap, setRatingsMap] = useState<Record<string, { avg: number; count: number }>>(initialRatingsMap);
   const [categories, setCategories] = useState<string[]>(() => {
     const uniqueCats = new Set<string>();
@@ -207,7 +216,10 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col font-sans text-zinc-100">
+    <div className="min-h-screen bg-zinc-950 flex flex-col font-sans text-zinc-100 relative">
+      {/* Three.js Global 3D Cyber Grid & Constellation Stardust */}
+      <Global3DBackground />
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeItemListJsonLd) }}
@@ -288,31 +300,34 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
               <div className="flex items-start gap-4 p-4 rounded-2xl bg-purple-950/20 border border-purple-900/30">
-                <div className="p-3 rounded-xl bg-purple-900/40 text-purple-400 shrink-0">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
+                <Feature3DCanvas type="shield" />
                 <div>
-                  <h3 className="font-bold text-sm mb-1 text-zinc-100">Zero Telemetry</h3>
+                  <h3 className="font-bold text-sm mb-1 text-zinc-100 flex items-center gap-1.5">
+                    Zero Telemetry
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-800/40">3D FOSS</span>
+                  </h3>
                   <p className="text-xs text-zinc-400 leading-relaxed">No ads, no trackers, and no background data mining. Privacy-first architecture.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4 p-4 rounded-2xl bg-indigo-950/20 border border-indigo-900/30">
-                <div className="p-3 rounded-xl bg-indigo-900/40 text-indigo-400 shrink-0">
-                  <Zap className="w-6 h-6" />
-                </div>
+                <Feature3DCanvas type="zap" />
                 <div>
-                  <h3 className="font-bold text-sm mb-1 text-zinc-100">Native Performance</h3>
+                  <h3 className="font-bold text-sm mb-1 text-zinc-100 flex items-center gap-1.5">
+                    Native Performance
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/40">120Hz</span>
+                  </h3>
                   <p className="text-xs text-zinc-400 leading-relaxed">Compiled natively for Android with 120Hz smooth scrolling and battery efficiency.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4 p-4 rounded-2xl bg-fuchsia-950/20 border border-fuchsia-900/30">
-                <div className="p-3 rounded-xl bg-fuchsia-900/40 text-fuchsia-400 shrink-0">
-                  <Code2 className="w-6 h-6" />
-                </div>
+                <Feature3DCanvas type="code" />
                 <div>
-                  <h3 className="font-bold text-sm mb-1 text-zinc-100">Modern Stack</h3>
+                  <h3 className="font-bold text-sm mb-1 text-zinc-100 flex items-center gap-1.5">
+                    Modern Stack
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-800/40">Compose</span>
+                  </h3>
                   <p className="text-xs text-zinc-400 leading-relaxed">Built entirely with Kotlin, Coroutines, and declarative Jetpack Compose UI.</p>
                 </div>
               </div>
@@ -322,41 +337,93 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
 
         {/* App Catalog Section */}
         <section id="catalog" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-12">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
             <div>
-              <h2 className="text-2xl font-black mb-2 text-zinc-100">Explore Applications</h2>
-              <p className="text-xs text-zinc-400">Select an app to view details, reviews, and download the APK.</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/40">
+                  Three.js 3D Catalog
+                </span>
+              </div>
+              <h2 className="text-2xl font-black mb-1 mt-1 text-zinc-100">Explore Applications</h2>
+              <p className="text-xs text-zinc-400">Spin the 3D Orbit Cylinder or inspect cards with hardware-accelerated 3D perspective.</p>
             </div>
 
-            {/* Category Filter */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto hide-scrollbar">
-              {categories.map((cat) => (
+            {/* Controls: 3D Mode Selector & Category Filter */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+              {/* 3D Mode Selector */}
+              <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-2xl p-1 justify-center shrink-0">
                 <button
-                  key={cat}
-                  onClick={() => {
-                    setSelectedCategory(cat);
-                    trackEvent({
-                      eventType: 'category_filter',
-                      details: `Filtered apps by "${cat}" category`,
-                    });
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                    selectedCategory === cat
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                      : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border border-zinc-800'
+                  onClick={() => setCatalogViewMode('both')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    catalogViewMode === 'both'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                      : 'text-zinc-400 hover:text-white'
                   }`}
+                  title="Show both 3D Orbit and 3D Cards"
                 >
-                  {cat}
+                  <Sparkles className="w-3.5 h-3.5" /> All 3D
                 </button>
-              ))}
+                <button
+                  onClick={() => setCatalogViewMode('carousel')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    catalogViewMode === 'carousel'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                  title="Show only 3D Orbit Cylinder"
+                >
+                  🌐 3D Orbit
+                </button>
+                <button
+                  onClick={() => setCatalogViewMode('grid')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    catalogViewMode === 'grid'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                  title="Show only 3D Tilt Cards"
+                >
+                  <Layers className="w-3.5 h-3.5" /> 3D Cards
+                </button>
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto hide-scrollbar">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      trackEvent({
+                        eventType: 'category_filter',
+                        details: `Filtered apps by "${cat}" category`,
+                      });
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      selectedCategory === cat
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+                        : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border border-zinc-800'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {isLoading ? (
-            <AppCardSkeleton count={6} />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {filteredApps.map((app, idx) => (
+          {/* Three.js 3D WebGL Orbit Carousel */}
+          {(catalogViewMode === 'both' || catalogViewMode === 'carousel') && (
+            <AppOrbit3DGallery apps={filteredApps} ratingsMap={ratingsMap} />
+          )}
+
+          {/* 3D Perspective Tilt Cards Grid */}
+          {(catalogViewMode === 'both' || catalogViewMode === 'grid') && (
+            isLoading ? (
+              <AppCardSkeleton count={6} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {filteredApps.map((app, idx) => (
                 <Card3DTilt key={app.slug} className="h-full">
                   <Link
                     href={`/apps/${app.slug}`}
@@ -443,7 +510,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                 </Card3DTilt>
               ))}
             </div>
-          )}
+          ))}
         </section>
 
         {/* Generative Engine Optimization (GEO) & FOSS Architecture Standards Section */}

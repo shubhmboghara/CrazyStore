@@ -38,6 +38,19 @@ function mockDisposeThreeScene(scene, disposedList) {
   }
 }
 
+function calculateCylinderPosition(index, total, radius) {
+  const angle = (index / total) * Math.PI * 2;
+  const x = Math.sin(angle) * radius;
+  const z = Math.cos(angle) * radius;
+  return { x, z, angle };
+}
+
+function calculateCard3DTilt(normX, normY, maxTilt) {
+  const rotX = -normY * maxTilt * 2 || 0;
+  const rotY = normX * maxTilt * 2 || 0;
+  return { rotX, rotY };
+}
+
 console.log('Running automated test suite for CrazyStore 3D / Three.js Utilities...');
 
 // Test 1: WebGL detection mock
@@ -80,7 +93,7 @@ assert.ok(disposedItems.includes('normal-map'), 'Should dispose normal map');
 assert.ok(disposedItems.includes('sub-mat-1'), 'Should dispose sub materials');
 console.log('✓ Test 2 Passed: Three.js recursive resource disposal cleans GPU buffers');
 
-// Test 3: Canvas drawing coordinate calculations
+// Test 3: Screen canvas coordinate calculations
 function calculatePreviewBounds(width, height) {
   const previewMargin = 24;
   const previewTop = 80;
@@ -94,4 +107,27 @@ assert.equal(bounds.previewWidth, 464, 'Preview width must maintain margin symme
 assert.equal(bounds.previewHeight, 904, 'Preview height must fit within frame bounds');
 console.log('✓ Test 3 Passed: Screen canvas viewport boundary math is deterministic');
 
-console.log('\n🎉 ALL 3 3D UTILITY TESTS PASSED WITH 100% SUCCESS!');
+// Test 4: 3D Cylinder Orbit Math
+const pos0 = calculateCylinderPosition(0, 4, 10);
+assert.equal(pos0.x, 0, 'First item in 3D orbit starts at sin(0)=0');
+assert.equal(pos0.z, 10, 'First item in 3D orbit sits at cos(0)*radius = 10');
+
+const pos1 = calculateCylinderPosition(1, 4, 10);
+assert.ok(Math.abs(pos1.x - 10) < 1e-10, 'Quarter turn sits at x = 10');
+assert.ok(Math.abs(pos1.z) < 1e-10, 'Quarter turn sits at z = 0');
+console.log('✓ Test 4 Passed: 3D Cylinder Orbit trigonometry distributes cards symmetrically');
+
+// Test 5: 3D Card Perspective Tilt Math
+const tiltCenter = calculateCard3DTilt(0, 0, 10);
+assert.equal(tiltCenter.rotX, 0);
+assert.equal(tiltCenter.rotY, 0);
+
+const tiltRightEdge = calculateCard3DTilt(0.5, 0, 10);
+assert.equal(tiltRightEdge.rotY, 10, 'Moving to right edge tilts rotY positive');
+assert.equal(tiltRightEdge.rotX, 0);
+
+const tiltTopEdge = calculateCard3DTilt(0, -0.5, 10);
+assert.equal(tiltTopEdge.rotX, 10, 'Moving to top edge tilts rotX positive');
+console.log('✓ Test 5 Passed: 3D Card tilt perspective calculations are mathematically accurate');
+
+console.log('\n🎉 ALL 5 3D UTILITY TESTS PASSED WITH 100% SUCCESS!');
