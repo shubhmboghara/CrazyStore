@@ -437,7 +437,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     </span>
                   </h3>
                   <p className="text-xs text-zinc-400">
-                    {validPreviews.length} high-res captures · Click any panel to focus · Drag in 3D space
+                    {validPreviews.length} high-resolution captures &bull; Interactive 3D Flagship Stage &bull; Gyroscope tilt &bull; 3D Visual Flow
                   </p>
                 </div>
               </div>
