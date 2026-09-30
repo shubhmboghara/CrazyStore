@@ -13,7 +13,6 @@ import { trackEvent } from '@/lib/analytics';
 import {
   Hero3DExperience,
   Card3DTilt,
-  FloatingAndroid3D,
   Global3DBackground,
   Feature3DCanvas,
 } from '@/components/three';
@@ -168,8 +167,13 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('focus', handleFocus);
 
+    const syncInterval = setInterval(() => {
+      loadApps(false);
+    }, 10000);
+
     return () => {
       isSubscribed = false;
+      clearInterval(syncInterval);
       window.removeEventListener('apps_updated', handleAppsUpdated);
       window.removeEventListener('storage', handleStorageChange);
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -236,33 +240,37 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
               <div className="lg:col-span-6 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/70 border border-purple-800/50 text-purple-300 text-xs font-bold mb-6 animate-in fade-in slide-in-from-bottom-2">
                   <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                  <span>3D Interactive Showcase • 100% Free & Open Source</span>
+                  <span>100% Free &amp; Open Source • Kotlin &amp; Compose</span>
                 </div>
 
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-[1.1]">
-                  Premium Android Apps, <br />
-                  Built with <span className="text-transparent bg-clip-text bg-gradient-to-br from-purple-400 via-indigo-400 to-fuchsia-400">Compose</span>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-[1.1] text-zinc-100">
+                  The Open Vault for <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-300 to-cyan-300">
+                    Native Android Apps
+                  </span>
                 </h1>
 
-                <p className="max-w-xl mx-auto lg:mx-0 text-sm sm:text-base text-zinc-400 mb-8 leading-relaxed font-medium">
-                  A curated vault of high-performance, ad-free Android applications crafted natively in Kotlin.
-                  Interact with apps live in 3D WebGL, download verified APKs, and review open-source code.
+                <p className="max-w-xl mx-auto lg:mx-0 text-sm sm:text-base text-zinc-400 mb-8 leading-relaxed font-normal">
+                  Curated directory of high-performance, ad-free Android applications built natively with Kotlin and Jetpack Compose. Zero telemetry, reproducible builds, and verified open-source code.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
                   <Link
                     href="#catalog"
-                    className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm shadow-xl shadow-purple-900/20 hover:scale-105 active:scale-95 transition-all text-center"
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-xl shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    Browse Catalog
+                    <span>Browse Catalog</span>
+                    <ChevronRight className="w-4 h-4" />
                   </Link>
 
-                  <Link
-                    href={`/apps/${apps[0]?.slug || 'videohub'}`}
-                    className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-purple-950/60 hover:bg-purple-900/60 text-purple-200 font-bold text-sm border border-purple-800/60 shadow-lg hover:border-purple-600 transition-all text-center flex items-center justify-center gap-2"
+                  <a
+                    href="https://github.com/shubhmboghara/CrazyStore"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-sm border border-zinc-800 shadow-md hover:border-zinc-700 transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>📱 3D Device Studio</span>
-                  </Link>
+                    <FaGithub className="w-4 h-4" /> View GitHub Source
+                  </a>
                 </div>
 
                 {/* Micro Highlights */}
@@ -285,7 +293,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
               {/* Right Column: Interactive 3D WebGL Phone Experience */}
               <div className="lg:col-span-6 relative flex items-center justify-center">
                 <div className="w-full max-w-[560px] relative">
-                  <Hero3DExperience />
+                  <Hero3DExperience apps={apps} />
                 </div>
               </div>
             </div>
@@ -527,9 +535,6 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
         <section className="py-16 sm:py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <GeoKnowledgeBase />
         </section>
-
-        {/* Interactive 3D Android Companion */}
-        <FloatingAndroid3D />
       </main>
 
       <Footer />

@@ -12,7 +12,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { trackEvent } from '@/lib/analytics';
-import { AppDevice3DStudio, FloatingAndroid3D, Screenshot3DGallery } from '@/components/three';
+import { AppDevice3DStudio, Screenshot3DGallery } from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -1124,9 +1124,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
             <Download className="w-4 h-4" /> Download
           </a>
         </div>
-
-        {/* 3D Mascot Companion */}
-        <FloatingAndroid3D />
       </main>
       <Footer />
     </div>

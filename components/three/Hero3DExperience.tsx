@@ -1,26 +1,76 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
-import { isWebGLAvailable, disposeThreeScene, drawAndroidScreenCanvas, ScreenCanvasOptions } from '@/lib/threeUtils';
-import { Sparkles, RotateCw, Play, Pause, Layers, Smartphone, RefreshCw } from 'lucide-react';
+import { isWebGLAvailable, disposeThreeScene, drawAndroidScreenCanvas } from '@/lib/threeUtils';
+import { AndroidApp, ANDROID_APPS } from '@/lib/appsData';
+import { normalizeAppRecord } from '@/lib/appUtils';
+import { Sparkles, Play, Pause, Layers, Smartphone, RefreshCw } from 'lucide-react';
 
-interface Hero3DExperienceProps {
-  onExploreClick?: () => void;
+export interface ShowcaseApp {
+  slug: string;
+  name: string;
+  category: string;
+  badge: string;
+  version: string;
+  rating: number;
+  color1: string;
+  color2: string;
+  tagline: string;
+  screenshotUrl?: string | null;
 }
 
-const PRESET_APPS: Array<{ name: string; category: string; badge: string; version: string; rating: number; color1: string; color2: string; tagline: string }> = [
+const SHOWCASE_PALETTES = [
+  { color1: '#8b5cf6', color2: '#6366f1' }, // Violet -> Indigo
+  { color1: '#06b6d4', color2: '#3b82f6' }, // Cyan -> Blue
+  { color1: '#ec4899', color2: '#a855f7' }, // Pink -> Purple
+  { color1: '#10b981', color2: '#06b6d4' }, // Emerald -> Cyan
+  { color1: '#f59e0b', color2: '#ef4444' }, // Amber -> Rose
+  { color1: '#6366f1', color2: '#ec4899' }, // Indigo -> Pink
+  { color1: '#14b8a6', color2: '#8b5cf6' }, // Teal -> Violet
+];
+
+export function toShowcaseApp(app: any, index: number = 0): ShowcaseApp {
+  const palette = SHOWCASE_PALETTES[index % SHOWCASE_PALETTES.length];
+
+  let screenshotUrl: string | null = null;
+  if (Array.isArray(app.screenshots) && app.screenshots.length > 0) {
+    const s = app.screenshots[0];
+    const raw = typeof s === 'string' ? s : (s?.imageUrl || s?.url || null);
+    if (raw && typeof raw === 'string' && raw.trim()) {
+      screenshotUrl = raw.trim();
+    }
+  }
+
+  return {
+    slug: app.slug || `app-${index}`,
+    name: app.name || 'Android App',
+    category: app.category || 'Tools & Utilities',
+    badge: app.badge || 'Kotlin + Compose',
+    version: app.version || 'v1.0.0',
+    rating: typeof app.initialRating === 'number' ? app.initialRating : 5.0,
+    color1: palette.color1,
+    color2: palette.color2,
+    tagline: app.tagline || app.shortDescription || 'Modern Native Android Jetpack Compose Application',
+    screenshotUrl,
+  };
+}
+
+const DEFAULT_FALLBACK_APPS: ShowcaseApp[] = [
   {
+    slug: 'videohub',
     name: 'VideoHub',
     category: 'Media & Video',
     badge: 'Kotlin + Compose',
-    version: 'v1.4.2',
+    version: 'v2.4.0',
     rating: 4.9,
     color1: '#8b5cf6',
     color2: '#6366f1',
     tagline: 'Ad-Free High-Definition Player for Android',
+    screenshotUrl: null,
   },
   {
+    slug: 'audioforge',
     name: 'AudioForge',
     category: 'Music & Audio',
     badge: 'Modern Jetpack M3',
@@ -29,8 +79,10 @@ const PRESET_APPS: Array<{ name: string; category: string; badge: string; versio
     color1: '#ec4899',
     color2: '#8b5cf6',
     tagline: 'Lossless Hi-Res Audio Engine & Visualizer',
+    screenshotUrl: null,
   },
   {
+    slug: 'fittrack-pro',
     name: 'FitTrack Pro',
     category: 'Health & Fitness',
     badge: 'Room + Coroutines',
@@ -39,10 +91,21 @@ const PRESET_APPS: Array<{ name: string; category: string; badge: string; versio
     color1: '#10b981',
     color2: '#06b6d4',
     tagline: 'Zero-Telemetry Native Workout Companion',
+    screenshotUrl: null,
   },
 ];
 
-export function Hero3DExperience({ onExploreClick }: Hero3DExperienceProps) {
+interface Hero3DExperienceProps {
+  onExploreClick?: () => void;
+  apps?: AndroidApp[];
+  cycleIntervalMs?: number;
+}
+
+export function Hero3DExperience({
+  onExploreClick,
+  apps,
+  cycleIntervalMs = 7000,
+}: Hero3DExperienceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -51,6 +114,68 @@ export function Hero3DExperience({ onExploreClick }: Hero3DExperienceProps) {
   const [activeAppIdx, setActiveAppIdx] = useState<number>(0);
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [pulseActive, setPulseActive] = useState<boolean>(false);
+  const [internalApps, setInternalApps] = useState<AndroidApp[]>([]);
+
+  // Keep isRotating in a ref for animation loop without tearing down Three.js scene
+  const isRotatingRef = useRef(isRotating);
+  useEffect(() => {
+    isRotatingRef.current = isRotating;
+  }, [isRotating]);
+
+  // Fallback fetch in case Hero3DExperience is used standalone without apps prop
+  useEffect(() => {
+    if (apps && apps.length > 0) return;
+    let isSubscribed = true;
+
+    async function fetchApps() {
+      try {
+        const res = await fetch(`/api/apps?t=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok && isSubscribed) {
+          const data = await res.json();
+          if (Array.isArray(data.apps) && data.apps.length > 0) {
+            setInternalApps(data.apps.map((a: any) => normalizeAppRecord(a)));
+          }
+        }
+      } catch {
+        // Fallback silently
+      }
+    }
+
+    fetchApps();
+    return () => {
+      isSubscribed = false;
+    };
+  }, [apps]);
+
+  // Derive dynamic list of showcase apps
+  const showcaseApps: ShowcaseApp[] = useMemo(() => {
+    const source = apps && apps.length > 0 ? apps : internalApps;
+    if (source && source.length > 0) {
+      return source.map((a, idx) => toShowcaseApp(a, idx));
+    }
+    return DEFAULT_FALLBACK_APPS;
+  }, [apps, internalApps]);
+
+  // Keep index within bounds if apps list changes dynamically
+  useEffect(() => {
+    if (activeAppIdx >= showcaseApps.length && showcaseApps.length > 0) {
+      setActiveAppIdx(0);
+    }
+  }, [showcaseApps.length, activeAppIdx]);
+
+  // Auto-cycle through all synchronized apps every N seconds
+  useEffect(() => {
+    if (showcaseApps.length <= 1) return;
+
+    const interval = setInterval(() => {
+      // Pause advancing if user is actively dragging the 3D model
+      if (!isDraggingRef.current) {
+        setActiveAppIdx((prev) => (prev + 1) % showcaseApps.length);
+      }
+    }, cycleIntervalMs);
+
+    return () => clearInterval(interval);
+  }, [showcaseApps.length, cycleIntervalMs]);
 
   // References for Three.js state
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -70,21 +195,50 @@ export function Hero3DExperience({ onExploreClick }: Hero3DExperienceProps) {
   const rotationVelocityRef = useRef({ x: 0, y: 0 });
 
   // Update screen canvas texture when active app changes
-  const updateScreenTexture = useCallback((appIdx: number) => {
+  const updateScreenTexture = useCallback((app: ShowcaseApp) => {
     if (!screenCanvasRef.current || !screenTextureRef.current) return;
-    const currentApp = PRESET_APPS[appIdx];
-    drawAndroidScreenCanvas(screenCanvasRef.current, {
-      appName: currentApp.name,
-      tagline: currentApp.tagline,
-      category: currentApp.category,
-      badge: currentApp.badge,
-      version: currentApp.version,
-      rating: currentApp.rating,
-      accentColor: currentApp.color1,
-      secondaryColor: currentApp.color2,
-    });
-    screenTextureRef.current.needsUpdate = true;
+
+    const renderToCanvas = (previewImg: HTMLImageElement | null = null) => {
+      if (!screenCanvasRef.current || !screenTextureRef.current) return;
+      drawAndroidScreenCanvas(screenCanvasRef.current, {
+        appName: app.name,
+        tagline: app.tagline,
+        category: app.category,
+        badge: app.badge,
+        version: app.version,
+        rating: app.rating,
+        accentColor: app.color1,
+        secondaryColor: app.color2,
+        previewImage: previewImg,
+      });
+      screenTextureRef.current.needsUpdate = true;
+    };
+
+    if (app.screenshotUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => renderToCanvas(img);
+      img.onerror = () => renderToCanvas(null);
+      img.src = app.screenshotUrl;
+    } else {
+      renderToCanvas(null);
+    }
+
+    // Dynamic light color update to match current app's branding
+    if (neonLightRef.current && cyanLightRef.current) {
+      neonLightRef.current.color.set(app.color1);
+      cyanLightRef.current.color.set(app.color2);
+    }
   }, []);
+
+  // Update canvas texture whenever activeAppIdx or showcaseApps changes
+  useEffect(() => {
+    if (showcaseApps.length === 0) return;
+    const current = showcaseApps[activeAppIdx] || showcaseApps[0];
+    if (current) {
+      updateScreenTexture(current);
+    }
+  }, [activeAppIdx, showcaseApps, updateScreenTexture]);
 
   // Main Three.js Scene Setup
   useEffect(() => {
@@ -179,16 +333,16 @@ export function Hero3DExperience({ onExploreClick }: Hero3DExperienceProps) {
     screenCanvas.height = 1024;
     screenCanvasRef.current = screenCanvas;
 
-    const currentApp = PRESET_APPS[0];
+    const initialApp = showcaseApps[0] || DEFAULT_FALLBACK_APPS[0];
     drawAndroidScreenCanvas(screenCanvas, {
-      appName: currentApp.name,
-      tagline: currentApp.tagline,
-      category: currentApp.category,
-      badge: currentApp.badge,
-      version: currentApp.version,
-      rating: currentApp.rating,
-      accentColor: currentApp.color1,
-      secondaryColor: currentApp.color2,
+      appName: initialApp.name,
+      tagline: initialApp.tagline,
+      category: initialApp.category,
+      badge: initialApp.badge,
+      version: initialApp.version,
+      rating: initialApp.rating,
+      accentColor: initialApp.color1,
+      secondaryColor: initialApp.color2,
     });
 
     const screenTexture = new THREE.CanvasTexture(screenCanvas);
@@ -274,73 +428,21 @@ export function Hero3DExperience({ onExploreClick }: Hero3DExperienceProps) {
     // ==========================================
     // Holographic Cyber Rings & Orbiting Tokens
     // ==========================================
+    // Subtle Studio Pedestal Glow Ring beneath Phone
     const holoRingsGroup = new THREE.Group();
     holoRingsGroupRef.current = holoRingsGroup;
 
-    // Glowing Neon Ring 1
-    const ringGeom1 = new THREE.TorusGeometry(3.6, 0.018, 16, 100);
-    const ringMat1 = new THREE.MeshBasicMaterial({
+    const ringGeom = new THREE.RingGeometry(2.4, 2.45, 64);
+    const ringMat = new THREE.MeshBasicMaterial({
       color: 0xa855f7,
       transparent: true,
-      opacity: 0.45,
-    });
-    const ring1 = new THREE.Mesh(ringGeom1, ringMat1);
-    ring1.rotation.x = Math.PI / 2.3;
-    ring1.rotation.y = Math.PI / 6;
-    holoRingsGroup.add(ring1);
-
-    // Glowing Cyan Ring 2
-    const ringGeom2 = new THREE.TorusGeometry(4.2, 0.015, 16, 100);
-    const ringMat2 = new THREE.MeshBasicMaterial({
-      color: 0x06b6d4,
-      transparent: true,
       opacity: 0.35,
+      side: THREE.DoubleSide,
     });
-    const ring2 = new THREE.Mesh(ringGeom2, ringMat2);
-    ring2.rotation.x = -Math.PI / 2.6;
-    ring2.rotation.z = Math.PI / 5;
-    holoRingsGroup.add(ring2);
-
-    // Floating 3D Kotlin Gem (Octahedron)
-    const gemGeom = new THREE.OctahedronGeometry(0.35);
-    const gemMat = new THREE.MeshStandardMaterial({
-      color: 0xc084fc,
-      emissive: 0x9333ea,
-      emissiveIntensity: 0.7,
-      roughness: 0.2,
-      metalness: 0.8,
-    });
-    const kotlinGem = new THREE.Mesh(gemGeom, gemMat);
-    kotlinGem.position.set(2.8, 1.8, 1.2);
-    holoRingsGroup.add(kotlinGem);
-
-    // Floating 3D Compose Hexagon Token
-    const composeGeom = new THREE.CylinderGeometry(0.3, 0.3, 0.08, 6);
-    const composeMat = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      emissive: 0x0284c7,
-      emissiveIntensity: 0.8,
-      metalness: 0.9,
-      roughness: 0.2,
-    });
-    const composeToken = new THREE.Mesh(composeGeom, composeMat);
-    composeToken.position.set(-2.8, -1.2, 1.0);
-    composeToken.rotation.x = Math.PI / 3;
-    holoRingsGroup.add(composeToken);
-
-    // Floating 3D Android Star Rating Badge
-    const starGeom = new THREE.DodecahedronGeometry(0.26);
-    const starMat = new THREE.MeshStandardMaterial({
-      color: 0xfbbf24,
-      emissive: 0xd97706,
-      emissiveIntensity: 0.75,
-      metalness: 0.9,
-      roughness: 0.1,
-    });
-    const starBadge = new THREE.Mesh(starGeom, starMat);
-    starBadge.position.set(-2.4, 2.2, -0.5);
-    holoRingsGroup.add(starBadge);
-
+    const pedestalRing = new THREE.Mesh(ringGeom, ringMat);
+    pedestalRing.rotation.x = Math.PI / 2;
+    pedestalRing.position.y = -3.2;
+    holoRingsGroup.add(pedestalRing);
     scene.add(holoRingsGroup);
 
     // ==========================================
@@ -457,7 +559,7 @@ export function Hero3DExperience({ onExploreClick }: Hero3DExperienceProps) {
 
         // Auto rotation when not dragging
         if (!isDraggingRef.current) {
-          if (isRotating) {
+          if (isRotatingRef.current) {
             phoneGroupRef.current.rotation.y += 0.006;
           }
           // Inertia damping
@@ -524,13 +626,13 @@ export function Hero3DExperience({ onExploreClick }: Hero3DExperienceProps) {
       disposeThreeScene(scene);
       renderer.dispose();
     };
-  }, [isRotating]);
+  }, []);
 
   // Handle switching preview apps
   const handleNextApp = () => {
-    const nextIdx = (activeAppIdx + 1) % PRESET_APPS.length;
+    if (showcaseApps.length === 0) return;
+    const nextIdx = (activeAppIdx + 1) % showcaseApps.length;
     setActiveAppIdx(nextIdx);
-    updateScreenTexture(nextIdx);
   };
 
   // Handle Holographic Pulse Trigger
@@ -570,69 +672,63 @@ export function Hero3DExperience({ onExploreClick }: Hero3DExperienceProps) {
         <canvas
           ref={canvasRef}
           className="w-full h-full cursor-grab active:cursor-grabbing outline-none"
-          title="Interactive 3D Android Flagship: Click & drag to rotate 360°"
+          title="Interactive 3D Android Device"
         />
       ) : (
         /* CSS 3D Fallback for legacy browsers without WebGL */
         <div className="flex flex-col items-center justify-center p-8 text-center bg-zinc-900/60 border border-purple-900/40 rounded-3xl">
           <Smartphone className="w-16 h-16 text-purple-400 mb-4 animate-bounce" />
-          <h4 className="font-bold text-lg text-zinc-100">Android Compose 3D Preview</h4>
+          <h4 className="font-bold text-lg text-zinc-100">
+            {showcaseApps[activeAppIdx]?.name || 'Android Compose 3D'}
+          </h4>
           <p className="text-xs text-zinc-400 max-w-xs mt-2">
-            Rendering modern Android Jetpack Compose native applications with zero telemetry.
+            {showcaseApps[activeAppIdx]?.tagline || 'Rendering modern Android Jetpack Compose native applications with zero telemetry.'}
           </p>
         </div>
       )}
 
       {/* Floating 3D Experience Interactive HUD Controls */}
       <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between pointer-events-none">
-        {/* Active App Badge in 3D */}
-        <div className="pointer-events-auto flex items-center gap-2 bg-zinc-950/80 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-zinc-800 shadow-xl">
-          <div
-            className="w-3 h-3 rounded-full animate-ping"
-            style={{ backgroundColor: PRESET_APPS[activeAppIdx].color1 }}
-          />
-          <div className="flex flex-col">
-            <span className="text-[11px] font-extrabold text-zinc-100 flex items-center gap-1.5">
-              3D Live: {PRESET_APPS[activeAppIdx].name}
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/90 text-purple-300 font-bold border border-purple-800/40">
-                {PRESET_APPS[activeAppIdx].badge}
-              </span>
-            </span>
-            <span className="text-[10px] text-zinc-400">
-              Drag to rotate 360° • Pinch to inspect
-            </span>
-          </div>
+        {/* Sleek App Pagination Dots (Synchronized with active app, no intrusive text) */}
+        <div className="pointer-events-auto flex items-center gap-1.5 bg-zinc-950/80 backdrop-blur-md px-3 py-2 rounded-2xl border border-zinc-800 shadow-xl">
+          {showcaseApps.map((app, idx) => (
+            <button
+              key={app.slug || idx}
+              type="button"
+              onClick={() => setActiveAppIdx(idx)}
+              title={app.name}
+              aria-label={`Switch to ${app.name}`}
+              className={`transition-all duration-300 rounded-full cursor-pointer ${
+                activeAppIdx === idx
+                  ? 'w-6 h-2 rounded-full shadow-sm'
+                  : 'w-2 h-2 bg-zinc-700 hover:bg-zinc-500'
+              }`}
+              style={{
+                backgroundColor: activeAppIdx === idx ? app.color1 : undefined,
+                boxShadow: activeAppIdx === idx ? `0 0 8px ${app.color1}` : undefined,
+              }}
+            />
+          ))}
         </div>
 
         {/* Action Controls */}
         <div className="pointer-events-auto flex items-center gap-2">
           {/* Switch App Preview */}
           <button
+            type="button"
             onClick={handleNextApp}
-            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-purple-600/50 shadow-lg backdrop-blur-md transition-all active:scale-95 flex items-center gap-1.5 text-xs font-bold"
-            title="Switch 3D Screen App"
+            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-purple-600/50 shadow-lg backdrop-blur-md transition-all active:scale-95 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+            title="Next App"
           >
             <Layers className="w-4 h-4 text-purple-400" />
-            <span className="hidden sm:inline">Switch App</span>
-          </button>
-
-          {/* Holo Pulse */}
-          <button
-            onClick={triggerHoloPulse}
-            disabled={pulseActive}
-            className={`p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-cyan-500/50 shadow-lg backdrop-blur-md transition-all active:scale-95 ${
-              pulseActive ? 'ring-2 ring-purple-500 text-purple-300' : ''
-            }`}
-            title="Trigger 3D Holographic Pulse"
-            aria-label="Trigger 3D Holographic Pulse"
-          >
-            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <span className="hidden sm:inline">Next App</span>
           </button>
 
           {/* Auto Rotate Toggle */}
           <button
+            type="button"
             onClick={() => setIsRotating(!isRotating)}
-            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-purple-500/50 shadow-lg backdrop-blur-md transition-all active:scale-95"
+            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-purple-500/50 shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer"
             title={isRotating ? 'Pause 3D Rotation' : 'Resume 3D Rotation'}
             aria-label={isRotating ? 'Pause 3D Rotation' : 'Resume 3D Rotation'}
           >
@@ -645,8 +741,9 @@ export function Hero3DExperience({ onExploreClick }: Hero3DExperienceProps) {
 
           {/* Reset Camera View */}
           <button
+            type="button"
             onClick={resetCamera}
-            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-purple-500/50 shadow-lg backdrop-blur-md transition-all active:scale-95"
+            className="p-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 hover:border-purple-500/50 shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer"
             title="Reset 3D Camera View"
             aria-label="Reset 3D Camera View"
           >

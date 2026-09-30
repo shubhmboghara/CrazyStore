@@ -24,27 +24,27 @@ export function Navbar() {
         >
           <NavLogo3D />
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-lg text-zinc-100 tracking-tight flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              <span className="font-black text-lg text-zinc-100 tracking-tight">
                 CrazyStore
               </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800/50">
-                3D FOSS
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800/50">
+                FOSS
               </span>
             </div>
-            <p className="text-[11px] text-zinc-400 -mt-1 hidden sm:block">
-              Open-Source 3D Kotlin Store
+            <p className="text-[11px] text-zinc-400 font-medium hidden sm:block">
+              Open-Source Android App Vault
             </p>
           </div>
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-1.5">
           <Link
             href="/"
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
               isHomeRoute
-                ? 'bg-purple-950/60 text-purple-300'
+                ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40 shadow-xs'
                 : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
             }`}
           >
@@ -53,17 +53,16 @@ export function Navbar() {
 
           <Link
             href="/#catalog"
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all"
           >
-            Categories
+            Apps Catalog
           </Link>
 
           <Link
-            href="/apps/videohub"
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-purple-300 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/40 transition-all flex items-center gap-1.5"
+            href="/#features"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-            3D Studio
+            Standards
           </Link>
         </nav>
 
