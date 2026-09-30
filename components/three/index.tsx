@@ -35,20 +35,6 @@ export const Feature3DCanvas = dynamic(
   }
 );
 
-export const AppOrbit3DGallery = dynamic(
-  () => import('./AppOrbit3DGallery').then((mod) => mod.AppOrbit3DGallery),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[500px] rounded-3xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-center animate-pulse">
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-2xl">🌐</span>
-          <span className="text-xs text-purple-400 font-bold">Spinning up 3D WebGL Orbit...</span>
-        </div>
-      </div>
-    ),
-  }
-);
 
 export const Hero3DExperience = dynamic(
   () => import('./Hero3DExperience').then((mod) => mod.Hero3DExperience),
