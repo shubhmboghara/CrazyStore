@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Sparkles } from 'lucide-react';
-import { FaGithub } from 'react-icons/fa6';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -71,17 +70,6 @@ export function Navbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-2.5">
-          {/* GitHub Repo */}
-          <a
-            href="https://github.com/shubhmboghara/CrazyStore"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 transition-all border border-zinc-800"
-            aria-label="GitHub Repository"
-          >
-            <FaGithub className="w-4 h-4" />
-          </a>
-
           {/* Mobile menu hamburger button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
