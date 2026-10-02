@@ -35,6 +35,13 @@ export function Screenshots3DPhoneView({
   const [hasWebGL, setHasWebGL] = useState<boolean>(true);
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
 
+  // Scroll-driven 3D Zoom-Out Physics (0.0 = Close, 1.0 = Zoomed out in 3D perspective)
+  const targetScrollZoom = useRef<number>(0.0);
+  const currentScrollZoom = useRef<number>(0.0);
+  const phoneBounceRef = useRef<number>(0.0);
+  const isUserRotating = useRef<boolean>(false);
+  const hasUserManuallySelected = useRef<boolean>(false);
+
   // Three.js references
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -145,14 +152,14 @@ export function Screenshots3DPhoneView({
 
     // 1. Scene & Fog
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x09090b, 0.03);
+    scene.fog = new THREE.FogExp2(0x09090b, 0.028);
     sceneRef.current = scene;
 
-    // 2. Camera - Fixed distance to ensure the full phone and screenshot are 100% visible
+    // 2. Camera - Starts comfortably framed, zooms out as you scroll down
     const isMobile = width < 640;
-    const baseZ = isMobile ? 8.4 : 7.8;
+    const initialZ = isMobile ? 7.4 : 6.8;
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
-    camera.position.set(0, 0.1, baseZ);
+    camera.position.set(0, 0.05, initialZ);
     cameraRef.current = camera;
 
     // 3. Renderer
@@ -168,16 +175,22 @@ export function Screenshots3DPhoneView({
     renderer.toneMappingExposure = 1.15;
     rendererRef.current = renderer;
 
-    // 4. OrbitControls - Rotation allowed, zoom strictly disabled so screenshots are never cut off
+    // 4. OrbitControls - Rotation allowed, manual zoom disabled to prevent image clipping
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.enableZoom = false; // Strictly disabled to prevent cutting off images
+    controls.enableZoom = false; // Zoom is driven purely by page scroll
     controls.minPolarAngle = Math.PI / 4;
     controls.maxPolarAngle = Math.PI * 0.72;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.8;
-    controls.addEventListener('start', () => setHasInteracted(true));
+    controls.autoRotateSpeed = 0.75;
+    controls.addEventListener('start', () => {
+      setHasInteracted(true);
+      isUserRotating.current = true;
+    });
+    controls.addEventListener('end', () => {
+      isUserRotating.current = false;
+    });
     controlsRef.current = controls;
 
     // 5. Lighting
@@ -319,7 +332,7 @@ export function Screenshots3DPhoneView({
 
     scene.add(platformGroup);
 
-    // 8. Flanking Companion Preview Cards (Desktop only to prevent mobile clutter)
+    // 8. Flanking Companion Preview Cards (Desktop only to prevent clutter)
     const showCompanionCards = width >= 640 && totalCount > 1;
 
     // Left Multitasking Card
@@ -440,7 +453,32 @@ export function Screenshots3DPhoneView({
       );
     }
 
-    // 10. Visibility and Resize Observers
+    // 10. Scroll Listener for Smooth 3D Zoom-Out Effect
+    const handleScroll = () => {
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const windowH = window.innerHeight || 800;
+
+      // Progress: 0.0 when container enters viewport, 1.0 as it scrolls through center
+      const progress = THREE.MathUtils.clamp(
+        (windowH * 0.85 - rect.top) / (windowH * 0.75),
+        0,
+        1
+      );
+      targetScrollZoom.current = progress;
+
+      // Automatically change screenshots as you scroll down if user hasn't manually clicked
+      if (totalCount > 1 && !hasUserManuallySelected.current) {
+        const stepIdx = Math.min(totalCount - 1, Math.floor(progress * totalCount));
+        if (stepIdx !== activeIdx) {
+          onSelectScreenshot(stepIdx);
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    // 11. Visibility and Resize Observers
     let isVisible = true;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -455,13 +493,9 @@ export function Screenshots3DPhoneView({
         const { width: w, height: h } = entry.contentRect;
         if (w > 0 && h > 0) {
           camera.aspect = w / h;
-          // Responsive distance adjustment so the full phone is always framed comfortably
-          const mobile = w < 640;
-          camera.position.z = mobile ? 8.4 : 7.8;
           camera.updateProjectionMatrix();
           renderer.setSize(w, h);
 
-          // Update companion cards visibility based on available width
           const canShowCompanion = w >= 640 && totalCount > 1;
           if (leftGroup) leftGroup.visible = canShowCompanion;
           if (rightGroup) rightGroup.visible = canShowCompanion;
@@ -470,7 +504,7 @@ export function Screenshots3DPhoneView({
     });
     resizeObserver.observe(container);
 
-    // 11. Animation Loop (60 FPS with gentle levitation)
+    // 12. Animation Loop (Rich Scroll-Driven Zoom-Out & Gentle Floating)
     let animId: number;
     let clock = new THREE.Clock();
 
@@ -481,11 +515,45 @@ export function Screenshots3DPhoneView({
 
       const elapsed = clock.getElapsedTime();
 
+      // Smoothly interpolate scroll zoom progress
+      currentScrollZoom.current = THREE.MathUtils.lerp(
+        currentScrollZoom.current,
+        targetScrollZoom.current,
+        0.08
+      );
+      const p = currentScrollZoom.current;
+
+      const isMobileNow = (container.clientWidth || 800) < 640;
+      const minZ = isMobileNow ? 7.4 : 6.8;
+      const maxZ = isMobileNow ? 9.2 : 8.6;
+
+      // Camera distance: starts prominent and cleanly framed, zooms out smoothly as you scroll
+      const targetCamZ = THREE.MathUtils.lerp(minZ, maxZ, p);
+      const targetCamY = THREE.MathUtils.lerp(0.04, 0.22, p);
+
+      if (!isUserRotating.current) {
+        camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetCamZ, 0.08);
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, 0.08);
+      }
+
+      // Rich 3D Perspective Tilt: As it zooms out, phone pitches back slightly in 3D
+      const targetTiltX = THREE.MathUtils.lerp(0.0, -0.14, p);
+      phone.rotation.x = THREE.MathUtils.lerp(phone.rotation.x, targetTiltX, 0.08);
+
+      // Tap bounce recovery
+      if (phoneBounceRef.current > 0.001) {
+        phoneBounceRef.current = THREE.MathUtils.lerp(phoneBounceRef.current, 0, 0.1);
+      }
+
       // Gentle floating levitation
       const levitation = Math.sin(elapsed * 1.5) * 0.06;
       phone.position.y = levitation;
+      phone.position.z = -phoneBounceRef.current;
 
-      if (platformGroup) platformGroup.position.y = levitation;
+      if (platformGroup) {
+        platformGroup.position.y = levitation;
+        platformGroup.scale.setScalar(THREE.MathUtils.lerp(0.75, 1.0, p));
+      }
       if (leftGroup) leftGroup.position.y = levitation;
       if (rightGroup) rightGroup.position.y = levitation;
 
@@ -496,15 +564,16 @@ export function Screenshots3DPhoneView({
 
     return () => {
       cancelAnimationFrame(animId);
+      window.removeEventListener('scroll', handleScroll);
       observer.disconnect();
       resizeObserver.disconnect();
       controls.dispose();
       disposeThreeScene(scene);
       renderer.dispose();
     };
-  }, [app, screenshots, activeIdx, prevIdx, nextIdx, totalCount, renderScreenToCanvas]);
+  }, [app, screenshots, activeIdx, prevIdx, nextIdx, totalCount, renderScreenToCanvas, onSelectScreenshot]);
 
-  // Canvas Click: Raycast to switch cards or open fullscreen lightbox
+  // Canvas Click: Tapping the phone smoothly changes to the next screenshot (never cuts off!)
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const canvas = canvasRef.current;
     const camera = cameraRef.current;
@@ -523,16 +592,22 @@ export function Screenshots3DPhoneView({
       const hitName = intersects[0].object.name;
 
       if (hitName === 'leftCardMesh') {
+        hasUserManuallySelected.current = true;
         onSelectScreenshot(prevIdx);
         return;
       }
       if (hitName === 'rightCardMesh') {
+        hasUserManuallySelected.current = true;
         onSelectScreenshot(nextIdx);
         return;
       }
-      // Clicking the phone screen opens high-res fullscreen view
+      // Tapping the phone screen advances to the next screenshot with a playful 3D bounce
       if (hitName === 'centerScreenMesh' || hitName === '') {
-        onOpenLightbox(activeIdx);
+        hasUserManuallySelected.current = true;
+        phoneBounceRef.current = 0.15;
+        if (totalCount > 1) {
+          onSelectScreenshot(nextIdx);
+        }
       }
     }
   };
@@ -541,15 +616,17 @@ export function Screenshots3DPhoneView({
     if (!controlsRef.current || !cameraRef.current) return;
     controlsRef.current.reset();
     const isMobile = (containerRef.current?.clientWidth || 800) < 640;
-    cameraRef.current.position.set(0, 0.1, isMobile ? 8.4 : 7.8);
+    cameraRef.current.position.set(0, 0.05, isMobile ? 7.4 : 6.8);
     controlsRef.current.autoRotate = true;
   };
 
   const handlePrevScreenshot = () => {
+    hasUserManuallySelected.current = true;
     onSelectScreenshot(prevIdx);
   };
 
   const handleNextScreenshot = () => {
+    hasUserManuallySelected.current = true;
     onSelectScreenshot(nextIdx);
   };
 
@@ -562,7 +639,7 @@ export function Screenshots3DPhoneView({
       <div
         ref={containerRef}
         onClick={handleCanvasClick}
-        className="relative w-full h-[400px] xs:h-[460px] sm:h-[500px] md:h-[540px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-900/60 to-zinc-950 border border-zinc-800/90 shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
+        className="relative w-full h-[400px] xs:h-[460px] sm:h-[500px] md:h-[540px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-900/60 to-zinc-950 border border-zinc-800/90 shadow-2xl flex items-center justify-center cursor-pointer select-none"
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
@@ -570,7 +647,7 @@ export function Screenshots3DPhoneView({
         <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center gap-2 pointer-events-none">
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-950/80 backdrop-blur-md border border-purple-800/50 text-purple-300 text-xs font-bold shadow-lg">
             <Smartphone className="w-3.5 h-3.5 text-purple-400" />
-            <span>3D Device Showcase</span>
+            <span>3D Interactive Studio</span>
           </div>
           <span className="hidden sm:inline-block px-2.5 py-1 rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-800 text-[11px] font-semibold text-zinc-400">
             WebGL 60FPS
@@ -633,13 +710,11 @@ export function Screenshots3DPhoneView({
           </>
         )}
 
-        {/* Interaction Hint (Fades once user interacts) */}
-        {!hasInteracted && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-purple-500/30 text-zinc-300 text-xs animate-pulse shadow-lg">
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            <span>Drag to rotate 360&deg; &bull; Tap phone for full photo</span>
-          </div>
-        )}
+        {/* Rich Interaction Hint (Scroll to Zoom Out • Tap Phone to Change) */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-purple-500/30 text-zinc-300 text-xs shadow-xl">
+          <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+          <span>Scroll to zoom out in 3D &bull; Tap phone to change photo</span>
+        </div>
       </div>
 
       {/* Synchronized Bottom Screenshot Selector */}
@@ -662,7 +737,10 @@ export function Screenshots3DPhoneView({
               <button
                 key={s.id || idx}
                 type="button"
-                onClick={() => onSelectScreenshot(idx)}
+                onClick={() => {
+                  hasUserManuallySelected.current = true;
+                  onSelectScreenshot(idx);
+                }}
                 className={`relative shrink-0 w-12 h-18 xs:w-14 xs:h-20 sm:w-16 sm:h-24 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
                   isSelected
                     ? 'border-purple-500 scale-105 shadow-lg shadow-purple-600/40 ring-2 ring-purple-500/30'
