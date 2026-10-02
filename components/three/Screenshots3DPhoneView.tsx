@@ -15,6 +15,17 @@ interface Screenshots3DPhoneViewProps {
   onOpenLightbox: (idx: number) => void;
 }
 
+// Helper to determine if an intersected 3D mesh is a child of a specific group
+function isChildOf(obj: THREE.Object3D | null, parent: THREE.Object3D | null): boolean {
+  if (!obj || !parent) return false;
+  let curr: THREE.Object3D | null = obj;
+  while (curr) {
+    if (curr === parent) return true;
+    curr = curr.parent;
+  }
+  return false;
+}
+
 export function Screenshots3DPhoneView({
   app,
   screenshots,
@@ -27,12 +38,38 @@ export function Screenshots3DPhoneView({
 
   const [hasWebGL, setHasWebGL] = useState<boolean>(true);
 
+  // Keep a ref to activeIdx for asynchronous Three.js and event callbacks
+  const activeIdxRef = useRef<number>(activeIdx);
+  useEffect(() => {
+    activeIdxRef.current = activeIdx;
+  }, [activeIdx]);
+
   // Scroll-driven 3D Zoom-Out Physics (0.0 = Close, 1.0 = Zoomed out in 3D perspective)
   const targetScrollZoom = useRef<number>(0.0);
   const currentScrollZoom = useRef<number>(0.0);
   const cardBounceRef = useRef<number>(0.0);
+  const cardFlipAngle = useRef<number>(0);
+  const prevActiveIdx = useRef<number>(activeIdx);
   const isUserRotating = useRef<boolean>(false);
   const hasUserManuallySelected = useRef<boolean>(false);
+
+  // Pointer & Touch gesture tracking for drag vs tap disambiguation and swipe detection
+  const pointerDownPos = useRef<{ x: number; y: number; time: number }>({ x: 0, y: 0, time: 0 });
+  const touchStartPos = useRef<{ x: number; y: number; time: number } | null>(null);
+  const touchEndPos = useRef<{ x: number; y: number } | null>(null);
+  const lastWheelTime = useRef<number>(0);
+  const lastScrollY = useRef<number>(0);
+  const manualResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-reset manual selection after 2.8s of idle so page scroll naturally resumes cycling
+  const resetManualLockWithTimeout = useCallback(() => {
+    if (manualResetTimerRef.current) {
+      clearTimeout(manualResetTimerRef.current);
+    }
+    manualResetTimerRef.current = setTimeout(() => {
+      hasUserManuallySelected.current = false;
+    }, 2800);
+  }, []);
 
   // Three.js references
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -57,6 +94,18 @@ export function Screenshots3DPhoneView({
   const totalCount = screenshots.length;
   const prevIdx = (activeIdx - 1 + totalCount) % totalCount;
   const nextIdx = (activeIdx + 1) % totalCount;
+
+  // Visual card flip turn impulse whenever active screenshot changes
+  useEffect(() => {
+    if (prevActiveIdx.current !== activeIdx) {
+      const isForward =
+        (activeIdx > prevActiveIdx.current && !(prevActiveIdx.current === 0 && activeIdx === totalCount - 1)) ||
+        (prevActiveIdx.current === totalCount - 1 && activeIdx === 0);
+      cardFlipAngle.current = isForward ? -0.22 : 0.22;
+      cardBounceRef.current = 0.08;
+      prevActiveIdx.current = activeIdx;
+    }
+  }, [activeIdx, totalCount]);
 
   // Render screenshot onto target canvas & texture
   const renderScreenToCanvas = useCallback(
@@ -386,11 +435,18 @@ export function Screenshots3DPhoneView({
       );
     }
 
-    // 9. Scroll Listener for Smooth 3D Zoom-Out Effect
+    // 9. Scroll Listener for Smooth 3D Zoom-Out Effect & Automatic Progression
     const handleScroll = () => {
       if (!container) return;
       const rect = container.getBoundingClientRect();
       const windowH = window.innerHeight || 800;
+
+      // Reset manual selection lock if user has scrolled significantly (> 120px)
+      const currentScrollY = window.scrollY;
+      if (Math.abs(currentScrollY - lastScrollY.current) > 120) {
+        hasUserManuallySelected.current = false;
+        lastScrollY.current = currentScrollY;
+      }
 
       // Progress: 0.0 when container enters viewport, 1.0 as it scrolls through center
       const progress = THREE.MathUtils.clamp(
@@ -403,7 +459,7 @@ export function Screenshots3DPhoneView({
       // Automatically change screenshots as you scroll down if user hasn't manually clicked
       if (totalCount > 1 && !hasUserManuallySelected.current) {
         const stepIdx = Math.min(totalCount - 1, Math.floor(progress * totalCount));
-        if (stepIdx !== activeIdx) {
+        if (stepIdx !== activeIdxRef.current) {
           onSelectScreenshot(stepIdx);
         }
       }
@@ -473,6 +529,14 @@ export function Screenshots3DPhoneView({
       const targetTiltX = THREE.MathUtils.lerp(0.0, -0.12, p);
       cardGroup.rotation.x = THREE.MathUtils.lerp(cardGroup.rotation.x, targetTiltX, 0.08);
 
+      // Smooth decay of card flip turn angle on screenshot change
+      if (Math.abs(cardFlipAngle.current) > 0.001) {
+        cardFlipAngle.current = THREE.MathUtils.lerp(cardFlipAngle.current, 0, 0.1);
+      }
+      if (!isUserRotating.current) {
+        cardGroup.rotation.y = cardFlipAngle.current;
+      }
+
       // Tap bounce recovery
       if (cardBounceRef.current > 0.001) {
         cardBounceRef.current = THREE.MathUtils.lerp(cardBounceRef.current, 0, 0.1);
@@ -494,20 +558,38 @@ export function Screenshots3DPhoneView({
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('scroll', handleScroll);
+      if (manualResetTimerRef.current) {
+        clearTimeout(manualResetTimerRef.current);
+      }
       observer.disconnect();
       resizeObserver.disconnect();
       controls.dispose();
       disposeThreeScene(scene);
       renderer.dispose();
     };
-  }, [app, screenshots, activeIdx, prevIdx, nextIdx, totalCount, renderScreenToCanvas, onSelectScreenshot]);
+  }, [app, screenshots, totalCount, renderScreenToCanvas, onSelectScreenshot, resetManualLockWithTimeout]);
 
-  // Canvas Click: Tapping the screenshot smoothly advances to next photo (never cuts off!)
-  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  // Pointer position tracker to distinguish between 3D orbit drag and click
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    pointerDownPos.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: Date.now(),
+    };
+  };
+
+  // Dynamic hover cursor: zoom-in over active screenshot, pointer over companion cards, grab for 3D rotation
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const canvas = canvasRef.current;
     const camera = cameraRef.current;
     const scene = sceneRef.current;
-    if (!canvas || !camera || !scene) return;
+    const container = containerRef.current;
+    if (!canvas || !camera || !scene || !container) return;
+
+    if (isUserRotating.current) {
+      container.style.cursor = 'grabbing';
+      return;
+    }
 
     const rect = canvas.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -518,25 +600,137 @@ export function Screenshots3DPhoneView({
 
     const intersects = raycaster.intersectObjects(scene.children, true);
     if (intersects.length > 0) {
-      const hitName = intersects[0].object.name;
+      const hitObj = intersects[0].object;
+      if (cardGroupRef.current && isChildOf(hitObj, cardGroupRef.current)) {
+        container.style.cursor = 'zoom-in';
+        return;
+      }
+      if (
+        (leftCardGroupRef.current && isChildOf(hitObj, leftCardGroupRef.current)) ||
+        (rightCardGroupRef.current && isChildOf(hitObj, rightCardGroupRef.current))
+      ) {
+        container.style.cursor = 'pointer';
+        return;
+      }
+    }
+    container.style.cursor = 'grab';
+  };
 
-      if (hitName === 'leftCardMesh') {
+  // Mouse Wheel / Trackpad scroll: cycling through screenshots over the canvas
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const absX = Math.abs(e.deltaX);
+    const absY = Math.abs(e.deltaY);
+
+    if (absX > 18 || absY > 18) {
+      const now = Date.now();
+      if (now - lastWheelTime.current > 320) {
+        lastWheelTime.current = now;
         hasUserManuallySelected.current = true;
+        resetManualLockWithTimeout();
+
+        const delta = absX > absY ? e.deltaX : e.deltaY;
+        if (delta > 0) {
+          onSelectScreenshot(nextIdx);
+        } else {
+          onSelectScreenshot(prevIdx);
+        }
+      }
+    }
+  };
+
+  // Mobile Touch Gestures: Horizontal swipe advances/rewinds screenshots
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 1) {
+      touchStartPos.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now(),
+      };
+      touchEndPos.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 1) {
+      touchEndPos.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartPos.current || !touchEndPos.current) return;
+    const dx = touchEndPos.current.x - touchStartPos.current.x;
+    const dy = touchEndPos.current.y - touchStartPos.current.y;
+    const dt = Date.now() - touchStartPos.current.time;
+
+    // Detect horizontal swipe on mobile
+    if (Math.abs(dx) > 38 && Math.abs(dx) > Math.abs(dy) * 1.15 && dt < 650) {
+      hasUserManuallySelected.current = true;
+      resetManualLockWithTimeout();
+      if (dx < 0) {
+        onSelectScreenshot(nextIdx);
+      } else {
+        onSelectScreenshot(prevIdx);
+      }
+    }
+
+    touchStartPos.current = null;
+    touchEndPos.current = null;
+  };
+
+  // Canvas Click: Tapping the active screenshot card opens it in high-res Lightbox modal
+  // Tapping left or right companion cards flips to that screenshot
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const canvas = canvasRef.current;
+    const camera = cameraRef.current;
+    const scene = sceneRef.current;
+    if (!canvas || !camera || !scene) return;
+
+    // Check if pointer dragged (e.g. 3D orbit rotation)
+    const dx = Math.abs(e.clientX - pointerDownPos.current.x);
+    const dy = Math.abs(e.clientY - pointerDownPos.current.y);
+    if (dx > 8 || dy > 8) {
+      // User was rotating the 3D scene, not clicking
+      return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    if (intersects.length > 0) {
+      const hitObj = intersects[0].object;
+
+      // 1. Click Left companion preview card -> change to previous screenshot
+      if (leftCardGroupRef.current && isChildOf(hitObj, leftCardGroupRef.current)) {
+        hasUserManuallySelected.current = true;
+        resetManualLockWithTimeout();
         onSelectScreenshot(prevIdx);
         return;
       }
-      if (hitName === 'rightCardMesh') {
+
+      // 2. Click Right companion preview card -> change to next screenshot
+      if (rightCardGroupRef.current && isChildOf(hitObj, rightCardGroupRef.current)) {
         hasUserManuallySelected.current = true;
+        resetManualLockWithTimeout();
         onSelectScreenshot(nextIdx);
         return;
       }
-      // Tapping the card advances to next screenshot with a playful 3D bounce
-      if (hitName === 'centerScreenMesh' || hitName === '') {
-        hasUserManuallySelected.current = true;
-        cardBounceRef.current = 0.15;
-        if (totalCount > 1) {
-          onSelectScreenshot(nextIdx);
-        }
+
+      // 3. Click Active Center 3D card -> OPEN the screenshot in full resolution (Lightbox modal)!
+      if (cardGroupRef.current && isChildOf(hitObj, cardGroupRef.current)) {
+        cardBounceRef.current = 0.08;
+        onOpenLightbox(activeIdxRef.current);
+        return;
       }
     }
   };
@@ -547,15 +741,18 @@ export function Screenshots3DPhoneView({
     const isMobile = (containerRef.current?.clientWidth || 800) < 640;
     cameraRef.current.position.set(0, 0.05, isMobile ? 7.2 : 6.6);
     controlsRef.current.autoRotate = true;
+    cardFlipAngle.current = 0;
   };
 
   const handlePrevScreenshot = () => {
     hasUserManuallySelected.current = true;
+    resetManualLockWithTimeout();
     onSelectScreenshot(prevIdx);
   };
 
   const handleNextScreenshot = () => {
     hasUserManuallySelected.current = true;
+    resetManualLockWithTimeout();
     onSelectScreenshot(nextIdx);
   };
 
@@ -564,11 +761,17 @@ export function Screenshots3DPhoneView({
 
   return (
     <div className="relative w-full flex flex-col items-center animate-in fade-in duration-300">
-      {/* 3D WebGL Canvas Viewport - Clean, borderless, no ugly phone hardware or badges */}
+      {/* 3D WebGL Canvas Viewport - Clean, borderless, click-to-open lightbox & swipe/scroll to change */}
       <div
         ref={containerRef}
         onClick={handleCanvasClick}
-        className="relative w-full h-[400px] xs:h-[460px] sm:h-[500px] md:h-[540px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center cursor-pointer select-none"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative w-full h-[400px] xs:h-[460px] sm:h-[500px] md:h-[540px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center select-none cursor-grab"
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
@@ -598,6 +801,14 @@ export function Screenshots3DPhoneView({
             <Maximize2 className="w-4 h-4" />
             <span className="hidden sm:inline">Fullscreen</span>
           </button>
+        </div>
+
+        {/* Subtle Bottom Action Hint: Clarifies that clicking opens full resolution and swiping/scrolling changes screenshot */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-3.5 py-1.5 rounded-full bg-zinc-950/80 backdrop-blur-md border border-white/10 text-[11px] text-zinc-300 font-medium flex items-center gap-2 shadow-lg transition-all">
+          <Maximize2 className="w-3 h-3 text-purple-400" />
+          <span>Click card to open full size</span>
+          <span className="text-zinc-600">&bull;</span>
+          <span className="text-zinc-400">Scroll / swipe to switch</span>
         </div>
 
         {/* Previous & Next Quick Arrows */}
