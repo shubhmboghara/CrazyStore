@@ -129,40 +129,43 @@ export function drawAndroidScreenCanvas(
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, width, height);
 
-  // If a real screenshot preview image is provided, draw it centered with rounded corners
+  // If a real screenshot preview image is provided, draw it uncropped with aspect ratio preserved
   if (previewImage && previewImage.complete && previewImage.naturalWidth > 0) {
-    ctx.save();
-    // Rounded clip for the screen area below status bar
-    const previewMargin = 24;
-    const previewTop = 80;
-    const previewHeight = height - previewTop - 40;
-    const previewWidth = width - previewMargin * 2;
-    const r = 32;
+    // Fill background with deep OLED black
+    ctx.fillStyle = '#09090b';
+    ctx.fillRect(0, 0, width, height);
 
+    const imgW = previewImage.naturalWidth;
+    const imgH = previewImage.naturalHeight;
+    const imgAspect = imgW / imgH;
+    const canvasAspect = width / height;
+
+    let drawW = width;
+    let drawH = height;
+    let drawX = 0;
+    let drawY = 0;
+
+    // Aspect ratio fit (contain) - 100% full screenshot visible, zero cropping
+    if (imgAspect > canvasAspect) {
+      drawW = width;
+      drawH = width / imgAspect;
+      drawY = (height - drawH) / 2;
+    } else {
+      drawH = height;
+      drawW = height * imgAspect;
+      drawX = (width - drawW) / 2;
+    }
+
+    // Clip to screen rounded bezel
+    ctx.save();
     ctx.beginPath();
-    ctx.moveTo(previewMargin + r, previewTop);
-    ctx.lineTo(previewMargin + previewWidth - r, previewTop);
-    ctx.quadraticCurveTo(previewMargin + previewWidth, previewTop, previewMargin + previewWidth, previewTop + r);
-    ctx.lineTo(previewMargin + previewWidth, previewTop + previewHeight - r);
-    ctx.quadraticCurveTo(previewMargin + previewWidth, previewTop + previewHeight, previewMargin + previewWidth - r, previewTop + previewHeight);
-    ctx.lineTo(previewMargin + r, previewTop + previewHeight);
-    ctx.quadraticCurveTo(previewMargin, previewTop + previewHeight, previewMargin, previewTop + previewHeight - r);
-    ctx.lineTo(previewMargin, previewTop + r);
-    ctx.quadraticCurveTo(previewMargin, previewTop, previewMargin + r, previewTop);
-    ctx.closePath();
+    ctx.roundRect(0, 0, width, height, 28);
     ctx.clip();
 
-    ctx.drawImage(previewImage, previewMargin, previewTop, previewWidth, previewHeight);
-
-    // Subtle dark gradient vignette over screenshot for UI readability
-    const overlayGrad = ctx.createLinearGradient(0, previewTop, 0, previewTop + 140);
-    overlayGrad.addColorStop(0, 'rgba(9, 9, 11, 0.7)');
-    overlayGrad.addColorStop(1, 'rgba(9, 9, 11, 0)');
-    ctx.fillStyle = overlayGrad;
-    ctx.fillRect(previewMargin, previewTop, previewWidth, 140);
-
+    ctx.drawImage(previewImage, drawX, drawY, drawW, drawH);
     ctx.restore();
-  } else {
+    return; // Early return: do not draw fake status bar or dark vignette over real screenshots!
+  }
     // 2. Decorative Ambient Glow Orbs
     const orbGrad1 = ctx.createRadialGradient(width * 0.8, height * 0.25, 10, width * 0.8, height * 0.25, 240);
     orbGrad1.addColorStop(0, 'rgba(139, 92, 246, 0.35)');
@@ -329,7 +332,6 @@ export function drawAndroidScreenCanvas(
     ctx.font = 'bold 16px sans-serif';
     ctx.fillText('Get APK ↓', ctaX + 28, ctaY + 30);
     ctx.restore();
-  }
 
   // 6. Top Status Bar (Time, Battery, Wi-Fi, 5G)
   ctx.save();

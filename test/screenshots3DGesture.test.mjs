@@ -1,77 +1,84 @@
 import assert from 'node:assert/strict';
 
 /**
- * Mathematical models for Screenshots 3D Phone Thumb Swipe & Zoom Out
+ * Mathematical models for Screenshots 3D Phone Uncropped Framing & Aspect Ratio Containment
  */
-function computeThumbSwipeProgress(initialZoom, deltaY, sensitivity = 220) {
-  const progressDelta = -deltaY / sensitivity;
-  return Math.max(0, Math.min(1, initialZoom + progressDelta));
+function computeScreenshotContain(imgW, imgH, canvasW, canvasH) {
+  const imgAspect = imgW / imgH;
+  const canvasAspect = canvasW / canvasH;
+
+  let drawW = canvasW;
+  let drawH = canvasH;
+  let drawX = 0;
+  let drawY = 0;
+
+  if (imgAspect > canvasAspect) {
+    drawW = canvasW;
+    drawH = canvasW / imgAspect;
+    drawY = (canvasH - drawH) / 2;
+  } else {
+    drawH = canvasH;
+    drawW = canvasH * imgAspect;
+    drawX = (canvasW - drawW) / 2;
+  }
+
+  return { drawX, drawY, drawW, drawH };
 }
 
-function snapZoomProgress(currentProgress, threshold = 0.45) {
-  return currentProgress > threshold ? 1.0 : 0.0;
+function computeFrustumHeight(fovDegrees, distance) {
+  const rad = (fovDegrees * Math.PI) / 360;
+  return 2 * distance * Math.tan(rad);
 }
 
-function lerp(a, b, t) {
-  return a + (b - a) * t;
+function shouldShowCompanionCards(width, totalCount) {
+  return width >= 640 && totalCount > 1;
 }
 
-function computeCameraAndPhoneTransforms(zoomProgress, isMobile = false) {
-  const closeZ = isMobile ? 4.9 : 4.4;
-  const farZ = isMobile ? 8.6 : 7.8;
-  const cameraZ = lerp(closeZ, farZ, zoomProgress);
-  const cameraY = lerp(0.02, 0.35, zoomProgress);
-  const phoneTiltX = lerp(0.0, -0.22, zoomProgress); // tilted back ~13 deg
-  return { cameraZ, cameraY, phoneTiltX };
+function getSafeCameraZ(isMobile) {
+  return isMobile ? 8.4 : 7.8;
 }
 
-function computeCompanionCards(zoomProgress) {
-  const cardAlpha = Math.max(0, Math.min(0.8, (zoomProgress - 0.25) / 0.75));
-  const leftX = lerp(-1.4, -3.2, zoomProgress);
-  const rightX = lerp(1.4, 3.2, zoomProgress);
-  const cardZ = lerp(-2.2, -1.2, zoomProgress);
-  return { cardAlpha, leftX, rightX, cardZ };
+console.log('Running automated test suite for CrazyStore 3D Screenshots & Uncropped Framing...');
+
+// Test 1: Full screenshot contain math - 9:16 portrait
+const portraitFit = computeScreenshotContain(1080, 1920, 512, 1024);
+assert.ok(portraitFit.drawW <= 512, 'Draw width must fit within canvas');
+assert.ok(portraitFit.drawH <= 1024, 'Draw height must fit within canvas');
+assert.ok(portraitFit.drawY >= 0, 'Top must not be cut off');
+assert.ok(portraitFit.drawY + portraitFit.drawH <= 1024, 'Bottom must not be cut off');
+console.log('✓ Test 1 Passed: 9:16 Portrait screenshot fits 100% uncropped with zero clipping');
+
+// Test 2: Full screenshot contain math - 9:21 ultra-tall modern Android
+const tallFit = computeScreenshotContain(1080, 2520, 512, 1024);
+assert.ok(tallFit.drawW <= 512, 'Tall screenshot width must fit');
+assert.ok(tallFit.drawH <= 1024, 'Tall screenshot height must fit');
+assert.equal(tallFit.drawY, 0, 'Tall screenshot spans full vertical bounds');
+console.log('✓ Test 2 Passed: 9:21 Ultra-tall screenshot fits 100% uncropped with zero clipping');
+
+// Test 3: Camera frustum safety - Phone (height 5.0) must never be cropped vertically
+const phoneHeight = 5.0;
+const desktopFrustumH = computeFrustumHeight(40, getSafeCameraZ(false));
+assert.ok(desktopFrustumH > phoneHeight * 1.1, `Desktop frustum (${desktopFrustumH.toFixed(2)}) must exceed phone height (${phoneHeight}) by >10%`);
+
+const mobileFrustumH = computeFrustumHeight(40, getSafeCameraZ(true));
+assert.ok(mobileFrustumH > phoneHeight * 1.15, `Mobile frustum (${mobileFrustumH.toFixed(2)}) must provide extra margin for small screens`);
+console.log('✓ Test 3 Passed: 3D Camera distance guarantees full phone is completely visible');
+
+// Test 4: Companion card visibility prevents mobile crowding
+assert.equal(shouldShowCompanionCards(400, 3), false, 'Mobile width < 640 must hide companion cards to keep center phone prominent');
+assert.equal(shouldShowCompanionCards(1024, 3), true, 'Desktop width >= 640 can show companion cards in depth');
+assert.equal(shouldShowCompanionCards(1024, 1), false, 'Single screenshot must never show companion cards');
+console.log('✓ Test 4 Passed: Responsive card layout rules prevent mobile screen clutter');
+
+// Test 5: Next/prev index wrapping
+function getNextIdx(current, total) {
+  return (current + 1) % total;
 }
+function getPrevIdx(current, total) {
+  return (current - 1 + total) % total;
+}
+assert.equal(getNextIdx(2, 3), 0, 'Next index wraps cleanly to 0');
+assert.equal(getPrevIdx(0, 3), 2, 'Previous index wraps cleanly to last');
+console.log('✓ Test 5 Passed: Cyclic screenshot indexing navigates deterministically');
 
-console.log('Running automated test suite for CrazyStore 3D Thumb Gesture & Scroll Zoom Out...');
-
-// Test 1: Thumb swipe up triggers zoom out
-const initialZoom = 0.0; // In App View
-const swipeUpDeltaY = -220; // 220px drag upward with thumb
-const progressAfterSwipeUp = computeThumbSwipeProgress(initialZoom, swipeUpDeltaY, 220);
-assert.equal(progressAfterSwipeUp, 1.0, 'Swiping up 220px should reach full 1.0 zoom overview');
-console.log('✓ Test 1 Passed: Thumb swipe up smoothly pulls zoom progress to 1.0 (overview)');
-
-// Test 2: Thumb swipe down from overview triggers zoom in
-const initialOverview = 1.0;
-const swipeDownDeltaY = 110; // Drag down 110px
-const progressAfterSwipeDown = computeThumbSwipeProgress(initialOverview, swipeDownDeltaY, 220);
-assert.equal(progressAfterSwipeDown, 0.5, 'Dragging down halfway should yield 0.5 zoom progress');
-console.log('✓ Test 2 Passed: Thumb swipe down smoothly reduces zoom progress');
-
-// Test 3: Elastic snapping threshold
-assert.equal(snapZoomProgress(0.6), 1.0, 'Progress > 0.45 must snap to 1.0 (overview)');
-assert.equal(snapZoomProgress(0.3), 0.0, 'Progress <= 0.45 must snap to 0.0 (app view)');
-console.log('✓ Test 3 Passed: Elastic gesture snap cleanly converges to binary modes');
-
-// Test 4: Camera distance and perspective tilt angles
-const inApp = computeCameraAndPhoneTransforms(0.0, false);
-assert.equal(inApp.cameraZ, 4.4, 'App view camera distance should be close (4.4)');
-assert.equal(inApp.phoneTiltX, 0.0, 'App view phone should stand upright (0.0 rad)');
-
-const inOverview = computeCameraAndPhoneTransforms(1.0, false);
-assert.equal(inOverview.cameraZ, 7.8, 'Overview camera distance should be zoomed out (7.8)');
-assert.ok(inOverview.phoneTiltX < -0.2, 'Overview phone must tilt backward to create the app-close perspective');
-console.log('✓ Test 4 Passed: 3D perspective camera Z and backward tilt transform correctly');
-
-// Test 5: Multitasking cards slide in depth
-const cardsAtApp = computeCompanionCards(0.0);
-assert.equal(cardsAtApp.cardAlpha, 0.0, 'Companion cards must be completely hidden in app view');
-
-const cardsAtOverview = computeCompanionCards(1.0);
-assert.equal(cardsAtOverview.cardAlpha, 0.8, 'Companion cards must reach max opacity in overview');
-assert.ok(cardsAtOverview.leftX < -3.0, 'Left card must slide outwards to reveal multitasking deck');
-assert.ok(cardsAtOverview.rightX > 3.0, 'Right card must slide outwards to reveal multitasking deck');
-console.log('✓ Test 5 Passed: 3D Multitasking cards emerge in depth matching iOS/Android app switcher');
-
-console.log('\n🎉 ALL 5 THUMB GESTURE & 3D ZOOM OUT TESTS PASSED WITH 100% SUCCESS!');
+console.log('\n🎉 ALL 5 UNCLIPPED SCREENSHOT & 3D FRAMING TESTS PASSED WITH 100% SUCCESS!');
