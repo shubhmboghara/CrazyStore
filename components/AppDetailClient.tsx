@@ -457,7 +457,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                       </span>
                     </div>
                     <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate hidden xs:block">
-                      Interactive 3D device showcase &bull; Drag to rotate 360&deg; &bull; Tap any screenshot to inspect
+                      Interactive 3D gallery &bull; Drag to rotate in 3D &bull; Scroll to zoom out
                     </p>
                   </div>
                 </div>
