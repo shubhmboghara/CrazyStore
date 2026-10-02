@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Sparkles } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import { NavLogo3D } from '@/components/three';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -20,11 +21,7 @@ export function Navbar() {
           id="nav-logo"
           className="flex items-center gap-3 group transition-transform hover:scale-[1.02]"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-500 p-0.5 shadow-md shadow-purple-500/20 flex items-center justify-center shrink-0">
-            <div className="w-full h-full bg-zinc-950 rounded-[10px] flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-purple-400 group-hover:rotate-12 transition-transform" />
-            </div>
-          </div>
+          <NavLogo3D size="md" />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-black text-lg text-zinc-100 tracking-tight">

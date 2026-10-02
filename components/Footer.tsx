@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Smartphone, ShieldCheck, Sparkles, ExternalLink } from 'lucide-react';
 import { FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa6';
+import { NavLogo3D } from '@/components/three';
 
 export function Footer() {
   return (
@@ -12,11 +13,9 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {/* Column 1: Brand */}
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white">
-                <Smartphone className="w-4 h-4" />
-              </div>
-              <span className="font-extrabold text-base text-zinc-100 tracking-tight">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <NavLogo3D size="sm" />
+              <span className="font-extrabold text-base text-zinc-100 tracking-tight group-hover:text-purple-300 transition-colors">
                 CrazyStore
               </span>
             </Link>

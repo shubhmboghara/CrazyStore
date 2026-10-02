@@ -16,8 +16,10 @@ export const NavLogo3D = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-800/40 flex items-center justify-center animate-pulse">
-        <span className="text-xs">📱</span>
+      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-500 p-0.5 shadow-md shadow-purple-500/25 flex items-center justify-center shrink-0">
+        <div className="w-full h-full bg-zinc-950 rounded-[10px] flex items-center justify-center overflow-hidden p-1">
+          <img src="/icon.svg" alt="CrazyStore Logo" className="w-full h-full object-contain" />
+        </div>
       </div>
     ),
   }
