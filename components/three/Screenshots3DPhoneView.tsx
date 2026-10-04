@@ -803,13 +803,6 @@ export function Screenshots3DPhoneView({
           </button>
         </div>
 
-        {/* Subtle Bottom Action Hint: Clarifies that clicking opens full resolution and swiping/scrolling changes screenshot */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-3.5 py-1.5 rounded-full bg-zinc-950/80 backdrop-blur-md border border-white/10 text-[11px] text-zinc-300 font-medium flex items-center gap-2 shadow-lg transition-all">
-          <Maximize2 className="w-3 h-3 text-purple-400" />
-          <span>Click card to open full size</span>
-          <span className="text-zinc-600">&bull;</span>
-          <span className="text-zinc-400">Scroll / swipe to switch</span>
-        </div>
 
         {/* Previous & Next Quick Arrows */}
         {totalCount > 1 && (
