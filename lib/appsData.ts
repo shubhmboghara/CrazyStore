@@ -67,25 +67,40 @@ export const ANDROID_APPS: AndroidApp[] = [
     screenshots: [
       {
         id: '1',
-        title: 'Trending Feed',
-        subtitle: 'Fluid 120Hz Compose LazyColumn feed with video previews',
+        title: 'Trending Feed & Discovery',
+        subtitle: 'Fluid 120Hz Jetpack Compose LazyColumn with real-time video previews & ad-free streaming',
         accentColor: 'from-purple-900/40 to-purple-600/20',
-        type: 'feed'
+        type: 'feed',
+        url: '/screenshots/videohub-feed.svg',
+        imageUrl: '/screenshots/videohub-feed.svg',
       },
       {
         id: '2',
-        title: 'Immersive Player',
-        subtitle: 'ExoPlayer engine with gesture controls & resolution picker',
+        title: 'Immersive 4K ExoPlayer',
+        subtitle: 'Hardware-accelerated 4K 60fps playback with live SponsorBlock skip markers and gesture HUD',
         accentColor: 'from-indigo-900/40 to-purple-900/20',
-        type: 'player'
+        type: 'player',
+        url: '/screenshots/videohub-player.svg',
+        imageUrl: '/screenshots/videohub-player.svg',
       },
       {
         id: '3',
-        title: 'SponsorBlock & Audio',
-        subtitle: 'Background audio player with lockscreen media controls',
+        title: 'Background Audio & Lockscreen',
+        subtitle: 'AMOLED lockscreen controller, 320kbps Opus Hi-Fi audio, waveform visualizer & time-saved telemetry',
         accentColor: 'from-violet-900/40 to-fuchsia-900/20',
-        type: 'stats'
-      }
+        type: 'stats',
+        url: '/screenshots/videohub-audio.svg',
+        imageUrl: '/screenshots/videohub-audio.svg',
+      },
+      {
+        id: '4',
+        title: 'Material You & Settings',
+        subtitle: 'Android 15 Dynamic Color palettes, granular SponsorBlock filters & 100% De-Googled privacy controls',
+        accentColor: 'from-fuchsia-900/40 to-pink-900/20',
+        type: 'settings',
+        url: '/screenshots/videohub-settings.svg',
+        imageUrl: '/screenshots/videohub-settings.svg',
+      },
     ],
     initialRating: 4.8,
     initialReviewCount: 24

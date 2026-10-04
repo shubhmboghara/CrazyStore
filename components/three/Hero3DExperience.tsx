@@ -67,7 +67,7 @@ const DEFAULT_FALLBACK_APPS: ShowcaseApp[] = [
     color1: '#8b5cf6',
     color2: '#6366f1',
     tagline: 'Ad-Free High-Definition Player for Android',
-    screenshotUrl: null,
+    screenshotUrl: '/screenshots/videohub-feed.svg',
   },
   {
     slug: 'audioforge',

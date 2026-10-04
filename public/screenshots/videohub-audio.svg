@@ -1,0 +1,272 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 2340" width="1080" height="2340">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bgAudio" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#020205"/>
+      <stop offset="50%" stop-color="#070710"/>
+      <stop offset="100%" stop-color="#010103"/>
+    </linearGradient>
+    <linearGradient id="artGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="40%" stop-color="#4f46e5"/>
+      <stop offset="80%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+    <linearGradient id="accentPurple" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="waveGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="statsGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="artGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="24" stdDeviation="40" flood-color="#8b5cf6" flood-opacity="0.45"/>
+    </filter>
+    <filter id="blurBackdrop" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="80"/>
+    </filter>
+    <filter id="cardGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="30" flood-color="#000000" flood-opacity="0.7"/>
+    </filter>
+  </defs>
+
+  <!-- Deep OLED Background -->
+  <rect width="1080" height="2340" fill="url(#bgAudio)"/>
+
+  <!-- Ambient Blurred Artwork Backdrop Reflection -->
+  <circle cx="540" cy="650" r="380" fill="url(#artGrad)" opacity="0.25" filter="url(#blurBackdrop)"/>
+  <circle cx="850" cy="1400" r="280" fill="#06b6d4" opacity="0.12" filter="url(#blurBackdrop)"/>
+
+  <!-- Top System Bar -->
+  <g id="statusBar3">
+    <text x="70" y="80" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="700" fill="#ffffff">09:41</text>
+    <circle cx="540" cy="70" r="22" fill="#000000"/>
+    <circle cx="540" cy="70" r="23" stroke="#27272a" stroke-width="2" fill="none"/>
+    <g transform="translate(860, 52)">
+      <path d="M0,24 A18,18 0 0,1 26,24 M4,18 A24,24 0 0,1 22,18 M8,12 A30,30 0 0,1 18,12 M13,27 A2,2 0 1,1 13,29" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <text x="45" y="26" font-family="sans-serif" font-size="24" font-weight="900" fill="#ffffff">5G</text>
+      <rect x="95" y="6" width="46" height="24" rx="6" stroke="#ffffff" stroke-width="3" fill="none"/>
+      <rect x="142" y="14" width="4" height="8" rx="2" fill="#ffffff"/>
+      <rect x="99" y="10" width="34" height="16" rx="3" fill="#10b981"/>
+    </g>
+  </g>
+
+  <!-- Top Header Navigation -->
+  <g id="audioHeader" transform="translate(60, 130)">
+    <!-- Collapse arrow -->
+    <path d="M20,15 L40,35 L60,15" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    
+    <text x="540" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="700" fill="#9ca3af" text-anchor="middle">
+      PLAYING FROM BACKGROUND QUEUE
+    </text>
+    <text x="540" y="66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle">
+      VideoHub Audio Mode
+    </text>
+
+    <!-- More / Equalizer icon -->
+    <g transform="translate(900, 10)">
+      <line x1="10" y1="0" x2="10" y2="40" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="10" cy="14" r="6" fill="#8b5cf6"/>
+      <line x1="28" y1="0" x2="28" y2="40" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="28" cy="28" r="6" fill="#8b5cf6"/>
+    </g>
+  </g>
+
+  <!-- Center Vinyl / Album Art with Ambient Glow -->
+  <g id="albumContainer" transform="translate(190, 260)">
+    <!-- Vinyl Glow Ring -->
+    <circle cx="350" cy="350" r="350" fill="none" stroke="#2a1f4d" stroke-width="2"/>
+    <circle cx="350" cy="350" r="320" fill="none" stroke="#372863" stroke-width="2" stroke-dasharray="10 16"/>
+
+    <!-- Square Cover Art -->
+    <rect x="50" y="50" width="600" height="600" rx="48" fill="url(#artGrad)" filter="url(#artGlow)"/>
+
+    <!-- Cover Art Graphic Elements -->
+    <circle cx="350" cy="350" r="140" fill="#000000" opacity="0.3"/>
+    <circle cx="350" cy="350" r="70" fill="#000000" opacity="0.6"/>
+    <circle cx="350" cy="350" r="18" fill="#ffffff"/>
+
+    <!-- Headphone / Audio Symbol -->
+    <path d="M260,350 A90,90 0 0,1 440,350 L440,380 A20,20 0 0,1 420,400 L410,400 A20,20 0 0,1 390,380 L390,350 M260,350 L260,380 A20,20 0 0,0 280,400 L290,400 A20,20 0 0,0 310,380 L310,350" stroke="#ffffff" stroke-width="8" stroke-linecap="round" fill="none"/>
+
+    <!-- Audio Format Badges -->
+    <rect x="74" y="584" width="220" height="46" rx="16" fill="#000000" opacity="0.8"/>
+    <text x="184" y="616" font-family="sans-serif" font-size="20" font-weight="900" fill="#38bdf8" text-anchor="middle">✦ 320 KBPS OPUS</text>
+
+    <rect x="390" y="584" width="236" height="46" rx="16" fill="#10b981" opacity="0.9"/>
+    <text x="508" y="616" font-family="sans-serif" font-size="19" font-weight="800" fill="#ffffff" text-anchor="middle">🛡️ SPONSORBLOCK ON</text>
+  </g>
+
+  <!-- Animated Frequency Waveform Spectrum -->
+  <g id="waveform" transform="translate(140, 1020)">
+    <!-- 28 Waveform Bars of varying height simulating live playback -->
+    <rect x="0" y="35" width="16" height="50" rx="8" fill="url(#waveGrad)"/>
+    <rect x="28" y="20" width="16" height="80" rx="8" fill="url(#waveGrad)"/>
+    <rect x="56" y="45" width="16" height="30" rx="8" fill="url(#waveGrad)"/>
+    <rect x="84" y="10" width="16" height="100" rx="8" fill="url(#waveGrad)"/>
+    <rect x="112" y="25" width="16" height="70" rx="8" fill="url(#waveGrad)"/>
+    <rect x="140" y="40" width="16" height="40" rx="8" fill="url(#waveGrad)"/>
+    <rect x="168" y="5" width="16" height="110" rx="8" fill="url(#waveGrad)"/>
+    <rect x="196" y="18" width="16" height="84" rx="8" fill="url(#waveGrad)"/>
+    <rect x="224" y="30" width="16" height="60" rx="8" fill="url(#waveGrad)"/>
+    <rect x="252" y="0" width="16" height="120" rx="8" fill="url(#waveGrad)"/>
+    <rect x="280" y="15" width="16" height="90" rx="8" fill="url(#waveGrad)"/>
+    <rect x="308" y="42" width="16" height="36" rx="8" fill="url(#waveGrad)"/>
+    <rect x="336" y="8" width="16" height="104" rx="8" fill="url(#waveGrad)"/>
+    <rect x="364" y="22" width="16" height="76" rx="8" fill="url(#waveGrad)"/>
+    <rect x="392" y="38" width="16" height="44" rx="8" fill="url(#waveGrad)"/>
+    <rect x="420" y="5" width="16" height="110" rx="8" fill="url(#waveGrad)"/>
+    <rect x="448" y="25" width="16" height="70" rx="8" fill="url(#waveGrad)"/>
+    <rect x="476" y="12" width="16" height="96" rx="8" fill="url(#waveGrad)"/>
+    <rect x="504" y="35" width="16" height="50" rx="8" fill="url(#waveGrad)"/>
+    <rect x="532" y="0" width="16" height="120" rx="8" fill="url(#waveGrad)"/>
+    <rect x="560" y="20" width="16" height="80" rx="8" fill="url(#waveGrad)"/>
+    <rect x="588" y="45" width="16" height="30" rx="8" fill="url(#waveGrad)"/>
+    <rect x="616" y="15" width="16" height="90" rx="8" fill="url(#waveGrad)"/>
+    <rect x="644" y="30" width="16" height="60" rx="8" fill="url(#waveGrad)"/>
+    <rect x="672" y="5" width="16" height="110" rx="8" fill="url(#waveGrad)"/>
+    <rect x="700" y="28" width="16" height="64" rx="8" fill="url(#waveGrad)"/>
+    <rect x="728" y="40" width="16" height="40" rx="8" fill="url(#waveGrad)"/>
+    <rect x="756" y="22" width="16" height="76" rx="8" fill="url(#waveGrad)"/>
+    <rect x="784" y="35" width="16" height="50" rx="8" fill="url(#waveGrad)"/>
+  </g>
+
+  <!-- Track Title & Artist -->
+  <g id="trackInfo" transform="translate(60, 1190)">
+    <text x="0" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="38" font-weight="900" fill="#ffffff" letter-spacing="-0.5">
+      Midnight Synthwave &amp; Lofi Beats
+    </text>
+    <text x="0" y="88" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="600" fill="#a1a1aa">
+      CrazyStore Studio &bull; Background Stream
+    </text>
+
+    <!-- Heart Like button -->
+    <g transform="translate(900, 20)">
+      <path d="M24,12 C18,0 0,4 0,22 C0,36 24,52 24,52 C24,52 48,36 48,22 C48,4 30,0 24,12 Z" fill="#ec4899"/>
+    </g>
+  </g>
+
+  <!-- Playback Scrubber Bar -->
+  <g id="audioScrubber" transform="translate(60, 1330)">
+    <rect x="0" y="16" width="960" height="8" rx="4" fill="#272738"/>
+    <!-- Played Progress -->
+    <rect x="0" y="16" width="620" height="8" rx="4" fill="url(#accentPurple)"/>
+    
+    <!-- SponsorBlock Auto-Skipped Markers (Green zones) -->
+    <rect x="180" y="14" width="80" height="12" rx="4" fill="#10b981"/>
+    <rect x="420" y="14" width="60" height="12" rx="4" fill="#10b981"/>
+
+    <!-- Thumb -->
+    <circle cx="620" cy="20" r="16" fill="#c084fc" stroke="#ffffff" stroke-width="4"/>
+
+    <!-- Timestamps -->
+    <text x="0" y="58" font-family="monospace" font-size="22" font-weight="700" fill="#a1a1aa">16:42</text>
+    <text x="960" y="58" font-family="monospace" font-size="22" font-weight="700" fill="#a1a1aa" text-anchor="end">28:50</text>
+  </g>
+
+  <!-- Full Lockscreen Transport Controls -->
+  <g id="transportControls" transform="translate(60, 1440)">
+    <!-- Shuffle -->
+    <g transform="translate(60, 50)">
+      <path d="M0,0 L18,18 L36,18 M0,36 L18,18" stroke="#a1a1aa" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    </g>
+
+    <!-- Prev Track -->
+    <g transform="translate(230, 50)">
+      <line x1="0" y1="0" x2="0" y2="36" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+      <polygon points="36,0 0,18 36,36" fill="#ffffff"/>
+    </g>
+
+    <!-- Main Play/Pause Button Circle -->
+    <g transform="translate(480, 50)">
+      <circle cx="0" cy="18" r="68" fill="url(#accentPurple)" filter="url(#artGlow)"/>
+      <rect x="-18" y="-12" width="12" height="60" rx="4" fill="#ffffff"/>
+      <rect x="6" y="-12" width="12" height="60" rx="4" fill="#ffffff"/>
+    </g>
+
+    <!-- Next Track -->
+    <g transform="translate(710, 50)">
+      <polygon points="0,0 36,18 0,36" fill="#ffffff"/>
+      <line x1="36" y1="0" x2="36" y2="36" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- Repeat Mode -->
+    <g transform="translate(860, 50)">
+      <path d="M0,18 A16,16 0 0,1 28,6 L36,14 M36,18 A16,16 0 0,1 8,30 L0,22" stroke="#a855f7" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <circle cx="18" cy="18" r="4" fill="#a855f7"/>
+    </g>
+  </g>
+
+  <!-- SponsorBlock Live Telemetry Widget Card -->
+  <g id="sponsorStatsWidget" transform="translate(60, 1630)">
+    <rect x="0" y="0" width="960" height="240" rx="36" fill="#0d1f1c" stroke="#059669" stroke-width="2" filter="url(#cardGlow)"/>
+
+    <!-- Widget Header -->
+    <g transform="translate(40, 45)">
+      <rect x="0" y="-8" width="56" height="56" rx="18" fill="url(#statsGrad)"/>
+      <text x="28" y="29" font-family="sans-serif" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle">🛡️</text>
+
+      <text x="74" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="26" font-weight="800" fill="#ffffff">
+        SponsorBlock Real-Time Protection
+      </text>
+      <text x="74" y="44" font-family="sans-serif" font-size="20" font-weight="600" fill="#34d399">
+        Community-driven automated content filter
+      </text>
+    </g>
+
+    <!-- Stats Grid (2 Columns) -->
+    <g transform="translate(40, 125)">
+      <!-- Col 1: Time Saved -->
+      <rect x="0" y="0" width="425" height="85" rx="20" fill="#064e3b" stroke="#047857" stroke-width="1.5"/>
+      <text x="28" y="36" font-family="sans-serif" font-size="18" font-weight="700" fill="#a7f3d0">TIME SAVED TODAY</text>
+      <text x="28" y="68" font-family="sans-serif" font-size="28" font-weight="900" fill="#ffffff">24m 18s <tspan fill="#34d399" font-size="18">saved</tspan></text>
+
+      <!-- Col 2: Segments Skipped -->
+      <rect x="455" y="0" width="425" height="85" rx="20" fill="#064e3b" stroke="#047857" stroke-width="1.5"/>
+      <text x="483" y="36" font-family="sans-serif" font-size="18" font-weight="700" fill="#a7f3d0">SEGMENTS SKIPPED</text>
+      <text x="483" y="68" font-family="sans-serif" font-size="28" font-weight="900" fill="#ffffff">42 Segments <tspan fill="#34d399" font-size="18">auto-skipped</tspan></text>
+    </g>
+  </g>
+
+  <!-- Quick Options Pill Bar -->
+  <g id="quickOptions" transform="translate(60, 1910)">
+    <!-- Sleep Timer -->
+    <rect x="0" y="0" width="300" height="70" rx="35" fill="#181826" stroke="#2b2b40" stroke-width="2"/>
+    <text x="150" y="44" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff" text-anchor="middle">⏱️ Sleep: 30 min</text>
+
+    <!-- Playback Speed -->
+    <rect x="330" y="0" width="300" height="70" rx="35" fill="#181826" stroke="#2b2b40" stroke-width="2"/>
+    <text x="480" y="44" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff" text-anchor="middle">⚡ Speed: 1.25x</text>
+
+    <!-- Equalizer -->
+    <rect x="660" y="0" width="300" height="70" rx="35" fill="#181826" stroke="#2b2b40" stroke-width="2"/>
+    <text x="810" y="44" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff" text-anchor="middle">🎚️ Bass Boost</text>
+  </g>
+
+  <!-- Notification Tray Media Player Simulation Card -->
+  <g id="notificationPreview" transform="translate(60, 2015)">
+    <rect x="0" y="0" width="960" height="180" rx="32" fill="#12121e" stroke="#2b2b3f" stroke-width="2"/>
+    <rect x="20" y="20" width="140" height="140" rx="22" fill="url(#artGrad)"/>
+    <polygon points="80,75 105,90 80,105" fill="#ffffff"/>
+
+    <text x="180" y="60" font-family="sans-serif" font-size="26" font-weight="800" fill="#ffffff">Lockscreen Media Controller</text>
+    <text x="180" y="95" font-family="sans-serif" font-size="20" font-weight="600" fill="#a1a1aa">Native Android 15 MediaSession Notification</text>
+    <rect x="180" y="115" width="160" height="34" rx="10" fill="#8b5cf6" opacity="0.25"/>
+    <text x="260" y="138" font-family="sans-serif" font-size="16" font-weight="800" fill="#c084fc" text-anchor="middle">⚡ ZERO BLOAT</text>
+
+    <!-- Mini transport -->
+    <circle cx="860" cy="90" r="32" fill="url(#accentPurple)"/>
+    <rect x="850" y="76" width="6" height="28" rx="2" fill="#ffffff"/>
+    <rect x="864" y="76" width="6" height="28" rx="2" fill="#ffffff"/>
+  </g>
+
+  <!-- Android Bottom Home Pill -->
+  <rect x="420" y="2280" width="240" height="8" rx="4" fill="#71717a"/>
+</svg>

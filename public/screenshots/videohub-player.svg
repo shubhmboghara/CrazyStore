@@ -1,0 +1,272 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 2340" width="1080" height="2340">
+  <defs>
+    <linearGradient id="bgGrad2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050508"/>
+      <stop offset="40%" stop-color="#0a0a12"/>
+      <stop offset="100%" stop-color="#040407"/>
+    </linearGradient>
+    <linearGradient id="playerGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#180b2a"/>
+      <stop offset="50%" stop-color="#2a144a"/>
+      <stop offset="100%" stop-color="#0d102b"/>
+    </linearGradient>
+    <linearGradient id="accentGrad2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="sponsorGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <filter id="glowPlayer" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#8b5cf6" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1080" height="2340" fill="url(#bgGrad2)"/>
+
+  <!-- Top System Bar -->
+  <g id="statusBar2">
+    <text x="70" y="80" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="700" fill="#ffffff">09:41</text>
+    <circle cx="540" cy="70" r="22" fill="#000000"/>
+    <circle cx="540" cy="70" r="23" stroke="#27272a" stroke-width="2" fill="none"/>
+    <g transform="translate(860, 52)">
+      <path d="M0,24 A18,18 0 0,1 26,24 M4,18 A24,24 0 0,1 22,18 M8,12 A30,30 0 0,1 18,12 M13,27 A2,2 0 1,1 13,29" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <text x="45" y="26" font-family="sans-serif" font-size="24" font-weight="900" fill="#ffffff">5G</text>
+      <rect x="95" y="6" width="46" height="24" rx="6" stroke="#ffffff" stroke-width="3" fill="none"/>
+      <rect x="142" y="14" width="4" height="8" rx="2" fill="#ffffff"/>
+      <rect x="99" y="10" width="34" height="16" rx="3" fill="#10b981"/>
+    </g>
+  </g>
+
+  <!-- 4K Video Player Viewport (16:9 Aspect Ratio) -->
+  <g id="exoPlayerBox" transform="translate(0, 110)">
+    <!-- Video Player Screen Canvas -->
+    <rect x="0" y="0" width="1080" height="610" fill="url(#playerGrad)"/>
+
+    <!-- Subtle cinematic backdrop artwork -->
+    <circle cx="540" cy="305" r="280" fill="#8b5cf6" opacity="0.15" filter="blur(80px)"/>
+    <circle cx="780" cy="200" r="160" fill="#06b6d4" opacity="0.2" filter="blur(60px)"/>
+
+    <!-- Top Player Controls Bar Overlay -->
+    <g transform="translate(50, 40)">
+      <!-- Back Arrow -->
+      <path d="M30,10 L10,30 L30,50" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      
+      <!-- Video Quality / Tech Pill -->
+      <rect x="680" y="10" width="160" height="42" rx="21" fill="#000000" opacity="0.75" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="760" y="38" font-family="sans-serif" font-size="20" font-weight="900" fill="#c084fc" text-anchor="middle">4K 60FPS HDR</text>
+
+      <!-- Settings Gear -->
+      <g transform="translate(880, 14)">
+        <circle cx="16" cy="16" r="8" stroke="#ffffff" stroke-width="3.5" fill="none"/>
+        <path d="M16,0 L16,6 M16,26 L16,32 M0,16 L6,16 M26,16 L32,16" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- Center Playback Controls -->
+    <g transform="translate(540, 305)">
+      <!-- 10s Rewind -->
+      <g transform="translate(-200, 0)">
+        <circle cx="0" cy="0" r="44" fill="#000000" opacity="0.6"/>
+        <path d="M-8,-16 L-22,0 L-8,16" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        <text x="6" y="8" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">10</text>
+      </g>
+
+      <!-- Main Pause Center Button -->
+      <circle cx="0" cy="0" r="62" fill="url(#accentGrad2)" filter="url(#glowPlayer)"/>
+      <rect x="-16" y="-24" width="10" height="48" rx="4" fill="#ffffff"/>
+      <rect x="6" y="-24" width="10" height="48" rx="4" fill="#ffffff"/>
+
+      <!-- 10s Forward -->
+      <g transform="translate(200, 0)">
+        <circle cx="0" cy="0" r="44" fill="#000000" opacity="0.6"/>
+        <path d="M8,-16 L22,0 L8,16" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        <text x="-6" y="8" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff" text-anchor="end">10</text>
+      </g>
+    </g>
+
+    <!-- Left Gesture HUD: Brightness -->
+    <g transform="translate(70, 220)">
+      <rect x="0" y="0" width="46" height="170" rx="23" fill="#000000" opacity="0.65" stroke="#ffffff" stroke-width="1.5"/>
+      <rect x="8" y="30" width="30" height="110" rx="15" fill="#e4e4e7"/>
+      <circle cx="23" cy="155" r="7" fill="#fbbf24"/>
+      <text x="23" y="-12" font-family="sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">85%</text>
+    </g>
+
+    <!-- Right Gesture HUD: Volume -->
+    <g transform="translate(964, 220)">
+      <rect x="0" y="0" width="46" height="170" rx="23" fill="#000000" opacity="0.65" stroke="#ffffff" stroke-width="1.5"/>
+      <rect x="8" y="55" width="30" height="85" rx="15" fill="#8b5cf6"/>
+      <circle cx="23" cy="155" r="7" fill="#8b5cf6"/>
+      <text x="23" y="-12" font-family="sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">70%</text>
+    </g>
+
+    <!-- Scrubber Timeline with SponsorBlock Segment Highlight! -->
+    <g transform="translate(50, 545)">
+      <!-- Scrubber Track Background -->
+      <rect x="0" y="24" width="980" height="8" rx="4" fill="#52525b" opacity="0.6"/>
+
+      <!-- Buffer Track -->
+      <rect x="0" y="24" width="720" height="8" rx="4" fill="#a1a1aa" opacity="0.5"/>
+
+      <!-- Played Track -->
+      <rect x="0" y="24" width="490" height="8" rx="4" fill="#8b5cf6"/>
+
+      <!-- SPONSORBLOCK GREEN SEGMENT (Skipped automated sponsor segment) -->
+      <rect x="230" y="22" width="130" height="12" rx="4" fill="url(#sponsorGrad)"/>
+      
+      <!-- SponsorBlock Tag Tooltip -->
+      <rect x="235" y="-16" width="120" height="32" rx="10" fill="#065f46" stroke="#10b981" stroke-width="1.5"/>
+      <text x="295" y="6" font-family="sans-serif" font-size="16" font-weight="800" fill="#34d399" text-anchor="middle">🛡️ SKIPPED (1m15s)</text>
+
+      <!-- Scrubber Playhead Thumb -->
+      <circle cx="490" cy="28" r="14" fill="#8b5cf6" stroke="#ffffff" stroke-width="3.5" filter="url(#glowPlayer)"/>
+
+      <!-- Time text -->
+      <text x="0" y="58" font-family="monospace" font-size="20" font-weight="700" fill="#ffffff">12:45 <tspan fill="#a1a1aa">/ 24:18</tspan></text>
+      
+      <!-- Fullscreen Toggle Icon -->
+      <g transform="translate(950, 42)">
+        <path d="M0,8 L0,0 L8,0 M22,0 L30,0 L30,8 M30,14 L30,22 L22,22 M8,22 L0,22 L0,14" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Video Meta & Details Section -->
+  <g id="videoDetails" transform="translate(60, 755)">
+    <!-- Title -->
+    <text x="0" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="900" fill="#ffffff" letter-spacing="-0.5">
+      VideoHub Core Engine: Kotlin 2.0 + ExoPlayer
+    </text>
+    <text x="0" y="88" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="900" fill="#ffffff" letter-spacing="-0.5">
+      4K HDR Media Pipeline &amp; Gesture HUD
+    </text>
+
+    <!-- Stats row -->
+    <text x="0" y="138" font-family="sans-serif" font-size="24" font-weight="600" fill="#a1a1aa">
+      842K views &bull; Oct 2026 &bull; <tspan fill="#34d399" font-weight="800">✓ 100% SponsorBlock Active</tspan>
+    </text>
+  </g>
+
+  <!-- Channel Row -->
+  <g id="channelRow" transform="translate(60, 930)">
+    <rect x="0" y="0" width="84" height="84" rx="42" fill="url(#accentGrad2)"/>
+    <text x="42" y="53" font-family="sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle">VH</text>
+
+    <text x="108" y="38" font-family="sans-serif" font-size="30" font-weight="800" fill="#ffffff">VideoHub Team</text>
+    <text x="108" y="72" font-family="sans-serif" font-size="22" font-weight="600" fill="#a1a1aa">142K subscribers &bull; Open Source</text>
+
+    <!-- Subscribe Button Pill -->
+    <rect x="740" y="10" width="220" height="64" rx="32" fill="#ffffff"/>
+    <text x="850" y="51" font-family="sans-serif" font-size="24" font-weight="800" fill="#09090b" text-anchor="middle">SUBSCRIBE</text>
+  </g>
+
+  <!-- Action Buttons Row (Like, PiP, Audio, Share, Download) -->
+  <g id="actionRow" transform="translate(60, 1050)">
+    <!-- Button 1: Like -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="170" height="74" rx="37" fill="#181826" stroke="#2e2e44" stroke-width="2"/>
+      <path d="M38,44 L38,28 M38,28 L56,14 L62,18 L58,28 L84,28 C88,28 92,32 92,38 L84,54 C82,58 78,60 74,60 L46,60 L38,44" stroke="#a855f7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <text x="110" y="47" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff">48K</text>
+    </g>
+
+    <!-- Button 2: PiP Mode (Picture in Picture) -->
+    <g transform="translate(190, 0)">
+      <rect x="0" y="0" width="180" height="74" rx="37" fill="url(#accentGrad2)"/>
+      <rect x="36" y="24" width="40" height="26" rx="4" stroke="#ffffff" stroke-width="3" fill="none"/>
+      <rect x="52" y="34" width="24" height="16" rx="2" fill="#ffffff"/>
+      <text x="124" y="47" font-family="sans-serif" font-size="22" font-weight="800" fill="#ffffff">PiP</text>
+    </g>
+
+    <!-- Button 3: Background Audio Mode -->
+    <g transform="translate(390, 0)">
+      <rect x="0" y="0" width="210" height="74" rx="37" fill="#181826" stroke="#2e2e44" stroke-width="2"/>
+      <circle cx="48" cy="37" r="16" stroke="#38bdf8" stroke-width="3" fill="none"/>
+      <path d="M48,27 L48,37 L56,41" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+      <text x="128" y="47" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff">Audio</text>
+    </g>
+
+    <!-- Button 4: Share -->
+    <g transform="translate(620, 0)">
+      <rect x="0" y="0" width="150" height="74" rx="37" fill="#181826" stroke="#2e2e44" stroke-width="2"/>
+      <circle cx="44" cy="37" r="6" fill="#a1a1aa"/>
+      <circle cx="68" cy="22" r="6" fill="#a1a1aa"/>
+      <circle cx="68" cy="52" r="6" fill="#a1a1aa"/>
+      <line x1="44" y1="37" x2="68" y2="22" stroke="#a1a1aa" stroke-width="2.5"/>
+      <line x1="44" y1="37" x2="68" y2="52" stroke="#a1a1aa" stroke-width="2.5"/>
+      <text x="104" y="47" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff">Share</text>
+    </g>
+
+    <!-- Button 5: Download APK / Video -->
+    <g transform="translate(790, 0)">
+      <rect x="0" y="0" width="170" height="74" rx="37" fill="#181826" stroke="#2e2e44" stroke-width="2"/>
+      <path d="M44,24 L44,46 M34,36 L44,46 L54,36 M26,52 L62,52" stroke="#10b981" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <text x="110" y="47" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff">Save</text>
+    </g>
+  </g>
+
+  <!-- SponsorBlock Real-Time Notification Banner -->
+  <g id="sponsorBanner" transform="translate(60, 1160)">
+    <rect x="0" y="0" width="960" height="110" rx="28" fill="#042f2e" stroke="#059669" stroke-width="2"/>
+    <circle cx="55" cy="55" r="28" fill="#059669"/>
+    <text x="55" y="65" font-family="sans-serif" font-size="30" font-weight="900" fill="#ffffff" text-anchor="middle">🛡️</text>
+
+    <text x="105" y="48" font-family="sans-serif" font-size="24" font-weight="800" fill="#34d399">SponsorBlock: Skipped In-Video Sponsor</text>
+    <text x="105" y="82" font-family="sans-serif" font-size="20" font-weight="600" fill="#a7f3d0">Auto-skipped 1m 15s non-content segment &bull; Saved your time!</text>
+
+    <!-- Undo / Replay Segment pill -->
+    <rect x="800" y="28" width="130" height="54" rx="27" fill="#0f766e"/>
+    <text x="865" y="62" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff" text-anchor="middle">Unskip</text>
+  </g>
+
+  <!-- Comments Peek Card -->
+  <g id="commentsCard" transform="translate(60, 1300)">
+    <rect x="0" y="0" width="960" height="140" rx="28" fill="#151522" stroke="#252538" stroke-width="2"/>
+    <text x="36" y="48" font-family="sans-serif" font-size="24" font-weight="800" fill="#ffffff">Comments <tspan fill="#a1a1aa" font-weight="600">2,490</tspan></text>
+    
+    <!-- User Avatar & Top Comment -->
+    <circle cx="64" cy="95" r="24" fill="#a855f7"/>
+    <text x="64" y="104" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff" text-anchor="middle">K</text>
+
+    <text x="106" y="88" font-family="sans-serif" font-size="20" font-weight="700" fill="#d4d4d8">KotlinDev: <tspan fill="#a1a1aa" font-weight="400">Finally a clean Compose video player with zero ads!</tspan></text>
+    <text x="106" y="116" font-family="sans-serif" font-size="18" font-weight="600" fill="#71717a">❤️ 1.4K &bull; 2 hours ago</text>
+  </g>
+
+  <!-- Up Next Queue Section -->
+  <g id="upNextQueue" transform="translate(60, 1470)">
+    <text x="0" y="32" font-family="sans-serif" font-size="28" font-weight="800" fill="#ffffff">Up Next</text>
+
+    <!-- Up Next Item 1 -->
+    <g transform="translate(0, 50)">
+      <rect x="0" y="0" width="960" height="200" rx="24" fill="#13131e" stroke="#222232" stroke-width="1.5"/>
+      <rect x="12" y="12" width="300" height="176" rx="18" fill="url(#playerGrad)"/>
+      <polygon points="140,85 180,100 140,115" fill="#ffffff"/>
+      <rect x="210" y="136" width="90" height="40" rx="10" fill="#000000" opacity="0.8"/>
+      <text x="255" y="163" font-family="monospace" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">18:04</text>
+
+      <text x="330" y="48" font-family="sans-serif" font-size="24" font-weight="800" fill="#ffffff">Jetpack Compose Animation Physics</text>
+      <text x="330" y="82" font-family="sans-serif" font-size="20" font-weight="600" fill="#a1a1aa">Android Modern Dev &bull; 240K views</text>
+      <rect x="330" y="108" width="140" height="36" rx="12" fill="#8b5cf6" opacity="0.2"/>
+      <text x="400" y="132" font-family="sans-serif" font-size="18" font-weight="800" fill="#c084fc" text-anchor="middle">⚡ 4K 120HZ</text>
+    </g>
+
+    <!-- Up Next Item 2 -->
+    <g transform="translate(0, 270)">
+      <rect x="0" y="0" width="960" height="200" rx="24" fill="#13131e" stroke="#222232" stroke-width="1.5"/>
+      <rect x="12" y="12" width="300" height="176" rx="18" fill="#1e1b4b"/>
+      <polygon points="140,85 180,100 140,115" fill="#ffffff"/>
+      <rect x="210" y="136" width="90" height="40" rx="10" fill="#000000" opacity="0.8"/>
+      <text x="255" y="163" font-family="monospace" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">42:15</text>
+
+      <text x="330" y="48" font-family="sans-serif" font-size="24" font-weight="800" fill="#ffffff">MicroG &amp; De-Googled Android Setup</text>
+      <text x="330" y="82" font-family="sans-serif" font-size="20" font-weight="600" fill="#a1a1aa">Privacy First &bull; 580K views</text>
+      <rect x="330" y="108" width="160" height="36" rx="12" fill="#10b981" opacity="0.2"/>
+      <text x="410" y="132" font-family="sans-serif" font-size="18" font-weight="800" fill="#34d399" text-anchor="middle">🛡️ 100% PRIVATE</text>
+    </g>
+  </g>
+
+  <!-- Bottom Android Navigation Pill -->
+  <rect x="420" y="2280" width="240" height="8" rx="4" fill="#71717a"/>
+</svg>

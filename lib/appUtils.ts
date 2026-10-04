@@ -157,7 +157,13 @@ export function normalizeAppRecord(dbApp: any): any {
               : null;
           }
           if (s && typeof s === 'object') {
-            const rawUrl = s.imageUrl || s.url || '';
+            let rawUrl = s.imageUrl || s.url || '';
+            if (!rawUrl && s.type) {
+              if (s.type === 'feed') rawUrl = '/screenshots/videohub-feed.svg';
+              else if (s.type === 'player') rawUrl = '/screenshots/videohub-player.svg';
+              else if (s.type === 'stats') rawUrl = '/screenshots/videohub-audio.svg';
+              else if (s.type === 'settings') rawUrl = '/screenshots/videohub-settings.svg';
+            }
             if (typeof rawUrl === 'string' && rawUrl.trim()) {
               const trimmedUrl = rawUrl.trim();
               return {
