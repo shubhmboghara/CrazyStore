@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { isWebGLAvailable, disposeThreeScene, drawAndroidScreenCanvas } from '@/lib/threeUtils';
+import { isWebGLAvailable, disposeThreeScene } from '@/lib/threeUtils';
 import { AndroidApp } from '@/lib/appsData';
 import { Maximize2, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -81,15 +81,16 @@ export function Screenshots3DPhoneView({
   const leftCardGroupRef = useRef<THREE.Group | null>(null);
   const rightCardGroupRef = useRef<THREE.Group | null>(null);
 
-  // Canvases & Textures for Center Card, Left Card & Right Card
-  const mainCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const mainTextureRef = useRef<THREE.CanvasTexture | null>(null);
+  // Direct THREE.Texture references — no canvas intermediary
+  const textureLoaderRef = useRef<THREE.TextureLoader | null>(null);
+  const centerTextureRef = useRef<THREE.Texture | null>(null);
+  const leftCompTexRef = useRef<THREE.Texture | null>(null);
+  const rightCompTexRef = useRef<THREE.Texture | null>(null);
 
-  const leftCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const leftTextureRef = useRef<THREE.CanvasTexture | null>(null);
-
-  const rightCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rightTextureRef = useRef<THREE.CanvasTexture | null>(null);
+  // Mesh material references for runtime texture swapping
+  const centerMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const leftMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const rightMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
 
   const totalCount = screenshots.length;
   const prevIdx = (activeIdx - 1 + totalCount) % totalCount;
@@ -107,74 +108,80 @@ export function Screenshots3DPhoneView({
     }
   }, [activeIdx, totalCount]);
 
-  // Render screenshot onto target canvas & texture
-  const renderScreenToCanvas = useCallback(
-    (canvas: HTMLCanvasElement, texture: THREE.CanvasTexture, targetUrl: string, title?: string) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        drawAndroidScreenCanvas(canvas, {
-          appName: title || app.name,
-          tagline: app.tagline || app.shortDescription,
-          category: app.category,
-          badge: app.badge,
-          version: app.version,
-          rating: app.initialRating || 5.0,
-          previewImage: img,
-        });
-        texture.needsUpdate = true;
-      };
-      img.onerror = () => {
-        drawAndroidScreenCanvas(canvas, {
-          appName: title || app.name,
-          tagline: app.tagline || app.shortDescription,
-          category: app.category,
-          badge: app.badge,
-          version: app.version,
-          rating: app.initialRating || 5.0,
-          accentColor: '#8b5cf6',
-          secondaryColor: '#6366f1',
-        });
-        texture.needsUpdate = true;
-      };
-      img.src = targetUrl;
+  // Helper to apply a loaded texture to a MeshStandardMaterial
+  const applyTextureToMat = useCallback(
+    (mat: THREE.MeshStandardMaterial, texture: THREE.Texture, oldTexRef: React.MutableRefObject<THREE.Texture | null>) => {
+      // Dispose old texture to free GPU memory
+      if (oldTexRef.current && oldTexRef.current !== texture) {
+        oldTexRef.current.dispose();
+      }
+      oldTexRef.current = texture;
+
+      mat.map = texture;
+      mat.emissiveMap = texture;
+      mat.emissive = new THREE.Color(0xffffff);
+      mat.emissiveIntensity = 0.3;
+      mat.color.set(0xffffff);
+      mat.needsUpdate = true;
     },
-    [app]
+    []
+  );
+
+  // Load a URL via TextureLoader and call callback on success
+  const loadTexture = useCallback(
+    (url: string, callback: (t: THREE.Texture) => void) => {
+      if (!textureLoaderRef.current || !url) return;
+      textureLoaderRef.current.load(
+        url,
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.minFilter = THREE.LinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.needsUpdate = true;
+          callback(texture);
+        },
+        undefined,
+        () => {
+          /* error: keep placeholder dark material, no crash */
+        }
+      );
+    },
+    []
   );
 
   // Update center, left, and right textures whenever activeIdx changes
   useEffect(() => {
-    if (mainCanvasRef.current && mainTextureRef.current) {
-      const currentUrl = screenshots[activeIdx]?.imageUrl || screenshots[activeIdx]?.url || '';
-      renderScreenToCanvas(
-        mainCanvasRef.current,
-        mainTextureRef.current,
-        currentUrl,
-        screenshots[activeIdx]?.title
-      );
+    if (!textureLoaderRef.current) return;
+
+    // Center card
+    const centerUrl = screenshots[activeIdx]?.imageUrl || screenshots[activeIdx]?.url || '';
+    if (centerUrl && centerMatRef.current) {
+      const mat = centerMatRef.current;
+      loadTexture(centerUrl, (tex) => {
+        applyTextureToMat(mat, tex, centerTextureRef);
+      });
     }
 
     if (totalCount > 1) {
-      if (leftCanvasRef.current && leftTextureRef.current) {
-        const leftUrl = screenshots[prevIdx]?.imageUrl || screenshots[prevIdx]?.url || '';
-        renderScreenToCanvas(
-          leftCanvasRef.current,
-          leftTextureRef.current,
-          leftUrl,
-          screenshots[prevIdx]?.title
-        );
+      // Left companion
+      const leftUrl = screenshots[prevIdx]?.imageUrl || screenshots[prevIdx]?.url || '';
+      if (leftUrl && leftMatRef.current) {
+        const mat = leftMatRef.current;
+        loadTexture(leftUrl, (tex) => {
+          applyTextureToMat(mat, tex, leftCompTexRef);
+        });
       }
-      if (rightCanvasRef.current && rightTextureRef.current) {
-        const rightUrl = screenshots[nextIdx]?.imageUrl || screenshots[nextIdx]?.url || '';
-        renderScreenToCanvas(
-          rightCanvasRef.current,
-          rightTextureRef.current,
-          rightUrl,
-          screenshots[nextIdx]?.title
-        );
+
+      // Right companion
+      const rightUrl = screenshots[nextIdx]?.imageUrl || screenshots[nextIdx]?.url || '';
+      if (rightUrl && rightMatRef.current) {
+        const mat = rightMatRef.current;
+        loadTexture(rightUrl, (tex) => {
+          applyTextureToMat(mat, tex, rightCompTexRef);
+        });
       }
     }
-  }, [activeIdx, screenshots, prevIdx, nextIdx, totalCount, renderScreenToCanvas]);
+  }, [activeIdx, screenshots, prevIdx, nextIdx, totalCount, loadTexture, applyTextureToMat]);
 
   // Main Three.js setup
   useEffect(() => {
@@ -195,7 +202,7 @@ export function Screenshots3DPhoneView({
     scene.fog = new THREE.FogExp2(0x09090b, 0.025);
     sceneRef.current = scene;
 
-    // 2. Camera - Starts comfortably framed, zooms out as you scroll down
+    // 2. Camera — Starts comfortably framed, zooms out as you scroll down
     const isMobile = width < 640;
     const initialZ = isMobile ? 7.2 : 6.6;
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
@@ -215,7 +222,7 @@ export function Screenshots3DPhoneView({
     renderer.toneMappingExposure = 1.15;
     rendererRef.current = renderer;
 
-    // 4. OrbitControls - Rotation enabled, manual zoom disabled to prevent image clipping
+    // 4. OrbitControls — Rotation enabled, manual zoom disabled to prevent image clipping
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -248,7 +255,11 @@ export function Screenshots3DPhoneView({
     fillLight.position.set(4, -3, -3);
     scene.add(fillLight);
 
-    // 6. Build Sleek Borderless 3D Floating Screenshot Card (No chunky phone hardware)
+    // 6. Texture Loader — shared instance, no canvas drawImage
+    const loader = new THREE.TextureLoader();
+    textureLoaderRef.current = loader;
+
+    // 7. Build Sleek Borderless 3D Floating Screenshot Card
     const cardGroup = new THREE.Group();
     cardGroupRef.current = cardGroup;
 
@@ -271,7 +282,7 @@ export function Screenshots3DPhoneView({
     // Subtle edge rim light border
     const rimMat = new THREE.MeshStandardMaterial({
       color: 0x8b5cf6,
-      emissive: 0x7c3aed,
+      emissive: new THREE.Color(0x7c3aed),
       emissiveIntensity: 0.4,
       metalness: 0.8,
       roughness: 0.2,
@@ -282,28 +293,18 @@ export function Screenshots3DPhoneView({
     );
     cardGroup.add(rim);
 
-    // Dynamic 2D Canvas for screen projection
-    const mainCanvas = document.createElement('canvas');
-    mainCanvas.width = 512;
-    mainCanvas.height = 1024;
-    mainCanvasRef.current = mainCanvas;
-
-    const mainTexture = new THREE.CanvasTexture(mainCanvas);
-    mainTexture.colorSpace = THREE.SRGBColorSpace;
-    mainTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    mainTextureRef.current = mainTexture;
-
-    // Screen Mesh - 100% full uncropped screenshot
-    const screenMat = new THREE.MeshStandardMaterial({
-      map: mainTexture,
+    // Center screen mesh with placeholder dark color while texture loads
+    const centerMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1a2e,
       roughness: 0.1,
       metalness: 0.05,
-      emissiveMap: mainTexture,
-      emissiveIntensity: 0.35,
+      emissiveIntensity: 0.3,
     });
+    centerMatRef.current = centerMat;
+
     const screenMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(cardW, cardH),
-      screenMat
+      centerMat
     );
     screenMesh.position.z = cardD / 2 + 0.002;
     screenMesh.name = 'centerScreenMesh';
@@ -326,33 +327,25 @@ export function Screenshots3DPhoneView({
 
     scene.add(cardGroup);
 
-    // 7. Flanking Companion Preview Cards (Desktop only to prevent clutter)
+    // 8. Flanking Companion Preview Cards (Desktop only to prevent clutter)
     const showCompanionCards = width >= 640 && totalCount > 1;
 
     // Left Companion Card
     const leftGroup = new THREE.Group();
     leftCardGroupRef.current = leftGroup;
 
-    const leftCanvas = document.createElement('canvas');
-    leftCanvas.width = 512;
-    leftCanvas.height = 1024;
-    leftCanvasRef.current = leftCanvas;
-
-    const leftTexture = new THREE.CanvasTexture(leftCanvas);
-    leftTexture.colorSpace = THREE.SRGBColorSpace;
-    leftTextureRef.current = leftTexture;
-
-    const leftCardMat = new THREE.MeshStandardMaterial({
-      map: leftTexture,
+    const leftMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1a2e,
       transparent: true,
       opacity: 0.6,
       roughness: 0.2,
       metalness: 0.1,
     });
+    leftMatRef.current = leftMat;
 
     const leftCard = new THREE.Mesh(
       new THREE.PlaneGeometry(cardW * 0.88, cardH * 0.88),
-      leftCardMat
+      leftMat
     );
     leftCard.position.z = 0.02;
     leftCard.name = 'leftCardMesh';
@@ -367,26 +360,18 @@ export function Screenshots3DPhoneView({
     const rightGroup = new THREE.Group();
     rightCardGroupRef.current = rightGroup;
 
-    const rightCanvas = document.createElement('canvas');
-    rightCanvas.width = 512;
-    rightCanvas.height = 1024;
-    rightCanvasRef.current = rightCanvas;
-
-    const rightTexture = new THREE.CanvasTexture(rightCanvas);
-    rightTexture.colorSpace = THREE.SRGBColorSpace;
-    rightTextureRef.current = rightTexture;
-
-    const rightCardMat = new THREE.MeshStandardMaterial({
-      map: rightTexture,
+    const rightMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1a2e,
       transparent: true,
       opacity: 0.6,
       roughness: 0.2,
       metalness: 0.1,
     });
+    rightMatRef.current = rightMat;
 
     const rightCard = new THREE.Mesh(
       new THREE.PlaneGeometry(cardW * 0.88, cardH * 0.88),
-      rightCardMat
+      rightMat
     );
     rightCard.position.z = 0.02;
     rightCard.name = 'rightCardMesh';
@@ -397,7 +382,7 @@ export function Screenshots3DPhoneView({
     rightGroup.visible = showCompanionCards;
     scene.add(rightGroup);
 
-    // 8. Ambient floating stardust
+    // 9. Ambient floating stardust
     const stardustCount = 50;
     const stardustGeo = new THREE.BufferGeometry();
     const stardustPos = new Float32Array(stardustCount * 3);
@@ -416,26 +401,77 @@ export function Screenshots3DPhoneView({
     const stardust = new THREE.Points(stardustGeo, stardustMat);
     scene.add(stardust);
 
-    // Initial render call
-    const initialUrl = screenshots[activeIdx]?.imageUrl || screenshots[activeIdx]?.url || '';
-    renderScreenToCanvas(mainCanvas, mainTexture, initialUrl, screenshots[activeIdx]?.title);
+    // 10. Initial texture load for all three slots
+    const loadInitialTextures = () => {
+      const centerUrl = screenshots[activeIdx]?.imageUrl || screenshots[activeIdx]?.url || '';
+      if (centerUrl) {
+        loader.load(
+          centerUrl,
+          (tex) => {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            tex.needsUpdate = true;
+            centerTextureRef.current = tex;
+            centerMat.map = tex;
+            centerMat.emissiveMap = tex;
+            centerMat.emissive = new THREE.Color(0xffffff);
+            centerMat.color.set(0xffffff);
+            centerMat.needsUpdate = true;
+          },
+          undefined,
+          () => { /* keep placeholder */ }
+        );
+      }
 
-    if (totalCount > 1) {
-      renderScreenToCanvas(
-        leftCanvas,
-        leftTexture,
-        screenshots[prevIdx]?.imageUrl || screenshots[prevIdx]?.url || '',
-        screenshots[prevIdx]?.title
-      );
-      renderScreenToCanvas(
-        rightCanvas,
-        rightTexture,
-        screenshots[nextIdx]?.imageUrl || screenshots[nextIdx]?.url || '',
-        screenshots[nextIdx]?.title
-      );
-    }
+      if (totalCount > 1) {
+        const leftUrl = screenshots[prevIdx]?.imageUrl || screenshots[prevIdx]?.url || '';
+        if (leftUrl) {
+          loader.load(
+            leftUrl,
+            (tex) => {
+              tex.colorSpace = THREE.SRGBColorSpace;
+              tex.minFilter = THREE.LinearFilter;
+              tex.magFilter = THREE.LinearFilter;
+              tex.needsUpdate = true;
+              leftCompTexRef.current = tex;
+              leftMat.map = tex;
+              leftMat.emissiveMap = tex;
+              leftMat.emissive = new THREE.Color(0xffffff);
+              leftMat.color.set(0xffffff);
+              leftMat.needsUpdate = true;
+            },
+            undefined,
+            () => { /* keep placeholder */ }
+          );
+        }
 
-    // 9. Scroll Listener for Smooth 3D Zoom-Out Effect & Automatic Progression
+        const rightUrl = screenshots[nextIdx]?.imageUrl || screenshots[nextIdx]?.url || '';
+        if (rightUrl) {
+          loader.load(
+            rightUrl,
+            (tex) => {
+              tex.colorSpace = THREE.SRGBColorSpace;
+              tex.minFilter = THREE.LinearFilter;
+              tex.magFilter = THREE.LinearFilter;
+              tex.needsUpdate = true;
+              rightCompTexRef.current = tex;
+              rightMat.map = tex;
+              rightMat.emissiveMap = tex;
+              rightMat.emissive = new THREE.Color(0xffffff);
+              rightMat.color.set(0xffffff);
+              rightMat.needsUpdate = true;
+            },
+            undefined,
+            () => { /* keep placeholder */ }
+          );
+        }
+      }
+    };
+
+    loadInitialTextures();
+
+    // 11. Scroll Listener for Smooth 3D Zoom-Out Effect & Automatic Progression
     const handleScroll = () => {
       if (!container) return;
       const rect = container.getBoundingClientRect();
@@ -467,7 +503,7 @@ export function Screenshots3DPhoneView({
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    // 10. Visibility and Resize Observers
+    // 12. Visibility and Resize Observers
     let isVisible = true;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -493,9 +529,9 @@ export function Screenshots3DPhoneView({
     });
     resizeObserver.observe(container);
 
-    // 11. Animation Loop (Rich Scroll-Driven Zoom-Out & Gentle Floating)
+    // 13. Animation Loop (Rich Scroll-Driven Zoom-Out & Gentle Floating)
     let animId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
@@ -564,10 +600,22 @@ export function Screenshots3DPhoneView({
       observer.disconnect();
       resizeObserver.disconnect();
       controls.dispose();
+      // Dispose textures
+      centerTextureRef.current?.dispose();
+      leftCompTexRef.current?.dispose();
+      rightCompTexRef.current?.dispose();
+      centerTextureRef.current = null;
+      leftCompTexRef.current = null;
+      rightCompTexRef.current = null;
+      textureLoaderRef.current = null;
+      centerMatRef.current = null;
+      leftMatRef.current = null;
+      rightMatRef.current = null;
       disposeThreeScene(scene);
       renderer.dispose();
     };
-  }, [app, screenshots, totalCount, renderScreenToCanvas, onSelectScreenshot, resetManualLockWithTimeout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app, screenshots, totalCount, onSelectScreenshot, resetManualLockWithTimeout]);
 
   // Pointer position tracker to distinguish between 3D orbit drag and click
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -761,7 +809,7 @@ export function Screenshots3DPhoneView({
 
   return (
     <div className="relative w-full flex flex-col items-center animate-in fade-in duration-300">
-      {/* 3D WebGL Canvas Viewport - Clean, borderless, click-to-open lightbox & swipe/scroll to change */}
+      {/* 3D WebGL Canvas Viewport */}
       <div
         ref={containerRef}
         onClick={handleCanvasClick}
@@ -771,7 +819,7 @@ export function Screenshots3DPhoneView({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative w-full h-[400px] xs:h-[460px] sm:h-[500px] md:h-[540px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center select-none cursor-grab"
+        className="relative w-full h-[480px] sm:h-[560px] md:h-[600px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-[#0d0d18] to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center select-none cursor-grab"
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
@@ -803,7 +851,6 @@ export function Screenshots3DPhoneView({
           </button>
         </div>
 
-
         {/* Previous & Next Quick Arrows */}
         {totalCount > 1 && (
           <>
@@ -833,20 +880,21 @@ export function Screenshots3DPhoneView({
         )}
       </div>
 
-      {/* Synchronized Bottom Screenshot Selector */}
-      <div className="w-full mt-4 flex flex-col items-center gap-2">
+      {/* Compact Info Bar + Bottom Thumbnail Strip */}
+      <div className="w-full mt-3 flex flex-col items-center gap-2.5">
+        {/* Compact "Viewing" status bar */}
         <div className="w-full flex items-center justify-between px-1">
-          <span className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-            <span>Viewing:</span>
-            <span className="text-purple-400">{displayTitle}</span>
+          <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5 truncate">
+            <span className="text-zinc-500 shrink-0">Viewing:</span>
+            <span className="text-purple-400 truncate">{displayTitle}</span>
           </span>
-          <span className="text-[11px] text-zinc-500">
-            {activeIdx + 1} of {screenshots.length}
+          <span className="text-[11px] tabular-nums text-zinc-500 shrink-0 ml-2">
+            {activeIdx + 1}&thinsp;/&thinsp;{screenshots.length}
           </span>
         </div>
 
         {/* Thumbnails row */}
-        <div className="w-full flex items-center gap-2.5 overflow-x-auto pb-2 pt-1 hide-scrollbar no-scrollbar [scrollbar-width:none]">
+        <div className="w-full flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {screenshots.map((s, idx) => {
             const isSelected = idx === activeIdx;
             return (
@@ -857,7 +905,7 @@ export function Screenshots3DPhoneView({
                   hasUserManuallySelected.current = true;
                   onSelectScreenshot(idx);
                 }}
-                className={`relative shrink-0 w-12 h-18 xs:w-14 xs:h-20 sm:w-16 sm:h-24 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
+                className={`relative shrink-0 w-10 sm:w-12 h-20 sm:h-24 md:h-28 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
                   isSelected
                     ? 'border-purple-500 scale-105 shadow-lg shadow-purple-600/40 ring-2 ring-purple-500/30'
                     : 'border-zinc-800 opacity-60 hover:opacity-100 hover:border-zinc-700'
@@ -867,7 +915,8 @@ export function Screenshots3DPhoneView({
                 <img
                   src={s.imageUrl || s.url}
                   alt={s.title || `Thumbnail ${idx + 1}`}
-                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  className="w-full h-full object-contain bg-zinc-900"
                 />
                 {isSelected && (
                   <div className="absolute inset-0 bg-purple-600/10 pointer-events-none" />
