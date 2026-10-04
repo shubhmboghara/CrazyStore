@@ -86,16 +86,16 @@ assert.equal(normalized[2].url, '/screenshots/videohub-audio.svg');
 assert.equal(normalized[3].url, '/screenshots/videohub-settings.svg');
 console.log('✓ Test 3 Passed: Screenshot normalization and fallback URLs operate deterministically');
 
-// Test 4: Verify AppDetailClient includes Dual Mode (3D Studio & Gallery Flow) and Lightbox Zoom
+// Test 4: Verify AppDetailClient uses 3D-only mode with Spotlight Banner and Lightbox Zoom
 const appDetailPath = path.resolve(process.cwd(), 'components/AppDetailClient.tsx');
 const appDetailContent = fs.readFileSync(appDetailPath, 'utf8');
 
-assert.ok(appDetailContent.includes('visualsViewMode'), 'AppDetailClient must contain visualsViewMode state');
-assert.ok(appDetailContent.includes('3D Studio'), 'AppDetailClient must contain 3D Studio button');
-assert.ok(appDetailContent.includes('Gallery Flow'), 'AppDetailClient must contain Gallery Flow button');
+assert.ok(appDetailContent.includes('Screenshots3DPhoneView'), 'AppDetailClient must render Screenshots3DPhoneView');
+assert.ok(!appDetailContent.includes('visualsViewMode'), 'Gallery toggle must be fully removed — 3D-only mode');
+assert.ok(!appDetailContent.includes('Gallery Flow'), 'Gallery Flow branch must not exist in component');
 assert.ok(appDetailContent.includes('lightboxZoom'), 'AppDetailClient must contain lightboxZoom state');
 assert.ok(appDetailContent.includes('ZoomIn') && appDetailContent.includes('ZoomOut'), 'AppDetailClient must contain zoom controls');
-console.log('✓ Test 4 Passed: AppDetailClient dual view modes, spotlight banner, and lightbox zoom verified');
+console.log('✓ Test 4 Passed: AppDetailClient 3D-only mode, spotlight banner, and lightbox zoom verified');
 
 // Test 5: Verify Hero3DExperience includes fallback screenshot for VideoHub
 const heroPath = path.resolve(process.cwd(), 'components/three/Hero3DExperience.tsx');

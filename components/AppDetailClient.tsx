@@ -89,7 +89,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tech'>('overview');
   const [selected3DIdx, setSelected3DIdx] = useState<number>(0);
-  const [visualsViewMode, setVisualsViewMode] = useState<'3d' | 'gallery'>('3d');
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxZoom, setLightboxZoom] = useState<number>(1);
@@ -437,7 +436,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           </div>
         </section>
 
-        {/* Screenshots & Visuals Showcase (Dual Mode: 3D WebGL Studio & Gallery Flow) */}
+        {/* Screenshots & Visuals Showcase (3D WebGL Studio) */}
         {validPreviews.length > 0 && (
           <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-8">
             <div className="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-6 shadow-xl relative overflow-hidden backdrop-blur-sm">
@@ -460,40 +459,11 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                       </span>
                     </div>
                     <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate hidden xs:block">
-                      {visualsViewMode === '3d'
-                        ? 'Interactive 3D WebGL studio • Drag to rotate 360° • Scroll down to zoom out • Tap card to open full size'
-                        : 'Native Android 15 UI showcase • High-definition preview & 100% uncropped display'}
+                      Interactive 3D WebGL studio &bull; Drag to rotate 360° &bull; Scroll to zoom out &bull; Tap to open fullscreen
                     </p>
                   </div>
                 </div>
 
-                {/* View Mode Switcher: 3D Studio vs Gallery Flow */}
-                <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 shrink-0 self-start sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => setVisualsViewMode('3d')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                      visualsViewMode === '3d'
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>3D Studio</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVisualsViewMode('gallery')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                      visualsViewMode === 'gallery'
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
-                    }`}
-                  >
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>Gallery Flow</span>
-                  </button>
-                </div>
               </div>
 
               {/* Active Screenshot Feature Highlight Banner */}
@@ -539,99 +509,16 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </div>
               </div>
 
-              {/* View Mode 1: Pure Three.js 3D Smartphone Viewport */}
-              {visualsViewMode === '3d' ? (
-                <div className="relative z-10 pt-1">
-                  <Screenshots3DPhoneView
-                    app={appData}
-                    screenshots={validPreviews}
-                    activeIdx={selected3DIdx}
-                    onSelectScreenshot={(idx) => setSelected3DIdx(idx)}
-                    onOpenLightbox={(idx) => setLightboxIndex(idx)}
-                  />
-                </div>
-              ) : (
-                /* View Mode 2: Gallery Flow (Responsive Device Frames with Snap Scroll) */
-                <div className="relative z-10 pt-2 pb-4">
-                  <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 px-1 snap-x snap-mandatory hide-scrollbar no-scrollbar [scrollbar-width:none]">
-                    {validPreviews.map((preview, idx) => {
-                      const isCurrent = idx === selected3DIdx;
-                      return (
-                        <div
-                          key={preview.id || idx}
-                          onClick={() => {
-                            setSelected3DIdx(idx);
-                            setLightboxIndex(idx);
-                          }}
-                          className="snap-center shrink-0 w-[240px] xs:w-[260px] sm:w-[280px] md:w-[300px] flex flex-col group cursor-pointer transition-all duration-300 transform hover:-translate-y-2"
-                        >
-                          {/* Android Flagship Smartphone Mockup Frame */}
-                          <div className={`relative p-2.5 sm:p-3 rounded-[2.5rem] bg-gradient-to-b from-zinc-800 via-zinc-900 to-zinc-950 border-2 transition-all duration-300 shadow-xl group-hover:shadow-2xl ${
-                            isCurrent
-                              ? 'border-purple-500 shadow-purple-500/20'
-                              : 'border-zinc-700/70 group-hover:border-purple-400/80'
-                          }`}>
-                            {/* Phone Top Notch / Speaker Slit & Punch Hole Camera */}
-                            <div className="w-full flex items-center justify-center gap-2 mb-2">
-                              <div className="w-10 h-1 rounded-full bg-zinc-700/80" />
-                              <div className="w-2.5 h-2.5 rounded-full bg-zinc-950 border border-zinc-700/80" />
-                            </div>
-
-                            {/* Uncropped Screen Display */}
-                            <div className="relative w-full aspect-[9/19.5] rounded-[1.8rem] overflow-hidden bg-black border border-zinc-800 shadow-inner flex items-center justify-center">
-                              {/* Ambient Back Glow */}
-                              <div
-                                className="absolute inset-0 bg-cover bg-center blur-xl opacity-20 group-hover:opacity-40 transition-opacity"
-                                style={{ backgroundImage: `url(${preview.imageUrl || preview.url})` }}
-                              />
-
-                              <img
-                                src={preview.imageUrl || preview.url}
-                                alt={preview.title || `Screenshot ${idx + 1}`}
-                                loading="lazy"
-                                className="relative z-10 w-full h-full object-contain pointer-events-none group-hover:scale-102 transition-transform duration-300"
-                              />
-
-                              {/* Hover Overlay with Zoom Icon */}
-                              <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-4">
-                                <span className="p-3 rounded-2xl bg-purple-600 text-white shadow-lg shadow-purple-600/40 mb-2">
-                                  <ZoomIn className="w-6 h-6" />
-                                </span>
-                                <span className="text-xs font-bold text-white text-center drop-shadow-md">
-                                  Click to Inspect Fullscreen
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Phone Bottom Bezel Dot */}
-                            <div className="w-16 h-1 rounded-full bg-zinc-700/60 mx-auto mt-2.5" />
-                          </div>
-
-                          {/* Screenshot Card Info Below Device */}
-                          <div className="mt-3 px-2">
-                            <div className="flex items-center justify-between gap-1 mb-1">
-                              <span className="text-xs font-bold text-purple-400">
-                                Screen {idx + 1}
-                              </span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-400 font-semibold border border-zinc-700/50">
-                                Native M3
-                              </span>
-                            </div>
-                            <h4 className="text-sm font-black text-zinc-100 group-hover:text-purple-300 transition-colors line-clamp-1">
-                              {preview.title}
-                            </h4>
-                            {preview.subtitle && (
-                              <p className="text-[11px] text-zinc-400 line-clamp-2 mt-0.5 leading-snug">
-                                {preview.subtitle}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {/* Three.js 3D Smartphone Viewport */}
+              <div className="relative z-10 pt-1">
+                <Screenshots3DPhoneView
+                  app={appData}
+                  screenshots={validPreviews}
+                  activeIdx={selected3DIdx}
+                  onSelectScreenshot={(idx) => setSelected3DIdx(idx)}
+                  onOpenLightbox={(idx) => setLightboxIndex(idx)}
+                />
+              </div>
 
               {/* Ambient bottom glow decoration */}
               <div
