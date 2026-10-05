@@ -861,6 +861,21 @@ export function Screenshots3DPhoneView({
   const currentScreenshot = screenshots[activeIdx];
   const displayTitle = currentScreenshot?.title || `Screenshot ${activeIdx + 1}`;
 
+  if (!hasWebGL) {
+    return (
+      <div className="relative w-full flex flex-col items-center animate-in fade-in duration-300">
+        <div className="relative w-full h-[500px] xs:h-[560px] sm:h-[620px] md:h-[660px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-[#0c0c16] to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center p-4 sm:p-8">
+          <img
+            src={screenshots[activeIdx]?.imageUrl || screenshots[activeIdx]?.url}
+            alt={displayTitle}
+            className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl cursor-pointer hover:scale-[1.02] transition-transform"
+            onClick={() => onOpenLightbox(activeIdx)}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full flex flex-col items-center animate-in fade-in duration-300">
       {/* 3D WebGL Canvas Viewport — Luxury flagship smartphone showcase */}
