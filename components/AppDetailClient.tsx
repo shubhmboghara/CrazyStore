@@ -93,6 +93,32 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxZoom, setLightboxZoom] = useState<number>(1);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
+
+  const handleTabKeyDown = (e: React.KeyboardEvent, currentTab: 'overview' | 'reviews' | 'tech') => {
+    const tabs: ('overview' | 'reviews' | 'tech')[] = ['overview', 'reviews', 'tech'];
+    const currentIdx = tabs.indexOf(currentTab);
+    let nextTab: 'overview' | 'reviews' | 'tech' | null = null;
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      nextTab = tabs[(currentIdx + 1) % tabs.length];
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      nextTab = tabs[(currentIdx - 1 + tabs.length) % tabs.length];
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      nextTab = tabs[0];
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      nextTab = tabs[tabs.length - 1];
+    }
+
+    if (nextTab) {
+      setActiveTab(nextTab);
+      const targetElem = document.getElementById(`tab-${nextTab}`);
+      targetElem?.focus();
+    }
+  };
   const { showToast } = useToast();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -601,7 +627,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   aria-controls="panel-overview"
                   tabIndex={activeTab === 'overview' ? 0 : -1}
                   onClick={() => setActiveTab('overview')}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+                  onKeyDown={(e) => handleTabKeyDown(e, 'overview')}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 ${
                     activeTab === 'overview'
                       ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
                       : 'text-zinc-400 hover:bg-zinc-800/60'
@@ -617,7 +644,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   aria-controls="panel-reviews"
                   tabIndex={activeTab === 'reviews' ? 0 : -1}
                   onClick={() => setActiveTab('reviews')}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+                  onKeyDown={(e) => handleTabKeyDown(e, 'reviews')}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 ${
                     activeTab === 'reviews'
                       ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
                       : 'text-zinc-400 hover:bg-zinc-800/60'
@@ -633,7 +661,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   aria-controls="panel-tech"
                   tabIndex={activeTab === 'tech' ? 0 : -1}
                   onClick={() => setActiveTab('tech')}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+                  onKeyDown={(e) => handleTabKeyDown(e, 'tech')}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 ${
                     activeTab === 'tech'
                       ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
                       : 'text-zinc-400 hover:bg-zinc-800/60'
