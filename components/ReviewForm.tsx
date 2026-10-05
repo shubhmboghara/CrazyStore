@@ -162,16 +162,18 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
             htmlFor="review-name-input"
             className="block text-xs font-medium text-zinc-300 mb-1"
           >
-            Your Name <span className="text-zinc-500 font-normal">(Optional)</span>
+            Your Name <span className="text-zinc-400 font-normal">(Optional)</span>
           </label>
           <input
             id="review-name-input"
             type="text"
             value={name}
+            autoComplete="name"
+            inputMode="text"
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Alex M. (blank shows 'Anonymous')"
             maxLength={50}
-            className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700 text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700 text-zinc-100 placeholder-zinc-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
           />
         </div>
 
@@ -209,34 +211,46 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
             id="review-text-input"
             rows={3}
             value={reviewText}
+            autoComplete="off"
+            spellCheck="true"
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && reviewText.trim().length >= 10 && !isSubmitting) {
+                handleSubmit(e);
+              }
+            }}
             onChange={(e) => setReviewText(e.target.value)}
             placeholder="What did you like about this app? Performance, Compose UI, speed, features..."
             minLength={10}
             maxLength={500}
             required
             aria-describedby="review-char-count"
-            className="auto-expanding w-full px-3.5 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700 text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            className="auto-expanding w-full px-3.5 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700 text-zinc-100 placeholder-zinc-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
           />
         </div>
 
-        <button
-          id="submit-review-button"
-          type="submit"
-          disabled={isSubmitting || reviewText.trim().length < 10}
-          className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-medium text-sm shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 cursor-pointer disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4" />
-              Submit Review
-            </>
-          )}
-        </button>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <button
+            id="submit-review-button"
+            type="submit"
+            disabled={isSubmitting || reviewText.trim().length < 10}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-medium text-sm shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Submit Review
+              </>
+            )}
+          </button>
+          <span className="text-[11px] text-zinc-400 hidden sm:inline">
+            Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-[10px]">Ctrl+Enter</kbd> to submit
+          </span>
+        </div>
       </form>
     </div>
   );

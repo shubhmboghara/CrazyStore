@@ -377,14 +377,16 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                   id="catalog-search"
                   type="text"
                   value={searchQuery}
+                  autoComplete="off"
+                  spellCheck="false"
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') setSearchQuery('');
                   }}
                   placeholder="Search by name, tag, or tech..."
-                  className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-100 placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-inner"
+                  className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-100 placeholder-zinc-400 text-sm sm:text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-inner"
                 />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
                   <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                 </div>
                 {searchQuery && (

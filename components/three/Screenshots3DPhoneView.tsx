@@ -80,6 +80,7 @@ export function Screenshots3DPhoneView({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [hasWebGL, setHasWebGL] = useState<boolean>(true);
+  const [isSceneReady, setIsSceneReady] = useState<boolean>(false);
 
   // Keep a ref to activeIdx for asynchronous Three.js and event callbacks
   const activeIdxRef = useRef<number>(activeIdx);
@@ -238,6 +239,7 @@ export function Screenshots3DPhoneView({
       const mat = centerMatRef.current;
       loadTexture(centerUrl, (tex) => {
         applyTextureToMat(mat, tex, centerTextureRef, screenMeshRef, 2.26, 4.70);
+        setIsSceneReady(true);
       });
     }
 
@@ -909,6 +911,16 @@ export function Screenshots3DPhoneView({
         className="relative w-full h-[500px] xs:h-[560px] sm:h-[620px] md:h-[660px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-[#0c0c16] to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center select-none cursor-grab focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
+
+        {/* Ambient loader while 3D WebGL finishes initializing */}
+        {!isSceneReady && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2.5 bg-zinc-950/70 backdrop-blur-xs pointer-events-none transition-opacity duration-300">
+            <div className="w-8 h-8 rounded-full border-2 border-purple-500/20 border-t-purple-500 animate-spin" />
+            <span className="text-[11px] font-bold text-zinc-400 tracking-wide">
+              Initializing 3D Studio...
+            </span>
+          </div>
+        )}
 
         {/* Minimal Controls Overlay in Top Right */}
         <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-2">

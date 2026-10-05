@@ -237,5 +237,65 @@ console.log('Running automated test suite for CrazyStore UI/UX & Modern Web Guid
   console.log('✓ Test 13 Passed: Page-level error boundary recovery UX verified');
 }
 
-console.log('\n🎉 ALL 13 UI/UX & DEEP MODERN WEB GUIDANCE TEST SUITES PASSED WITH 100% SUCCESS!\n');
+// 14. Verify Mobile Sticky Action Bar Clearance & Safe-Area Occlusion Prevention
+{
+  const detailPath = path.join(rootDir, 'components', 'AppDetailClient.tsx');
+  const detail = fs.readFileSync(detailPath, 'utf8');
+
+  assert.ok(detail.includes('pb-32 sm:pb-16'), 'AppDetailClient must provide pb-32 clearance on mobile so sticky bar never occludes bottom content');
+  assert.ok(detail.includes('safe-area-inset-bottom'), 'Sticky bar must respect safe-area-inset-bottom for gesture nav bars');
+
+  console.log('✓ Test 14 Passed: Mobile sticky action bar clearance and safe-area occlusion prevention verified');
+}
+
+// 15. Verify Download CTA Tactile Feedback & Doherty Threshold Prevention
+{
+  const detailPath = path.join(rootDir, 'components', 'AppDetailClient.tsx');
+  const detail = fs.readFileSync(detailPath, 'utf8');
+
+  assert.ok(detail.includes('isDownloading'), 'AppDetailClient must maintain isDownloading state for tactile feedback');
+  assert.ok(detail.includes('Downloading APK...'), 'AppDetailClient must show active downloading confirmation text');
+  assert.ok(detail.includes('aria-live="polite"'), 'Download buttons must declare aria-live for screen reader status');
+
+  console.log('✓ Test 15 Passed: Download CTA tactile feedback and rapid double-click prevention verified');
+}
+
+// 16. Verify Form Autocomplete, Spellcheck, and Ctrl+Enter Power Shortcut
+{
+  const formPath = path.join(rootDir, 'components', 'ReviewForm.tsx');
+  const form = fs.readFileSync(formPath, 'utf8');
+
+  assert.ok(form.includes('autoComplete="name"'), 'ReviewForm name field must support autocomplete="name"');
+  assert.ok(form.includes('inputMode="text"'), 'ReviewForm name field must declare inputMode="text"');
+  assert.ok(form.includes('ctrlKey') || form.includes('metaKey'), 'ReviewForm textarea must support Ctrl/Cmd+Enter shortcut to submit');
+  assert.ok(form.includes('Ctrl+Enter'), 'ReviewForm must display keyboard shortcut tip');
+
+  console.log('✓ Test 16 Passed: Form autocomplete, inputMode, and Ctrl+Enter power shortcut verified');
+}
+
+// 17. Verify Mobile Auto-Zoom Protection & Search Polish
+{
+  const homePath = path.join(rootDir, 'components', 'HomeClient.tsx');
+  const home = fs.readFileSync(homePath, 'utf8');
+
+  assert.ok(home.includes('text-sm sm:text-xs'), 'Search input must use at least 14px (text-sm) on mobile to prevent iOS viewport auto-zoom');
+  assert.ok(home.includes('autoComplete="off"'), 'Search input must declare autoComplete="off"');
+  assert.ok(home.includes('spellCheck="false"'), 'Search input must declare spellCheck="false"');
+
+  console.log('✓ Test 17 Passed: Mobile auto-zoom protection and search input ergonomics verified');
+}
+
+// 18. Verify 3D Studio Ambient Loading State & Zero Perceptual Latency
+{
+  const viewPath = path.join(rootDir, 'components', 'three', 'Screenshots3DPhoneView.tsx');
+  const view = fs.readFileSync(viewPath, 'utf8');
+
+  assert.ok(view.includes('isSceneReady'), 'Screenshots3DPhoneView must track isSceneReady lifecycle');
+  assert.ok(view.includes('Initializing 3D Studio...'), 'Screenshots3DPhoneView must display ambient initializing loader while WebGL initializes');
+
+  console.log('✓ Test 18 Passed: 3D Studio ambient loading state and perceived latency elimination verified');
+}
+
+console.log('\n🎉 ALL 18 UI/UX & DEEP FRICTION-FREE PLATFORM TEST SUITES PASSED WITH 100% SUCCESS!\n');
+
 

@@ -92,6 +92,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxZoom, setLightboxZoom] = useState<number>(1);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const { showToast } = useToast();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -329,6 +330,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   };
 
   const handleDownloadClick = (source: string) => {
+    setIsDownloading(true);
     showToast(`Starting verified download: ${appData.name} APK (${appData.size})`, 'success');
     trackEvent({
       eventType: 'app_download',
@@ -337,6 +339,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
       isTaskCompleted: true,
       details: `Downloaded APK from ${source}: ${appData.name} (${appData.version})`,
     });
+    setTimeout(() => {
+      setIsDownloading(false);
+    }, 2500);
   };
 
   const handleShare = async () => {
@@ -363,7 +368,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
     <div className="min-h-screen bg-zinc-950 flex flex-col font-sans text-zinc-100">
       <Navbar />
 
-      <main id="main-content" tabIndex={-1} className="flex-1 pb-16 focus:outline-none">
+      <main id="main-content" tabIndex={-1} className="flex-1 pb-32 sm:pb-16 focus:outline-none">
         {/* Top Header Banner with optional Admin Banner Backdrop */}
         <section className="relative bg-zinc-900 border-b border-zinc-800 py-10 sm:py-12 overflow-hidden">
           {appData.bannerUrl && (
@@ -445,9 +450,24 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => handleDownloadClick('header_cta')}
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm text-center shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className={`w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-bold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    isDownloading
+                      ? 'bg-emerald-600 shadow-emerald-600/30 ring-2 ring-emerald-400/50'
+                      : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'
+                  }`}
+                  aria-live="polite"
                 >
-                  <Download className="w-5 h-5" /> Download APK
+                  {isDownloading ? (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 text-white animate-in zoom-in-75" />
+                      <span>Downloading APK...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-5 h-5" />
+                      <span>Download APK</span>
+                    </>
+                  )}
                 </a>
                 {appData.githubUrl && (
                   <a
@@ -1165,9 +1185,24 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => handleDownloadClick('mobile_sticky_bar')}
-            className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-lg shadow-purple-600/30 cursor-pointer"
+            className={`px-5 py-2.5 rounded-xl text-white font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-lg transition-all cursor-pointer ${
+              isDownloading
+                ? 'bg-emerald-600 shadow-emerald-600/30 ring-2 ring-emerald-400/50'
+                : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'
+            }`}
+            aria-live="polite"
           >
-            <Download className="w-4 h-4" /> Download
+            {isDownloading ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-white" />
+                <span>Downloading...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                <span>Download</span>
+              </>
+            )}
           </a>
         </div>
       </main>
