@@ -218,6 +218,19 @@ export function FloatingAndroid3D() {
     };
   }, [isOpen]);
 
+  // Auto advance mascot tips every 10s seamlessly (unconditional hook)
+  useEffect(() => {
+    if (!isOpen) return;
+    const interval = setInterval(() => {
+      setMessageIdx((prev) => (prev + 1) % MASCOT_MESSAGES.length);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  const handleNextMessage = () => {
+    setMessageIdx((prev) => (prev + 1) % MASCOT_MESSAGES.length);
+  };
+
   if (!isOpen) {
     return (
       <button
@@ -230,19 +243,6 @@ export function FloatingAndroid3D() {
       </button>
     );
   }
-
-  const handleNextMessage = () => {
-    setMessageIdx((prev) => (prev + 1) % MASCOT_MESSAGES.length);
-  };
-
-  // Auto advance mascot tips every 10s seamlessly
-  useEffect(() => {
-    if (!isOpen) return;
-    const interval = setInterval(() => {
-      setMessageIdx((prev) => (prev + 1) % MASCOT_MESSAGES.length);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [isOpen]);
 
   return (
     <aside
