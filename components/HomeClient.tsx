@@ -234,7 +234,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
       />
       <Navbar />
 
-      <main className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         {/* 3D WebGL Hero Section */}
         <section className="relative py-12 sm:py-20 overflow-hidden">
           {/* Background Ambient Glows */}

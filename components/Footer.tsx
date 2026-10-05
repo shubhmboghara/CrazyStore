@@ -27,7 +27,7 @@ export function Footer() {
                 href="https://github.com/shubhmboghara/CrazyStore"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg bg-zinc-900 hover:bg-purple-950/60 hover:text-purple-400 text-zinc-400 flex items-center justify-center transition-colors border border-zinc-800"
+                className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-purple-950/60 hover:text-purple-400 text-zinc-300 flex items-center justify-center transition-colors border border-zinc-800 focus-visible:ring-2 focus-visible:ring-purple-400"
                 aria-label="GitHub Repository"
               >
                 <FaGithub className="w-4 h-4" />
@@ -36,7 +36,7 @@ export function Footer() {
                 href="https://linkedin.com/in/shubham-boghara-60b4a1343"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg bg-zinc-900 hover:bg-purple-950/60 hover:text-purple-400 text-zinc-400 flex items-center justify-center transition-colors border border-zinc-800"
+                className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-purple-950/60 hover:text-purple-400 text-zinc-300 flex items-center justify-center transition-colors border border-zinc-800 focus-visible:ring-2 focus-visible:ring-purple-400"
                 aria-label="LinkedIn"
               >
                 <FaLinkedin className="w-4 h-4" />
@@ -45,7 +45,7 @@ export function Footer() {
                 href="https://instagram.com/shubhambogharadotcom"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg bg-zinc-900 hover:bg-purple-950/60 hover:text-purple-400 text-zinc-400 flex items-center justify-center transition-colors border border-zinc-800"
+                className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-purple-950/60 hover:text-purple-400 text-zinc-300 flex items-center justify-center transition-colors border border-zinc-800 focus-visible:ring-2 focus-visible:ring-purple-400"
                 aria-label="Instagram"
               >
                 <FaInstagram className="w-4 h-4" />

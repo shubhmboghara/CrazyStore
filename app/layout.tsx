@@ -159,6 +159,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body suppressHydrationWarning className="bg-zinc-950 text-zinc-100 min-h-screen antialiased selection:bg-purple-500 selection:text-white">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2.5 focus:rounded-xl focus:bg-purple-600 focus:text-white focus:font-bold focus:text-xs focus:shadow-xl focus:ring-2 focus:ring-purple-400 focus:outline-none transition-all"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider>
           <ToastProvider>
             <AnalyticsTracker />

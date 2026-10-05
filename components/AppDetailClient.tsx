@@ -363,7 +363,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
     <div className="min-h-screen bg-zinc-950 flex flex-col font-sans text-zinc-100">
       <Navbar />
 
-      <main className="flex-1 pb-16">
+      <main id="main-content" tabIndex={-1} className="flex-1 pb-16 focus:outline-none">
         {/* Top Header Banner with optional Admin Banner Backdrop */}
         <section className="relative bg-zinc-900 border-b border-zinc-800 py-10 sm:py-12 overflow-hidden">
           {appData.bannerUrl && (
@@ -637,7 +637,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                           <h3 className="text-xl sm:text-2xl font-black text-zinc-100">
                             About {appData.name}
                           </h3>
-                          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
+                          <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
                             Complete application overview and capabilities
                           </p>
                         </div>
@@ -685,24 +685,24 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
                     {/* Quick Specs Bento */}
                     <div className="pt-6 border-t border-zinc-800/80">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">
                         Specifications at a Glance
                       </h4>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="p-3.5 rounded-2xl bg-zinc-800/40 border border-zinc-700/40">
-                          <span className="text-[10px] font-bold text-zinc-500 uppercase block">Android Version</span>
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase block">Android Version</span>
                           <span className="text-xs sm:text-sm font-black text-zinc-100 mt-0.5 block">{appData.minAndroid}</span>
                         </div>
                         <div className="p-3.5 rounded-2xl bg-zinc-800/40 border border-zinc-700/40">
-                          <span className="text-[10px] font-bold text-zinc-500 uppercase block">Package Size</span>
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase block">Package Size</span>
                           <span className="text-xs sm:text-sm font-black text-zinc-100 mt-0.5 block">{appData.size}</span>
                         </div>
                         <div className="p-3.5 rounded-2xl bg-zinc-800/40 border border-zinc-700/40">
-                          <span className="text-[10px] font-bold text-zinc-500 uppercase block">Build Release</span>
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase block">Build Release</span>
                           <span className="text-xs sm:text-sm font-black text-zinc-100 mt-0.5 block">{appData.version}</span>
                         </div>
                         <div className="p-3.5 rounded-2xl bg-zinc-800/40 border border-zinc-700/40">
-                          <span className="text-[10px] font-bold text-zinc-500 uppercase block">UI Framework</span>
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase block">UI Framework</span>
                           <span className="text-xs sm:text-sm font-black text-purple-400 mt-0.5 block">Jetpack Compose</span>
                         </div>
                       </div>
@@ -717,7 +717,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                         <span className="text-base font-black text-zinc-100">
                           {averageRating.toFixed(1)} / 5.0 Rating
                         </span>
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-xs text-zinc-400">
                           ({totalCount} verified user {totalCount === 1 ? 'review' : 'reviews'})
                         </span>
                       </div>
@@ -958,6 +958,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
         {lightboxIndex !== null && validPreviews[lightboxIndex] && (
           <dialog
             ref={dialogRef}
+            aria-modal="true"
+            aria-label="Screenshot lightbox modal"
             onCancel={(e) => {
               e.preventDefault();
               setLightboxIndex(null);

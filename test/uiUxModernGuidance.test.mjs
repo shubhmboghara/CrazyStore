@@ -158,4 +158,84 @@ console.log('Running automated test suite for CrazyStore UI/UX & Modern Web Guid
   console.log('✓ Test 7 Passed: Toast notification accessibility, Form live regions, and Category tablist semantics verified');
 }
 
-console.log('\n🎉 ALL 7 UI/UX & MODERN WEB GUIDANCE TEST SUITES PASSED WITH 100% SUCCESS!\n');
+// 8. Verify WCAG 2.4.1 Skip to Main Content Landmark & Target IDs
+{
+  const layoutPath = path.join(rootDir, 'app', 'layout.tsx');
+  const homePath = path.join(rootDir, 'components', 'HomeClient.tsx');
+  const detailPath = path.join(rootDir, 'components', 'AppDetailClient.tsx');
+
+  const layout = fs.readFileSync(layoutPath, 'utf8');
+  assert.ok(layout.includes('href="#main-content"'), 'RootLayout must contain Skip to main content link');
+  assert.ok(layout.includes('sr-only focus:not-sr-only'), 'Skip link must be visually hidden until keyboard focus');
+
+  const home = fs.readFileSync(homePath, 'utf8');
+  assert.ok(home.includes('id="main-content"'), 'HomeClient must declare id="main-content" on main element');
+
+  const detail = fs.readFileSync(detailPath, 'utf8');
+  assert.ok(detail.includes('id="main-content"'), 'AppDetailClient must declare id="main-content" on main element');
+
+  console.log('✓ Test 8 Passed: WCAG 2.4.1 Skip to main content accessibility verified across layout and client pages');
+}
+
+// 9. Verify Scroll Padding & Vestibular Disorder Reduced-Motion Handling
+{
+  const cssPath = path.join(rootDir, 'app', 'globals.css');
+  const css = fs.readFileSync(cssPath, 'utf8');
+
+  assert.ok(css.includes('scroll-padding-top: 5rem'), 'globals.css must set scroll-padding-top to prevent sticky header occlusion');
+  assert.ok(css.includes('@media (prefers-reduced-motion: reduce)'), 'globals.css must provide accessible reduced-motion reset');
+  assert.ok(css.includes('animation-duration: 0.01ms'), 'globals.css must neutralize animations when reduced motion is preferred');
+
+  console.log('✓ Test 9 Passed: Sticky header scroll-padding buffer and vestibular reduced-motion rules verified');
+}
+
+// 10. Verify 3D Phone Showcase Keyboard Navigation & Screen Reader Region
+{
+  const viewPath = path.join(rootDir, 'components', 'three', 'Screenshots3DPhoneView.tsx');
+  const view = fs.readFileSync(viewPath, 'utf8');
+
+  assert.ok(view.includes('tabIndex={0}'), '3D Viewport container must be keyboard focusable via tabIndex={0}');
+  assert.ok(view.includes('role="region"'), '3D Viewport container must declare role="region"');
+  assert.ok(view.includes('aria-label='), '3D Viewport container must declare an accessible aria-label');
+  assert.ok(view.includes('ArrowLeft') && view.includes('ArrowRight'), '3D Viewport must support Arrow key screenshot cycling');
+  assert.ok(view.includes('handleResetCamera'), '3D Viewport must support perspective reset');
+
+  console.log('✓ Test 10 Passed: 3D Phone viewer full keyboard control and assistive tech accessibility verified');
+}
+
+// 11. Verify Lightbox Native Dialog ARIA Semantics
+{
+  const detailPath = path.join(rootDir, 'components', 'AppDetailClient.tsx');
+  const detail = fs.readFileSync(detailPath, 'utf8');
+
+  assert.ok(detail.includes('aria-modal="true"'), 'Lightbox <dialog> must declare aria-modal="true"');
+  assert.ok(detail.includes('aria-label="Screenshot lightbox modal"'), 'Lightbox <dialog> must declare aria-label');
+
+  console.log('✓ Test 11 Passed: Lightbox native dialog modal ARIA semantics verified');
+}
+
+// 12. Verify WCAG 2.5.8 Touch Target Sizes in Footer
+{
+  const footerPath = path.join(rootDir, 'components', 'Footer.tsx');
+  const footer = fs.readFileSync(footerPath, 'utf8');
+
+  assert.ok(footer.includes('w-10 h-10'), 'Footer social icons must meet WCAG minimum 40x40px touch targets');
+  assert.ok(footer.includes('focus-visible:ring-2'), 'Footer interactive elements must declare high-contrast focus rings');
+
+  console.log('✓ Test 12 Passed: WCAG 2.5.8 touch target size minimums verified');
+}
+
+// 13. Verify Page-Level Error Boundary Recovery UX
+{
+  const errorPath = path.join(rootDir, 'app', 'error.tsx');
+  assert.ok(fs.existsSync(errorPath), 'app/error.tsx page-level error boundary must exist');
+  const error = fs.readFileSync(errorPath, 'utf8');
+
+  assert.ok(error.includes('Try Again'), 'app/error.tsx must provide a Try Again retry action');
+  assert.ok(error.includes('Storefront'), 'app/error.tsx must provide a navigation recovery link');
+
+  console.log('✓ Test 13 Passed: Page-level error boundary recovery UX verified');
+}
+
+console.log('\n🎉 ALL 13 UI/UX & DEEP MODERN WEB GUIDANCE TEST SUITES PASSED WITH 100% SUCCESS!\n');
+

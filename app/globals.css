@@ -25,6 +25,7 @@ html {
   color: var(--color-text-main, #f4f4f5);
   color-scheme: dark;
   -webkit-tap-highlight-color: transparent;
+  scroll-padding-top: 5rem;
 }
 
 body {
@@ -153,6 +154,18 @@ dialog::backdrop {
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
+  }
+}
+
+/* Accessible reduced-motion behavior for vestibular disorder protections */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

@@ -119,7 +119,7 @@ export function ReviewsList({
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <span className="w-10 text-right text-zinc-500 font-mono shrink-0">
+                  <span className="w-10 text-right text-zinc-400 font-mono shrink-0">
                     {count}
                   </span>
                 </button>
@@ -168,7 +168,7 @@ export function ReviewsList({
                 Show all reviews
               </button>
             ) : (
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-zinc-400">
                 Be the first user to download the APK and leave feedback above!
               </p>
             )}
@@ -191,7 +191,7 @@ export function ReviewsList({
                         <span className="font-semibold text-sm text-zinc-100 block">
                           {review.name || 'Anonymous'}
                         </span>
-                        <span className="text-[11px] text-zinc-500">
+                        <span className="text-[11px] text-zinc-400">
                           {formatDate(review.createdAt)}
                         </span>
                       </div>
@@ -222,7 +222,7 @@ export function ReviewsList({
                     </div>
                   )}
 
-                  <div className="pt-2 pl-10 flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-800/60">
+                  <div className="pt-2 pl-10 flex items-center justify-between text-xs text-zinc-400 border-t border-zinc-800/60">
                     <button
                       type="button"
                       onClick={() => toggleHelpful(review.id)}

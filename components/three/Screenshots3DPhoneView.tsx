@@ -881,14 +881,32 @@ export function Screenshots3DPhoneView({
       {/* 3D WebGL Canvas Viewport — Luxury flagship smartphone showcase */}
       <div
         ref={containerRef}
+        tabIndex={0}
+        role="region"
+        aria-label="Interactive 3D Screenshot Showcase. Use Left and Right arrow keys to switch screenshots, Enter or Space to open fullscreen."
         onClick={handleCanvasClick}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+            e.preventDefault();
+            handlePrevScreenshot();
+          } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+            e.preventDefault();
+            handleNextScreenshot();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpenLightbox(activeIdx);
+          } else if (e.key === 'r' || e.key === 'R') {
+            e.preventDefault();
+            handleResetCamera();
+          }
+        }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onWheel={handleWheel}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative w-full h-[500px] xs:h-[560px] sm:h-[620px] md:h-[660px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-[#0c0c16] to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center select-none cursor-grab"
+        className="relative w-full h-[500px] xs:h-[560px] sm:h-[620px] md:h-[660px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-[#0c0c16] to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center select-none cursor-grab focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
@@ -900,8 +918,8 @@ export function Screenshots3DPhoneView({
               e.stopPropagation();
               handleResetCamera();
             }}
-            className="p-2 sm:p-2.5 rounded-xl bg-zinc-900/85 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95"
-            title="Reset 3D Perspective"
+            className="p-2 sm:p-2.5 rounded-xl bg-zinc-900/85 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-purple-400"
+            title="Reset 3D Perspective (R)"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -912,8 +930,8 @@ export function Screenshots3DPhoneView({
               e.stopPropagation();
               onOpenLightbox(activeIdx);
             }}
-            className="p-2 sm:px-3 sm:py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white backdrop-blur-md transition-all shadow-lg shadow-purple-600/30 cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5 text-xs font-bold"
-            title="Inspect Fullscreen"
+            className="p-2 sm:px-3 sm:py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white backdrop-blur-md transition-all shadow-lg shadow-purple-600/30 cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5 text-xs font-bold focus-visible:ring-2 focus-visible:ring-purple-400"
+            title="Inspect Fullscreen (Enter/Space)"
           >
             <Maximize2 className="w-4 h-4" />
             <span className="hidden sm:inline">Fullscreen</span>
@@ -929,8 +947,9 @@ export function Screenshots3DPhoneView({
                 e.stopPropagation();
                 handlePrevScreenshot();
               }}
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-zinc-900/85 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
-              title="Previous Screenshot"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-zinc-900/85 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400"
+              title="Previous Screenshot (Left Arrow)"
+              aria-label="Previous Screenshot"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -940,8 +959,9 @@ export function Screenshots3DPhoneView({
                 e.stopPropagation();
                 handleNextScreenshot();
               }}
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-zinc-900/85 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
-              title="Next Screenshot"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-zinc-900/85 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400"
+              title="Next Screenshot (Right Arrow)"
+              aria-label="Next Screenshot"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -954,10 +974,10 @@ export function Screenshots3DPhoneView({
         {/* Compact "Viewing" status bar */}
         <div className="w-full flex items-center justify-between px-1">
           <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5 truncate">
-            <span className="text-zinc-500 shrink-0">Viewing:</span>
+            <span className="text-zinc-400 shrink-0">Viewing:</span>
             <span className="text-purple-400 truncate">{displayTitle}</span>
           </span>
-          <span className="text-[11px] tabular-nums text-zinc-500 shrink-0 ml-2">
+          <span className="text-[11px] tabular-nums text-zinc-400 shrink-0 ml-2">
             {activeIdx + 1}&thinsp;/&thinsp;{screenshots.length}
           </span>
         </div>

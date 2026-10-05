@@ -42,7 +42,7 @@ export default function NotFound() {
           </Link>
         </div>
 
-        <div className="pt-6 border-t border-zinc-900 text-xs text-zinc-500">
+        <div className="pt-6 border-t border-zinc-900 text-xs text-zinc-400">
           Looking for a specific app? Check out our flagship{' '}
           <Link href="/apps/videohub" className="text-purple-400 hover:underline font-bold">
             VideoHub Android Studio
