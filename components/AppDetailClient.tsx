@@ -417,13 +417,13 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     <ArrowLeft className="w-3.5 h-3.5" /> Storefront
                   </Link>
                 </li>
-                <li aria-hidden="true" className="text-zinc-600">/</li>
+                <li aria-hidden="true" className="text-zinc-400">/</li>
                 <li>
                   <Link href="/#catalog" className="hover:text-purple-300 transition-colors">
                     Catalog
                   </Link>
                 </li>
-                <li aria-hidden="true" className="text-zinc-600">/</li>
+                <li aria-hidden="true" className="text-zinc-400">/</li>
                 <li aria-current="page" className="text-zinc-100 font-bold truncate max-w-[200px]">
                   {appData.name}
                 </li>

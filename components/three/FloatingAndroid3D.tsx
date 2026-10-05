@@ -257,7 +257,7 @@ export function FloatingAndroid3D() {
           </span>
           <button
             onClick={() => setIsOpen(false)}
-            className="text-zinc-500 hover:text-zinc-200 transition-colors"
+            className="text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
             title="Minimize"
             aria-label="Minimize 3D Mascot"
           >

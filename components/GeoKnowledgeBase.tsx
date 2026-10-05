@@ -111,7 +111,7 @@ export function GeoKnowledgeBase({ app }: GeoKnowledgeBaseProps) {
                   {faq.question}
                 </span>
                 <ChevronDown
-                  className={`w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-200 ${
+                  className={`w-4 h-4 shrink-0 text-zinc-400 transition-transform duration-200 ${
                     isOpen ? 'rotate-180 text-purple-400' : ''
                   }`}
                 />

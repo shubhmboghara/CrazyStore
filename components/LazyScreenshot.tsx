@@ -91,7 +91,7 @@ export function LazyScreenshot({
       {/* Loading Skeleton Placeholder before image enters viewport or while loading */}
       {(!isInView || (!isLoaded && !hasError)) && (
         <div className="absolute inset-0 bg-gradient-to-tr from-zinc-900 via-zinc-800/80 to-zinc-900 flex flex-col items-center justify-center animate-pulse z-0 p-6">
-          <div className="w-12 h-12 rounded-2xl bg-zinc-800/90 border border-zinc-700/50 flex items-center justify-center text-zinc-500 mb-3 shadow-inner">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-800/90 border border-zinc-700/50 flex items-center justify-center text-zinc-400 mb-3 shadow-inner">
             <ImageIcon className="w-6 h-6 animate-pulse text-zinc-400" />
           </div>
           <div className="h-2.5 w-24 bg-zinc-700/60 rounded-full mb-2"></div>
@@ -101,12 +101,12 @@ export function LazyScreenshot({
 
       {/* Error State Fallback */}
       {hasError && (
-        <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 text-zinc-500">
-          <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mb-2.5 shadow-inner">
+        <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 text-zinc-400">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 mb-2.5 shadow-inner">
             <ImageIcon className="w-6 h-6 text-zinc-400" />
           </div>
           <span className="text-xs font-semibold text-zinc-300">{title || 'Screenshot Preview'}</span>
-          <span className="text-[11px] text-zinc-500 mt-0.5">Image preview unavailable</span>
+          <span className="text-[11px] text-zinc-400 mt-0.5">Image preview unavailable</span>
         </div>
       )}
 
