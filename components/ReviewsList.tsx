@@ -97,12 +97,13 @@ export function ReviewsList({
                   key={star}
                   type="button"
                   onClick={() => setSelectedStar(isSelected ? null : star)}
-                  className={`w-full flex items-center gap-3 text-xs p-1 rounded-lg transition-all cursor-pointer group text-left ${
+                  className={`w-full flex items-center gap-3 text-xs p-1.5 rounded-lg transition-all cursor-pointer group text-left focus-visible:ring-2 focus-visible:ring-purple-500 ${
                     isSelected
                       ? 'bg-purple-950/60 ring-1 ring-purple-600/50'
                       : 'hover:bg-zinc-800/60'
                   }`}
                   aria-pressed={isSelected}
+                  aria-label={`Filter by ${star} star reviews, ${count} review${count === 1 ? '' : 's'} available`}
                   title={`Filter by ${star} star reviews (${count})`}
                 >
                   <span className={`w-8 font-medium text-right shrink-0 transition-colors ${
@@ -225,12 +226,13 @@ export function ReviewsList({
                     <button
                       type="button"
                       onClick={() => toggleHelpful(review.id)}
-                      className={`inline-flex items-center gap-1.5 text-[11px] transition-colors cursor-pointer py-1 px-2 rounded-lg ${
+                      className={`inline-flex items-center gap-1.5 text-[11px] transition-colors cursor-pointer py-1.5 px-3 rounded-lg min-h-[36px] focus-visible:ring-2 focus-visible:ring-purple-500 ${
                         isHelpful
                           ? 'text-purple-300 bg-purple-950/60 font-bold'
                           : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
                       }`}
                       aria-pressed={isHelpful}
+                      aria-label={isHelpful ? 'Marked as helpful' : 'Mark review as helpful'}
                     >
                       <ThumbsUp className={`w-3.5 h-3.5 ${isHelpful ? 'fill-purple-400 text-purple-400' : ''}`} />
                       <span>{isHelpful ? 'Marked Helpful (1)' : 'Helpful'}</span>

@@ -134,4 +134,28 @@ console.log('Running automated test suite for CrazyStore UI/UX & Modern Web Guid
   console.log('✓ Test 6 Passed: 404 and Error Boundary recovery UX verified');
 }
 
-console.log('\n🎉 ALL 6 UI/UX & MODERN WEB GUIDANCE TEST SUITES PASSED WITH 100% SUCCESS!\n');
+// 7. Verify Toast Notifications, Form Live Regions & Category ARIA Semantics
+{
+  const toastPath = path.join(rootDir, 'components', 'Toast.tsx');
+  const formPath = path.join(rootDir, 'components', 'ReviewForm.tsx');
+  const homePath = path.join(rootDir, 'components', 'HomeClient.tsx');
+
+  const toast = fs.readFileSync(toastPath, 'utf8');
+  assert.ok(toast.includes('aria-live="polite"'), 'Toast container must declare aria-live="polite"');
+  assert.ok(toast.includes('aria-atomic="true"'), 'Toast container must declare aria-atomic="true"');
+  assert.ok(toast.includes('Dismiss notification'), 'Toast dismiss button must have accessible aria-label');
+
+  const form = fs.readFileSync(formPath, 'utf8');
+  assert.ok(form.includes('role="status"'), 'ReviewForm success alert must declare role="status"');
+  assert.ok(form.includes('role="alert"'), 'ReviewForm error alert must declare role="alert"');
+  assert.ok(form.includes('aria-describedby="review-char-count"'), 'ReviewForm textarea must link to char counter via aria-describedby');
+
+  const home = fs.readFileSync(homePath, 'utf8');
+  assert.ok(home.includes('role="tablist"'), 'HomeClient category filter container must declare role="tablist"');
+  assert.ok(home.includes('role="tab"'), 'HomeClient category pills must declare role="tab"');
+  assert.ok(home.includes('aria-selected'), 'HomeClient category pills must declare aria-selected');
+
+  console.log('✓ Test 7 Passed: Toast notification accessibility, Form live regions, and Category tablist semantics verified');
+}
+
+console.log('\n🎉 ALL 7 UI/UX & MODERN WEB GUIDANCE TEST SUITES PASSED WITH 100% SUCCESS!\n');

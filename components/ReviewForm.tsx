@@ -118,14 +118,22 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
       </div>
 
       {submittedSuccess && (
-        <div className="mb-4 p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 text-sm flex items-center gap-3 animate-in fade-in">
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 text-sm flex items-center gap-3 animate-in fade-in"
+        >
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <span>Your review was submitted successfully! It is now live below.</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="mb-4 p-4 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-200 text-sm flex items-center gap-3 animate-in fade-in">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="mb-4 p-4 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-200 text-sm flex items-center gap-3 animate-in fade-in"
+        >
           <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
           <span>{errorMessage}</span>
         </div>
@@ -177,6 +185,7 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
             </label>
             <div className="flex items-center gap-2">
               <span
+                id="review-char-count"
                 className={`text-[11px] font-medium transition-colors ${
                   reviewText.trim().length >= 10
                     ? 'text-emerald-400'
@@ -205,6 +214,7 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
             minLength={10}
             maxLength={500}
             required
+            aria-describedby="review-char-count"
             className="auto-expanding w-full px-3.5 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700 text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
           />
         </div>
