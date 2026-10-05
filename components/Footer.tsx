@@ -56,30 +56,35 @@ export function Footer() {
           {/* Column 2: Storefront */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-100 mb-3">
-              Storefront & Discover
+              Storefront &amp; Discover
             </h4>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs">
               <li>
-                <Link href="/#catalog" className="hover:text-purple-500 transition-colors">
-                  All Android Applications
+                <Link href="/#catalog" className="hover:text-purple-400 transition-colors inline-block py-1">
+                  Curated App Catalog
                 </Link>
               </li>
               <li>
-                <Link href="/#featured" className="hover:text-purple-500 transition-colors">
-                  Featured Kotlin Apps
+                <Link href="/#features" className="hover:text-purple-400 transition-colors inline-block py-1">
+                  120Hz &amp; FOSS Architecture
                 </Link>
               </li>
               <li>
-                <Link href="/#categories" className="hover:text-purple-500 transition-colors">
-                  Categories & Tags
+                <Link href="/#standards" className="hover:text-purple-400 transition-colors inline-block py-1">
+                  Verification Standards
+                </Link>
+              </li>
+              <li>
+                <Link href="/apps/videohub" className="hover:text-purple-400 transition-colors inline-block py-1">
+                  Interactive 3D Device Studio
                 </Link>
               </li>
               <li>
                 <a
-                  href="https://github.com/shubhmboghara/CrazyStore"
+                  href="https://github.com/shubhmboghara/CrazyStore/releases"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-purple-500 transition-colors inline-flex items-center gap-1"
+                  className="hover:text-purple-400 transition-colors inline-flex items-center gap-1 py-1"
                 >
                   GitHub Releases <ExternalLink className="w-3 h-3" />
                 </a>

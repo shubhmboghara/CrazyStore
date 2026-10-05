@@ -11,6 +11,7 @@ import { LazyScreenshot } from '@/components/LazyScreenshot';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
+import { useToast } from '@/components/Toast';
 import { trackEvent } from '@/lib/analytics';
 import { Screenshots3DBackdrop, Screenshots3DPhoneView } from '@/components/three';
 import { FaGithub } from 'react-icons/fa6';
@@ -38,7 +39,6 @@ import {
   ChevronRight,
   X,
   Maximize2,
-  ImageIcon,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -92,6 +92,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxZoom, setLightboxZoom] = useState<number>(1);
+  const { showToast } = useToast();
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Normalize valid screenshots uploaded by admin
   const validPreviews = (appData.screenshots || [])
@@ -113,6 +115,26 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
       };
     })
     .filter(Boolean) as { id: string; url: string; imageUrl: string; title: string; subtitle?: string }[];
+
+  // Synchronize native HTML5 <dialog> modal with state
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (lightboxIndex !== null) {
+      if (!dialog.open) {
+        try {
+          dialog.showModal();
+        } catch {
+          // Fallback if dialog.showModal is not supported in environment
+        }
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [lightboxIndex]);
 
   // Keyboard navigation & body scroll lock for screenshot lightbox
   useEffect(() => {
@@ -306,6 +328,17 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
     }
   };
 
+  const handleDownloadClick = (source: string) => {
+    showToast(`Starting verified download: ${appData.name} APK (${appData.size})`, 'success');
+    trackEvent({
+      eventType: 'app_download',
+      appSlug: appData.slug,
+      appName: appData.name,
+      isTaskCompleted: true,
+      details: `Downloaded APK from ${source}: ${appData.name} (${appData.version})`,
+    });
+  };
+
   const handleShare = async () => {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
@@ -314,12 +347,14 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           text: appData.shortDescription,
           url: window.location.href,
         });
+        showToast('Application link shared successfully!', 'info');
       } catch {
         // Ignored
       }
     } else if (typeof navigator !== 'undefined') {
       navigator.clipboard.writeText(window.location.href);
       setCopied(true);
+      showToast('Application link copied to clipboard!', 'info');
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -343,12 +378,26 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           )}
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-400 hover:underline mb-6"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back to Catalog
-            </Link>
+            {/* Semantic Accessible Breadcrumb Navigation */}
+            <nav aria-label="Breadcrumb" className="mb-6">
+              <ol className="flex items-center gap-2 text-xs font-medium text-zinc-400">
+                <li>
+                  <Link href="/" className="hover:text-purple-300 transition-colors flex items-center gap-1">
+                    <ArrowLeft className="w-3.5 h-3.5" /> Storefront
+                  </Link>
+                </li>
+                <li aria-hidden="true" className="text-zinc-600">/</li>
+                <li>
+                  <Link href="/#catalog" className="hover:text-purple-300 transition-colors">
+                    Catalog
+                  </Link>
+                </li>
+                <li aria-hidden="true" className="text-zinc-600">/</li>
+                <li aria-current="page" className="text-zinc-100 font-bold truncate max-w-[200px]">
+                  {appData.name}
+                </li>
+              </ol>
+            </nav>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div className="flex items-start gap-5">
@@ -373,11 +422,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     <span className="px-2.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-bold">
                       {appData.version}
                     </span>
-                    {validPreviews.length > 0 && (
-                      <span className="px-2.5 py-0.5 rounded-md bg-zinc-800/80 text-purple-300 border border-purple-800/40 text-[10px] font-bold flex items-center gap-1">
-                        <ImageIcon className="w-3 h-3 text-purple-400" /> {validPreviews.length} Screenshots
-                      </span>
-                    )}
                   </div>
 
                   <h1 className="text-2xl sm:text-4xl font-black text-zinc-100">
@@ -400,15 +444,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => {
-                    trackEvent({
-                      eventType: 'app_download',
-                      appSlug: appData.slug,
-                      appName: appData.name,
-                      isTaskCompleted: true,
-                      details: `Downloaded APK: ${appData.name} (${appData.version})`,
-                    });
-                  }}
+                  onClick={() => handleDownloadClick('header_cta')}
                   className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm text-center shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download className="w-5 h-5" /> Download APK
@@ -535,10 +571,15 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Main Content Column (8 cols) */}
             <div className="lg:col-span-8 space-y-8">
-              {/* Tab Navigation */}
-              <div className="flex items-center gap-2 border-b border-zinc-800 pb-2 overflow-x-auto hide-scrollbar no-scrollbar [scrollbar-width:none]">
+              {/* Tab Navigation with WAI-ARIA pattern */}
+              <div role="tablist" aria-label="Application Details Tabs" className="flex items-center gap-2 border-b border-zinc-800 pb-2 overflow-x-auto hide-scrollbar no-scrollbar [scrollbar-width:none]">
                 <button
                   type="button"
+                  role="tab"
+                  id="tab-overview"
+                  aria-selected={activeTab === 'overview'}
+                  aria-controls="panel-overview"
+                  tabIndex={activeTab === 'overview' ? 0 : -1}
                   onClick={() => setActiveTab('overview')}
                   className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
                     activeTab === 'overview'
@@ -550,6 +591,11 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  id="tab-reviews"
+                  aria-selected={activeTab === 'reviews'}
+                  aria-controls="panel-reviews"
+                  tabIndex={activeTab === 'reviews' ? 0 : -1}
                   onClick={() => setActiveTab('reviews')}
                   className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
                     activeTab === 'reviews'
@@ -561,6 +607,11 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  id="tab-tech"
+                  aria-selected={activeTab === 'tech'}
+                  aria-controls="panel-tech"
+                  tabIndex={activeTab === 'tech' ? 0 : -1}
                   onClick={() => setActiveTab('tech')}
                   className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
                     activeTab === 'tech'
@@ -574,7 +625,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
               {/* Tab 1: Overview & About */}
               {activeTab === 'overview' && (
-                <div className="space-y-8 animate-in fade-in duration-300">
+                <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabIndex={0} className="space-y-8 animate-in fade-in duration-300">
                   {/* Primary About Card */}
                   <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/80 pb-5">
@@ -692,7 +743,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
               {/* Tab 2: User Reviews */}
               {activeTab === 'reviews' && (
-                <div className="space-y-8 animate-in fade-in duration-300">
+                <div role="tabpanel" id="panel-reviews" aria-labelledby="tab-reviews" tabIndex={0} className="space-y-8 animate-in fade-in duration-300">
                   <ReviewForm appSlug={appData.slug} onReviewSubmitted={fetchReviews} />
                   <ReviewsList
                     reviews={reviews}
@@ -705,7 +756,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
               {/* Tab 3: Tech Stack & Architecture */}
               {activeTab === 'tech' && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
+                <div role="tabpanel" id="panel-tech" aria-labelledby="tab-tech" tabIndex={0} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
                   <h3 className="text-lg font-black text-zinc-100">
                     Android Architecture & Stack
                   </h3>
@@ -794,15 +845,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => {
-                    trackEvent({
-                      eventType: 'app_download',
-                      appSlug: appData.slug,
-                      appName: appData.name,
-                      isTaskCompleted: true,
-                      details: `Downloaded APK from sidebar: ${appData.name} (${appData.version})`,
-                    });
-                  }}
+                  onClick={() => handleDownloadClick('sidebar')}
                   className="w-full py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm text-center shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download className="w-5 h-5" /> Download APK ({appData.size})
@@ -911,10 +954,15 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           </div>
         </section>
 
-        {/* Fullscreen Lightbox Modal (Google Play / App Store Style) */}
+        {/* Fullscreen Lightbox Modal (Native HTML5 <dialog> Platform Architecture) */}
         {lightboxIndex !== null && validPreviews[lightboxIndex] && (
-          <div
-            className="fixed inset-0 z-50 h-[100dvh] w-full bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-3 sm:p-5 animate-in fade-in select-none overscroll-contain"
+          <dialog
+            ref={dialogRef}
+            onCancel={(e) => {
+              e.preventDefault();
+              setLightboxIndex(null);
+            }}
+            className="fixed inset-0 m-0 p-0 w-full h-[100dvh] max-w-none max-h-none bg-black/95 backdrop:backdrop-blur-md flex flex-col items-center justify-between p-3 sm:p-5 text-zinc-100 border-0 select-none overscroll-contain z-50 animate-in fade-in"
             onClick={() => setLightboxIndex(null)}
           >
             {/* Top Lightbox Bar */}
@@ -1079,11 +1127,14 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 Use Left &amp; Right Arrow keys or swipe to navigate &bull; Press Esc to close
               </span>
             </div>
-          </div>
+          </dialog>
         )}
 
-        {/* Mobile Sticky Download Action Bar */}
-        <div className="fixed bottom-0 inset-x-0 z-40 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800 px-4 py-3 sm:hidden flex items-center justify-between gap-3 shadow-2xl">
+        {/* Mobile Sticky Download Action Bar with Safe-Area padding */}
+        <div
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))' }}
+          className="fixed bottom-0 inset-x-0 z-40 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800 px-4 py-3 sm:hidden flex items-center justify-between gap-3 shadow-2xl"
+        >
           <div className="flex items-center gap-3 min-w-0">
             <div
               className={`w-11 h-11 rounded-xl bg-gradient-to-br ${
@@ -1111,15 +1162,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
             href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => {
-              trackEvent({
-                eventType: 'app_download',
-                appSlug: appData.slug,
-                appName: appData.name,
-                isTaskCompleted: true,
-                details: `Downloaded APK from mobile bottom bar: ${appData.name}`,
-              });
-            }}
+            onClick={() => handleDownloadClick('mobile_sticky_bar')}
             className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-lg shadow-purple-600/30 cursor-pointer"
           >
             <Download className="w-4 h-4" /> Download

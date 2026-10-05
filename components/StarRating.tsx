@@ -32,8 +32,24 @@ export function StarRating({
 
   const currentRating = hoverRating !== null ? hoverRating : rating;
 
+  const handleKeyDown = (e: React.KeyboardEvent, starValue: number) => {
+    if (!interactive || !onRatingChange) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      onRatingChange(Math.min(maxStars, starValue + 1));
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      onRatingChange(Math.max(1, starValue - 1));
+    }
+  };
+
   return (
-    <div className="inline-flex items-center gap-1.5" id="star-rating">
+    <div
+      className="inline-flex items-center gap-1.5"
+      id="star-rating"
+      role={interactive ? 'radiogroup' : undefined}
+      aria-label={interactive ? 'Star rating selection' : undefined}
+    >
       <div className="flex items-center gap-0.5">
         {Array.from({ length: maxStars }).map((_, index) => {
           const starValue = index + 1;
@@ -45,15 +61,18 @@ export function StarRating({
               key={index}
               type={interactive ? 'button' : undefined}
               disabled={!interactive}
+              role={interactive ? 'radio' : undefined}
+              aria-checked={interactive ? rating === starValue : undefined}
               onClick={() => interactive && onRatingChange?.(starValue)}
               onMouseEnter={() => interactive && setHoverRating(starValue)}
               onMouseLeave={() => interactive && setHoverRating(null)}
-              className={`transition-transform duration-150 ${
+              onKeyDown={(e) => handleKeyDown(e, starValue)}
+              className={`transition-transform duration-150 p-0.5 ${
                 interactive
-                  ? 'cursor-pointer hover:scale-110 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded'
+                  ? 'cursor-pointer hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-md'
                   : 'cursor-default'
               }`}
-              aria-label={`Set rating to ${starValue} stars`}
+              aria-label={interactive ? `${starValue} of ${maxStars} stars` : undefined}
             >
               <div className="relative">
                 <Star

@@ -175,26 +175,37 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
             >
               Your Review <span className="text-purple-500">*</span>
             </label>
-            <span
-              className={`text-[11px] ${
-                reviewText.trim().length >= 10
-                  ? 'text-emerald-400'
-                  : 'text-zinc-400'
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-[11px] font-medium transition-colors ${
+                  reviewText.trim().length >= 10
+                    ? 'text-emerald-400'
+                    : 'text-zinc-400'
+                }`}
+              >
+                {reviewText.trim().length}/500 (min 10 chars)
+              </span>
+            </div>
+          </div>
+          {/* Visual character requirement progress bar */}
+          <div className="w-full h-1 bg-zinc-800 rounded-full mb-2 overflow-hidden">
+            <div
+              className={`h-full transition-all duration-200 rounded-full ${
+                reviewText.trim().length >= 10 ? 'bg-emerald-400' : 'bg-purple-500'
               }`}
-            >
-              {reviewText.trim().length}/500 (min 10 chars)
-            </span>
+              style={{ width: `${Math.min(100, (reviewText.trim().length / 500) * 100)}%` }}
+            />
           </div>
           <textarea
             id="review-text-input"
-            rows={4}
+            rows={3}
             value={reviewText}
             onChange={(e) => setReviewText(e.target.value)}
             placeholder="What did you like about this app? Performance, Compose UI, speed, features..."
             minLength={10}
             maxLength={500}
             required
-            className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700 text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
+            className="auto-expanding w-full px-3.5 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700 text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
           />
         </div>
 
@@ -202,7 +213,7 @@ export function ReviewForm({ appSlug, onReviewSubmitted }: ReviewFormProps) {
           id="submit-review-button"
           type="submit"
           disabled={isSubmitting || reviewText.trim().length < 10}
-          className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-medium text-sm shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-medium text-sm shadow-md shadow-purple-600/20 transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 cursor-pointer disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <>

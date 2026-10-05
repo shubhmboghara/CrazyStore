@@ -28,11 +28,25 @@ export function ReviewsList({
   averageRating,
   totalCount,
 }: ReviewsListProps) {
+  const [selectedStar, setSelectedStar] = React.useState<number | null>(null);
+  const [helpfulMap, setHelpfulMap] = React.useState<Record<string, boolean>>({});
+
   const distribution = [5, 4, 3, 2, 1].map((star) => {
     const count = reviews.filter((r) => Math.round(r.rating) === star).length;
     const percentage = totalCount > 0 ? (count / totalCount) * 100 : 0;
     return { star, count, percentage };
   });
+
+  const filteredReviews = selectedStar !== null
+    ? reviews.filter((r) => Math.round(r.rating) === selectedStar)
+    : reviews;
+
+  const toggleHelpful = (id: string) => {
+    setHelpfulMap((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   const formatDate = (isoString: string) => {
     try {
@@ -54,7 +68,7 @@ export function ReviewsList({
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-sm">
         <h3 className="text-lg font-bold text-zinc-100 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-purple-400" />
-          Ratings & Reviews
+          Ratings &amp; Reviews
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           {/* Big Score Number */}
@@ -73,102 +87,158 @@ export function ReviewsList({
               Based on {totalCount} user review{totalCount === 1 ? '' : 's'}
             </span>
           </div>
-          {/* Star Distribution Bars */}
-          <div className="md:col-span-8 space-y-1.5">
-            {distribution.map(({ star, count, percentage }) => (
-              <div key={star} className="flex items-center gap-3 text-xs">
-                <span className="w-8 font-medium text-zinc-400 text-right">
-                  {star} ★
-                </span>
-                <div className="flex-1 h-2 rounded-full bg-zinc-800 overflow-hidden">
-                  <div
-                    className="h-full bg-amber-400 rounded-full transition-all duration-500"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-                <span className="w-10 text-right text-zinc-500 font-mono">
-                  {count}
-                </span>
-              </div>
-            ))}
+
+          {/* Interactive Star Distribution Bars */}
+          <div className="md:col-span-8 space-y-1.5" role="group" aria-label="Filter reviews by star rating">
+            {distribution.map(({ star, count, percentage }) => {
+              const isSelected = selectedStar === star;
+              return (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setSelectedStar(isSelected ? null : star)}
+                  className={`w-full flex items-center gap-3 text-xs p-1 rounded-lg transition-all cursor-pointer group text-left ${
+                    isSelected
+                      ? 'bg-purple-950/60 ring-1 ring-purple-600/50'
+                      : 'hover:bg-zinc-800/60'
+                  }`}
+                  aria-pressed={isSelected}
+                  title={`Filter by ${star} star reviews (${count})`}
+                >
+                  <span className={`w-8 font-medium text-right shrink-0 transition-colors ${
+                    isSelected ? 'text-purple-300 font-bold' : 'text-zinc-400 group-hover:text-zinc-200'
+                  }`}>
+                    {star} ★
+                  </span>
+                  <div className="flex-1 h-2 rounded-full bg-zinc-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isSelected ? 'bg-purple-400' : 'bg-amber-400 group-hover:bg-amber-300'
+                      }`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  <span className="w-10 text-right text-zinc-500 font-mono shrink-0">
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* Reviews List */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-400">
-            User Reviews ({reviews.length})
-          </h4>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-400">
+              User Reviews ({filteredReviews.length})
+            </h4>
+            {selectedStar !== null && (
+              <button
+                type="button"
+                onClick={() => setSelectedStar(null)}
+                className="px-2.5 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800/40 text-xs font-medium flex items-center gap-1 hover:bg-purple-900 transition-colors cursor-pointer"
+              >
+                <span>{selectedStar}★ Only</span>
+                <span className="font-bold">×</span>
+              </button>
+            )}
+          </div>
           <span className="text-xs text-zinc-400">Newest first</span>
         </div>
 
         {isLoading ? (
           <ReviewSkeleton />
-        ) : reviews.length === 0 ? (
+        ) : filteredReviews.length === 0 ? (
           <div className="p-8 text-center bg-zinc-900/40 rounded-2xl border border-dashed border-zinc-800 space-y-2">
             <p className="text-zinc-400 font-medium text-sm">
-              No reviews yet for this app.
+              {selectedStar !== null
+                ? `No ${selectedStar}-star reviews yet.`
+                : 'No reviews yet for this app.'}
             </p>
-            <p className="text-xs text-zinc-500">
-              Be the first user to download the APK and leave feedback above!
-            </p>
+            {selectedStar !== null ? (
+              <button
+                type="button"
+                onClick={() => setSelectedStar(null)}
+                className="text-xs text-purple-400 hover:underline font-bold"
+              >
+                Show all reviews
+              </button>
+            ) : (
+              <p className="text-xs text-zinc-500">
+                Be the first user to download the APK and leave feedback above!
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-3" id="reviews-list">
-            {reviews.map((review) => (
-              <div
-                key={review.id}
-                className="p-5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm transition-all hover:border-purple-900/60 space-y-3"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-purple-950/80 text-purple-300 flex items-center justify-center font-bold text-xs uppercase border border-purple-800/50">
-                      {review.name ? review.name.charAt(0) : <User className="w-4 h-4" />}
-                    </div>
-                    <div>
-                      <span className="font-semibold text-sm text-zinc-100 block">
-                        {review.name || 'Anonymous'}
-                      </span>
-                      <span className="text-[11px] text-zinc-500">
-                        {formatDate(review.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <StarRating rating={review.rating} size="sm" />
-                  </div>
-                </div>
-
-                <p className="text-sm text-zinc-300 whitespace-pre-line leading-relaxed pl-10">
-                  {review.reviewText}
-                </p>
-
-                {/* Developer / Admin Reply */}
-                {review.adminReply && (
-                  <div className="ml-10 mt-3 p-3.5 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-start gap-2.5">
-                    <CornerDownRight className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
-                          Developer Response
+            {filteredReviews.map((review) => {
+              const isHelpful = !!helpfulMap[review.id];
+              return (
+                <div
+                  key={review.id}
+                  className="p-5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm transition-all hover:border-purple-900/60 space-y-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-purple-950/80 text-purple-300 flex items-center justify-center font-bold text-xs uppercase border border-purple-800/50">
+                        {review.name ? review.name.charAt(0) : <User className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <span className="font-semibold text-sm text-zinc-100 block">
+                          {review.name || 'Anonymous'}
+                        </span>
+                        <span className="text-[11px] text-zinc-500">
+                          {formatDate(review.createdAt)}
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-300 leading-relaxed font-normal">
-                        {review.adminReply}
-                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <StarRating rating={review.rating} size="sm" />
                     </div>
                   </div>
-                )}
 
-                <div className="pt-2 pl-10 flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-800/60">
-                  <span className="inline-flex items-center gap-1 text-[11px] hover:text-zinc-300 cursor-pointer">
-                    <ThumbsUp className="w-3 h-3" /> Helpful
-                  </span>
+                  <p className="text-sm text-zinc-300 whitespace-pre-line leading-relaxed pl-10">
+                    {review.reviewText}
+                  </p>
+
+                  {/* Developer / Admin Reply */}
+                  {review.adminReply && (
+                    <div className="ml-10 mt-3 p-3.5 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-start gap-2.5">
+                      <CornerDownRight className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                            Developer Response
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-300 leading-relaxed font-normal">
+                          {review.adminReply}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-2 pl-10 flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-800/60">
+                    <button
+                      type="button"
+                      onClick={() => toggleHelpful(review.id)}
+                      className={`inline-flex items-center gap-1.5 text-[11px] transition-colors cursor-pointer py-1 px-2 rounded-lg ${
+                        isHelpful
+                          ? 'text-purple-300 bg-purple-950/60 font-bold'
+                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+                      }`}
+                      aria-pressed={isHelpful}
+                    >
+                      <ThumbsUp className={`w-3.5 h-3.5 ${isHelpful ? 'fill-purple-400 text-purple-400' : ''}`} />
+                      <span>{isHelpful ? 'Marked Helpful (1)' : 'Helpful'}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

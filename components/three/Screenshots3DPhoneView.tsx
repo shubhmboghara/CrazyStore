@@ -15,6 +15,49 @@ interface Screenshots3DPhoneViewProps {
   onOpenLightbox: (idx: number) => void;
 }
 
+/**
+ * Creates a 2D rounded rectangle Shape in Three.js
+ */
+function createRoundedRectShape(w: number, h: number, r: number): THREE.Shape {
+  const shape = new THREE.Shape();
+  const x = -w / 2;
+  const y = -h / 2;
+  const radius = Math.min(r, w / 2, h / 2);
+
+  shape.moveTo(x + radius, y);
+  shape.lineTo(x + w - radius, y);
+  shape.absarc(x + w - radius, y + radius, radius, -Math.PI / 2, 0, false);
+  shape.lineTo(x + w, y + h - radius);
+  shape.absarc(x + w - radius, y + h - radius, radius, 0, Math.PI / 2, false);
+  shape.lineTo(x + radius, y + h);
+  shape.absarc(x + radius, y + h - radius, radius, Math.PI / 2, Math.PI, false);
+  shape.lineTo(x, y + radius);
+  shape.absarc(x + radius, y + radius, radius, Math.PI, Math.PI * 1.5, false);
+
+  return shape;
+}
+
+/**
+ * Generates a BufferGeometry for a rounded rectangle with normalized UVs (0..1)
+ */
+function createRoundedRectGeometry(w: number, h: number, r: number, segments = 16): THREE.BufferGeometry {
+  const shape = createRoundedRectShape(w, h, r);
+  const geo = new THREE.ShapeGeometry(shape, segments);
+  const pos = geo.attributes.position;
+  const uvs = new Float32Array(pos.count * 2);
+
+  for (let i = 0; i < pos.count; i++) {
+    const px = pos.getX(i);
+    const py = pos.getY(i);
+    uvs[i * 2] = (px + w / 2) / w;
+    uvs[i * 2 + 1] = (py + h / 2) / h;
+  }
+
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geo.computeVertexNormals();
+  return geo;
+}
+
 // Helper to determine if an intersected 3D mesh is a child of a specific group
 function isChildOf(obj: THREE.Object3D | null, parent: THREE.Object3D | null): boolean {
   if (!obj || !parent) return false;
@@ -87,10 +130,15 @@ export function Screenshots3DPhoneView({
   const leftCompTexRef = useRef<THREE.Texture | null>(null);
   const rightCompTexRef = useRef<THREE.Texture | null>(null);
 
+  // Screen Mesh references for dynamic aspect ratio fitting
+  const screenMeshRef = useRef<THREE.Mesh | null>(null);
+  const leftScreenMeshRef = useRef<THREE.Mesh | null>(null);
+  const rightScreenMeshRef = useRef<THREE.Mesh | null>(null);
+
   // Mesh material references for runtime texture swapping
-  const centerMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
-  const leftMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
-  const rightMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const centerMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const leftMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const rightMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
 
   const totalCount = screenshots.length;
   const prevIdx = (activeIdx - 1 + totalCount) % totalCount;
@@ -108,9 +156,38 @@ export function Screenshots3DPhoneView({
     }
   }, [activeIdx, totalCount]);
 
-  // Helper to apply a loaded texture to a MeshStandardMaterial
+  // Adjust screen mesh scale dynamically to preserve native aspect ratio (contain fit)
+  const adjustMeshAspect = useCallback((mesh: THREE.Mesh | null, texture: THREE.Texture, maxW: number, maxH: number) => {
+    if (!mesh || !texture.image) return;
+    const img = texture.image as any;
+    const imgW = (typeof img.naturalWidth === 'number' && img.naturalWidth > 0) ? img.naturalWidth : (img.width || 0);
+    const imgH = (typeof img.naturalHeight === 'number' && img.naturalHeight > 0) ? img.naturalHeight : (img.height || 0);
+    if (imgW <= 0 || imgH <= 0) return;
+
+    const imgAspect = imgW / imgH;
+    const maxAspect = maxW / maxH;
+
+    if (imgAspect > maxAspect) {
+      // Wider than phone screen frame: fit width, scale height down
+      const fitH = maxW / imgAspect;
+      mesh.scale.set(1, fitH / maxH, 1);
+    } else {
+      // Taller or standard portrait: fit height, scale width to match ratio
+      const fitW = maxH * imgAspect;
+      mesh.scale.set(fitW / maxW, 1, 1);
+    }
+  }, []);
+
+  // Helper to apply a loaded texture to a MeshBasicMaterial (self-luminous screen)
   const applyTextureToMat = useCallback(
-    (mat: THREE.MeshStandardMaterial, texture: THREE.Texture, oldTexRef: React.MutableRefObject<THREE.Texture | null>) => {
+    (
+      mat: THREE.MeshBasicMaterial,
+      texture: THREE.Texture,
+      oldTexRef: React.MutableRefObject<THREE.Texture | null>,
+      meshRef?: React.MutableRefObject<THREE.Mesh | null>,
+      maxW = 2.26,
+      maxH = 4.70
+    ) => {
       // Dispose old texture to free GPU memory
       if (oldTexRef.current && oldTexRef.current !== texture) {
         oldTexRef.current.dispose();
@@ -118,13 +195,14 @@ export function Screenshots3DPhoneView({
       oldTexRef.current = texture;
 
       mat.map = texture;
-      mat.emissiveMap = texture;
-      mat.emissive = new THREE.Color(0xffffff);
-      mat.emissiveIntensity = 0.3;
       mat.color.set(0xffffff);
       mat.needsUpdate = true;
+
+      if (meshRef?.current) {
+        adjustMeshAspect(meshRef.current, texture, maxW, maxH);
+      }
     },
-    []
+    [adjustMeshAspect]
   );
 
   // Load a URL via TextureLoader and call callback on success
@@ -137,6 +215,7 @@ export function Screenshots3DPhoneView({
           texture.colorSpace = THREE.SRGBColorSpace;
           texture.minFilter = THREE.LinearFilter;
           texture.magFilter = THREE.LinearFilter;
+          texture.generateMipmaps = false;
           texture.needsUpdate = true;
           callback(texture);
         },
@@ -158,7 +237,7 @@ export function Screenshots3DPhoneView({
     if (centerUrl && centerMatRef.current) {
       const mat = centerMatRef.current;
       loadTexture(centerUrl, (tex) => {
-        applyTextureToMat(mat, tex, centerTextureRef);
+        applyTextureToMat(mat, tex, centerTextureRef, screenMeshRef, 2.26, 4.70);
       });
     }
 
@@ -168,7 +247,7 @@ export function Screenshots3DPhoneView({
       if (leftUrl && leftMatRef.current) {
         const mat = leftMatRef.current;
         loadTexture(leftUrl, (tex) => {
-          applyTextureToMat(mat, tex, leftCompTexRef);
+          applyTextureToMat(mat, tex, leftCompTexRef, leftScreenMeshRef, 2.26 * 0.88, 4.70 * 0.88);
         });
       }
 
@@ -177,7 +256,7 @@ export function Screenshots3DPhoneView({
       if (rightUrl && rightMatRef.current) {
         const mat = rightMatRef.current;
         loadTexture(rightUrl, (tex) => {
-          applyTextureToMat(mat, tex, rightCompTexRef);
+          applyTextureToMat(mat, tex, rightCompTexRef, rightScreenMeshRef, 2.26 * 0.88, 4.70 * 0.88);
         });
       }
     }
@@ -195,18 +274,18 @@ export function Screenshots3DPhoneView({
     if (!container || !canvas) return;
 
     const width = container.clientWidth || 600;
-    const height = container.clientHeight || 480;
+    const height = container.clientHeight || 520;
 
     // 1. Scene & Fog
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x09090b, 0.025);
+    scene.fog = new THREE.FogExp2(0x09090b, 0.02);
     sceneRef.current = scene;
 
-    // 2. Camera — Starts comfortably framed, zooms out as you scroll down
+    // 2. Camera — Calibrated safe distance so phone is 100% visible with generous margins
     const isMobile = width < 640;
-    const initialZ = isMobile ? 7.2 : 6.6;
+    const initialZ = isMobile ? 9.2 : 8.2;
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
-    camera.position.set(0, 0.05, initialZ);
+    camera.position.set(0, 0.0, initialZ);
     cameraRef.current = camera;
 
     // 3. Renderer
@@ -219,18 +298,18 @@ export function Screenshots3DPhoneView({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.05;
     rendererRef.current = renderer;
 
     // 4. OrbitControls — Rotation enabled, manual zoom disabled to prevent image clipping
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    controls.dampingFactor = 0.06;
     controls.enableZoom = false; // Strictly driven by page scroll
     controls.minPolarAngle = Math.PI / 4;
     controls.maxPolarAngle = Math.PI * 0.72;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.65;
+    controls.autoRotateSpeed = 0.55;
     controls.addEventListener('start', () => {
       isUserRotating.current = true;
     });
@@ -239,151 +318,185 @@ export function Screenshots3DPhoneView({
     });
     controlsRef.current = controls;
 
-    // 5. Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+    // 5. Studio Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    keyLight.position.set(4, 6, 6);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
+    keyLight.position.set(4, 5, 6);
     scene.add(keyLight);
 
-    const rimLight = new THREE.PointLight(0xa855f7, 3.5, 15);
-    rimLight.position.set(-4, -2, 4);
-    scene.add(rimLight);
-
-    const fillLight = new THREE.PointLight(0x38bdf8, 2.5, 15);
-    fillLight.position.set(4, -3, -3);
+    const fillLight = new THREE.DirectionalLight(0x94a3b8, 0.8);
+    fillLight.position.set(-4, 3, 4);
     scene.add(fillLight);
 
-    // 6. Texture Loader — shared instance, no canvas drawImage
+    const rimLight = new THREE.PointLight(0xa855f7, 1.8, 12);
+    rimLight.position.set(-3, -2, 3);
+    scene.add(rimLight);
+
+    // 6. Texture Loader — shared instance
     const loader = new THREE.TextureLoader();
     textureLoaderRef.current = loader;
 
-    // 7. Build Sleek Borderless 3D Floating Screenshot Card
-    const cardGroup = new THREE.Group();
-    cardGroupRef.current = cardGroup;
+    // 7. Helper: Build Flagship Smartphone 3D Model
+    const createPhoneDeviceGroup = (scale = 1.0) => {
+      const group = new THREE.Group();
+      group.scale.set(scale, scale, scale);
 
-    const cardW = 2.6;
-    const cardH = 5.2;
-    const cardD = 0.04;
+      const phoneW = 2.40;
+      const phoneH = 4.88;
+      const phoneD = 0.08;
+      const phoneR = 0.22;
 
-    // Thin glass backplate
-    const backplateMat = new THREE.MeshStandardMaterial({
-      color: 0x121217,
-      metalness: 0.85,
-      roughness: 0.2,
-    });
-    const backplate = new THREE.Mesh(
-      new THREE.BoxGeometry(cardW + 0.02, cardH + 0.02, cardD),
-      backplateMat
-    );
-    cardGroup.add(backplate);
+      // Outer Chassis: Titanium backplate with rounded corners
+      const chassisMat = new THREE.MeshStandardMaterial({
+        color: 0x181822,
+        metalness: 0.82,
+        roughness: 0.24,
+      });
+      const chassisGeo = createRoundedRectGeometry(phoneW, phoneH, phoneR);
+      const backplate = new THREE.Mesh(chassisGeo, chassisMat);
+      backplate.position.z = -phoneD / 2;
+      group.add(backplate);
 
-    // Subtle edge rim light border
-    const rimMat = new THREE.MeshStandardMaterial({
-      color: 0x8b5cf6,
-      emissive: new THREE.Color(0x7c3aed),
-      emissiveIntensity: 0.4,
-      metalness: 0.8,
-      roughness: 0.2,
-    });
-    const rim = new THREE.Mesh(
-      new THREE.BoxGeometry(cardW + 0.04, cardH + 0.04, cardD * 0.7),
-      rimMat
-    );
-    cardGroup.add(rim);
+      // Chassis Perimeter Rim (Titanium Mid-Frame Band)
+      const rimMat = new THREE.MeshStandardMaterial({
+        color: 0x272733,
+        metalness: 0.9,
+        roughness: 0.18,
+      });
+      const rimGeo = createRoundedRectGeometry(phoneW + 0.03, phoneH + 0.03, phoneR + 0.015);
+      const rimMesh = new THREE.Mesh(rimGeo, rimMat);
+      rimMesh.position.z = -0.005;
+      group.add(rimMesh);
 
-    // Center screen mesh with placeholder dark color while texture loads
-    const centerMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a2e,
-      roughness: 0.1,
-      metalness: 0.05,
-      emissiveIntensity: 0.3,
-    });
-    centerMatRef.current = centerMat;
+      // Side Hardware Buttons: Sleek Power & Volume Accents
+      const buttonMat = new THREE.MeshStandardMaterial({
+        color: 0x3f3f4e,
+        metalness: 0.95,
+        roughness: 0.15,
+      });
+      // Power button (right)
+      const powerBtn = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.45, 0.03), buttonMat);
+      powerBtn.position.set(phoneW / 2 + 0.01, 0.4, 0);
+      group.add(powerBtn);
+      // Volume rocker (left)
+      const volumeBtn = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.75, 0.03), buttonMat);
+      volumeBtn.position.set(-phoneW / 2 - 0.01, 0.6, 0);
+      group.add(volumeBtn);
 
-    const screenMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(cardW, cardH),
-      centerMat
-    );
-    screenMesh.position.z = cardD / 2 + 0.002;
-    screenMesh.name = 'centerScreenMesh';
-    cardGroup.add(screenMesh);
+      // OLED Screen Bezel: Deep OLED black rounded background
+      const bezelW = 2.34;
+      const bezelH = 4.82;
+      const bezelR = 0.18;
+      const bezelMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const bezelGeo = createRoundedRectGeometry(bezelW, bezelH, bezelR);
+      const bezelMesh = new THREE.Mesh(bezelGeo, bezelMat);
+      bezelMesh.position.z = phoneD / 2 - 0.002;
+      group.add(bezelMesh);
 
-    // Clearcoat glass reflection layer
-    const glassMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.08,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-    });
-    const glass = new THREE.Mesh(
-      new THREE.PlaneGeometry(cardW, cardH),
-      glassMat
-    );
-    glass.position.z = cardD / 2 + 0.004;
-    cardGroup.add(glass);
+      // Active Screen Display: Uncropped native aspect ratio screenshot mesh
+      const screenW = 2.26;
+      const screenH = 4.70;
+      const screenR = 0.15;
+      const screenGeo = createRoundedRectGeometry(screenW, screenH, screenR);
+      const screenMat = new THREE.MeshBasicMaterial({
+        color: 0x12121e, // dark placeholder while texture is loading
+        toneMapped: true,
+      });
+      const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+      screenMesh.position.z = phoneD / 2 + 0.002;
+      group.add(screenMesh);
 
-    scene.add(cardGroup);
+      // Speaker Slit at Top
+      const speakerMat = new THREE.MeshBasicMaterial({ color: 0x33333f });
+      const speakerGeo = createRoundedRectGeometry(0.42, 0.025, 0.012);
+      const speakerMesh = new THREE.Mesh(speakerGeo, speakerMat);
+      speakerMesh.position.set(0, phoneH / 2 - 0.09, phoneD / 2 + 0.006);
+      group.add(speakerMesh);
 
-    // 8. Flanking Companion Preview Cards (Desktop only to prevent clutter)
+      // Punch-Hole Camera at Top Center
+      const cameraMat = new THREE.MeshBasicMaterial({ color: 0x050508 });
+      const cameraGeo = new THREE.CircleGeometry(0.042, 24);
+      const cameraMesh = new THREE.Mesh(cameraGeo, cameraMat);
+      cameraMesh.position.set(0, phoneH / 2 - 0.22, phoneD / 2 + 0.006);
+      group.add(cameraMesh);
+
+      // Camera Inner Lens Dot
+      const lensMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+      const lensGeo = new THREE.CircleGeometry(0.018, 16);
+      const lensMesh = new THREE.Mesh(lensGeo, lensMat);
+      lensMesh.position.set(0, phoneH / 2 - 0.22, phoneD / 2 + 0.007);
+      group.add(lensMesh);
+
+      // Bottom Android Home Pill Indicator
+      const homePillMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.45,
+      });
+      const homePillGeo = createRoundedRectGeometry(0.65, 0.022, 0.011);
+      const homePillMesh = new THREE.Mesh(homePillGeo, homePillMat);
+      homePillMesh.position.set(0, -phoneH / 2 + 0.14, phoneD / 2 + 0.006);
+      group.add(homePillMesh);
+
+      // Ultra-subtle Glass Glare Reflection Layer
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.05,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+      });
+      const glassGeo = createRoundedRectGeometry(screenW, screenH, screenR);
+      const glassMesh = new THREE.Mesh(glassGeo, glassMat);
+      glassMesh.position.z = phoneD / 2 + 0.008;
+      group.add(glassMesh);
+
+      return { group, screenMesh, screenMat };
+    };
+
+    // Center Phone (Primary Focus)
+    const centerPhone = createPhoneDeviceGroup(1.0);
+    centerPhone.screenMesh.name = 'centerScreenMesh';
+    screenMeshRef.current = centerPhone.screenMesh;
+    centerMatRef.current = centerPhone.screenMat;
+    cardGroupRef.current = centerPhone.group;
+    scene.add(centerPhone.group);
+
+    // 8. Flanking Companion Preview Phones (Desktop only to prevent mobile clutter)
     const showCompanionCards = width >= 640 && totalCount > 1;
 
-    // Left Companion Card
-    const leftGroup = new THREE.Group();
-    leftCardGroupRef.current = leftGroup;
+    // Left Companion Phone
+    const leftPhone = createPhoneDeviceGroup(0.86);
+    leftPhone.screenMesh.name = 'leftCardMesh';
+    leftPhone.screenMat.transparent = true;
+    leftPhone.screenMat.opacity = 0.55;
+    leftScreenMeshRef.current = leftPhone.screenMesh;
+    leftMatRef.current = leftPhone.screenMat;
+    leftCardGroupRef.current = leftPhone.group;
 
-    const leftMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a2e,
-      transparent: true,
-      opacity: 0.6,
-      roughness: 0.2,
-      metalness: 0.1,
-    });
-    leftMatRef.current = leftMat;
+    leftPhone.group.position.set(-3.3, 0.0, -1.2);
+    leftPhone.group.rotation.y = 0.28;
+    leftPhone.group.visible = showCompanionCards;
+    scene.add(leftPhone.group);
 
-    const leftCard = new THREE.Mesh(
-      new THREE.PlaneGeometry(cardW * 0.88, cardH * 0.88),
-      leftMat
-    );
-    leftCard.position.z = 0.02;
-    leftCard.name = 'leftCardMesh';
-    leftGroup.add(leftCard);
+    // Right Companion Phone
+    const rightPhone = createPhoneDeviceGroup(0.86);
+    rightPhone.screenMesh.name = 'rightCardMesh';
+    rightPhone.screenMat.transparent = true;
+    rightPhone.screenMat.opacity = 0.55;
+    rightScreenMeshRef.current = rightPhone.screenMesh;
+    rightMatRef.current = rightPhone.screenMat;
+    rightCardGroupRef.current = rightPhone.group;
 
-    leftGroup.position.set(-3.2, 0.05, -1.2);
-    leftGroup.rotation.y = 0.32;
-    leftGroup.visible = showCompanionCards;
-    scene.add(leftGroup);
+    rightPhone.group.position.set(3.3, 0.0, -1.2);
+    rightPhone.group.rotation.y = -0.28;
+    rightPhone.group.visible = showCompanionCards;
+    scene.add(rightPhone.group);
 
-    // Right Companion Card
-    const rightGroup = new THREE.Group();
-    rightCardGroupRef.current = rightGroup;
-
-    const rightMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a2e,
-      transparent: true,
-      opacity: 0.6,
-      roughness: 0.2,
-      metalness: 0.1,
-    });
-    rightMatRef.current = rightMat;
-
-    const rightCard = new THREE.Mesh(
-      new THREE.PlaneGeometry(cardW * 0.88, cardH * 0.88),
-      rightMat
-    );
-    rightCard.position.z = 0.02;
-    rightCard.name = 'rightCardMesh';
-    rightGroup.add(rightCard);
-
-    rightGroup.position.set(3.2, 0.05, -1.2);
-    rightGroup.rotation.y = -0.32;
-    rightGroup.visible = showCompanionCards;
-    scene.add(rightGroup);
-
-    // 9. Ambient floating stardust
-    const stardustCount = 50;
+    // 9. Ambient Stardust Particles
+    const stardustCount = 45;
     const stardustGeo = new THREE.BufferGeometry();
     const stardustPos = new Float32Array(stardustCount * 3);
     for (let i = 0; i < stardustCount; i++) {
@@ -396,82 +509,35 @@ export function Screenshots3DPhoneView({
       size: 0.035,
       color: 0xa855f7,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.35,
     });
     const stardust = new THREE.Points(stardustGeo, stardustMat);
     scene.add(stardust);
 
-    // 10. Initial texture load for all three slots
-    const loadInitialTextures = () => {
-      const centerUrl = screenshots[activeIdx]?.imageUrl || screenshots[activeIdx]?.url || '';
-      if (centerUrl) {
-        loader.load(
-          centerUrl,
-          (tex) => {
-            tex.colorSpace = THREE.SRGBColorSpace;
-            tex.minFilter = THREE.LinearFilter;
-            tex.magFilter = THREE.LinearFilter;
-            tex.needsUpdate = true;
-            centerTextureRef.current = tex;
-            centerMat.map = tex;
-            centerMat.emissiveMap = tex;
-            centerMat.emissive = new THREE.Color(0xffffff);
-            centerMat.color.set(0xffffff);
-            centerMat.needsUpdate = true;
-          },
-          undefined,
-          () => { /* keep placeholder */ }
-        );
+    // Initial texture loading
+    const initialUrl = screenshots[activeIdx]?.imageUrl || screenshots[activeIdx]?.url || '';
+    if (initialUrl) {
+      loadTexture(initialUrl, (tex) => {
+        applyTextureToMat(centerPhone.screenMat, tex, centerTextureRef, screenMeshRef, 2.26, 4.70);
+      });
+    }
+
+    if (totalCount > 1) {
+      const leftUrl = screenshots[prevIdx]?.imageUrl || screenshots[prevIdx]?.url || '';
+      if (leftUrl) {
+        loadTexture(leftUrl, (tex) => {
+          applyTextureToMat(leftPhone.screenMat, tex, leftCompTexRef, leftScreenMeshRef, 2.26 * 0.86, 4.70 * 0.86);
+        });
       }
-
-      if (totalCount > 1) {
-        const leftUrl = screenshots[prevIdx]?.imageUrl || screenshots[prevIdx]?.url || '';
-        if (leftUrl) {
-          loader.load(
-            leftUrl,
-            (tex) => {
-              tex.colorSpace = THREE.SRGBColorSpace;
-              tex.minFilter = THREE.LinearFilter;
-              tex.magFilter = THREE.LinearFilter;
-              tex.needsUpdate = true;
-              leftCompTexRef.current = tex;
-              leftMat.map = tex;
-              leftMat.emissiveMap = tex;
-              leftMat.emissive = new THREE.Color(0xffffff);
-              leftMat.color.set(0xffffff);
-              leftMat.needsUpdate = true;
-            },
-            undefined,
-            () => { /* keep placeholder */ }
-          );
-        }
-
-        const rightUrl = screenshots[nextIdx]?.imageUrl || screenshots[nextIdx]?.url || '';
-        if (rightUrl) {
-          loader.load(
-            rightUrl,
-            (tex) => {
-              tex.colorSpace = THREE.SRGBColorSpace;
-              tex.minFilter = THREE.LinearFilter;
-              tex.magFilter = THREE.LinearFilter;
-              tex.needsUpdate = true;
-              rightCompTexRef.current = tex;
-              rightMat.map = tex;
-              rightMat.emissiveMap = tex;
-              rightMat.emissive = new THREE.Color(0xffffff);
-              rightMat.color.set(0xffffff);
-              rightMat.needsUpdate = true;
-            },
-            undefined,
-            () => { /* keep placeholder */ }
-          );
-        }
+      const rightUrl = screenshots[nextIdx]?.imageUrl || screenshots[nextIdx]?.url || '';
+      if (rightUrl) {
+        loadTexture(rightUrl, (tex) => {
+          applyTextureToMat(rightPhone.screenMat, tex, rightCompTexRef, rightScreenMeshRef, 2.26 * 0.86, 4.70 * 0.86);
+        });
       }
-    };
+    }
 
-    loadInitialTextures();
-
-    // 11. Scroll Listener for Smooth 3D Zoom-Out Effect & Automatic Progression
+    // 10. Scroll Listener for Smooth 3D Zoom-Out Effect & Automatic Progression
     const handleScroll = () => {
       if (!container) return;
       const rect = container.getBoundingClientRect();
@@ -503,7 +569,7 @@ export function Screenshots3DPhoneView({
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    // 12. Visibility and Resize Observers
+    // 11. Visibility and Resize Observers
     let isVisible = true;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -522,14 +588,14 @@ export function Screenshots3DPhoneView({
           renderer.setSize(w, h);
 
           const canShowCompanion = w >= 640 && totalCount > 1;
-          if (leftGroup) leftGroup.visible = canShowCompanion;
-          if (rightGroup) rightGroup.visible = canShowCompanion;
+          if (leftPhone.group) leftPhone.group.visible = canShowCompanion;
+          if (rightPhone.group) rightPhone.group.visible = canShowCompanion;
         }
       }
     });
     resizeObserver.observe(container);
 
-    // 13. Animation Loop (Rich Scroll-Driven Zoom-Out & Gentle Floating)
+    // 12. Animation Loop (Smooth Floating & Scroll Progression)
     let animId: number;
     const clock = new THREE.Clock();
 
@@ -549,12 +615,12 @@ export function Screenshots3DPhoneView({
       const p = currentScrollZoom.current;
 
       const isMobileNow = (container.clientWidth || 800) < 640;
-      const minZ = isMobileNow ? 7.2 : 6.6;
-      const maxZ = isMobileNow ? 9.0 : 8.5;
+      const minZ = isMobileNow ? 9.2 : 8.2;
+      const maxZ = isMobileNow ? 10.8 : 9.8;
 
-      // Camera distance: starts prominent and cleanly framed, zooms out smoothly as you scroll
+      // Camera distance: starts comfortably framed, zooms out smoothly as you scroll
       const targetCamZ = THREE.MathUtils.lerp(minZ, maxZ, p);
-      const targetCamY = THREE.MathUtils.lerp(0.04, 0.22, p);
+      const targetCamY = THREE.MathUtils.lerp(0.0, 0.20, p);
 
       if (!isUserRotating.current) {
         camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetCamZ, 0.08);
@@ -562,15 +628,15 @@ export function Screenshots3DPhoneView({
       }
 
       // Rich 3D Perspective Tilt: As it zooms out, card pitches back slightly in 3D
-      const targetTiltX = THREE.MathUtils.lerp(0.0, -0.12, p);
-      cardGroup.rotation.x = THREE.MathUtils.lerp(cardGroup.rotation.x, targetTiltX, 0.08);
+      const targetTiltX = THREE.MathUtils.lerp(0.0, -0.10, p);
+      centerPhone.group.rotation.x = THREE.MathUtils.lerp(centerPhone.group.rotation.x, targetTiltX, 0.08);
 
       // Smooth decay of card flip turn angle on screenshot change
       if (Math.abs(cardFlipAngle.current) > 0.001) {
         cardFlipAngle.current = THREE.MathUtils.lerp(cardFlipAngle.current, 0, 0.1);
       }
       if (!isUserRotating.current) {
-        cardGroup.rotation.y = cardFlipAngle.current;
+        centerPhone.group.rotation.y = cardFlipAngle.current;
       }
 
       // Tap bounce recovery
@@ -579,12 +645,12 @@ export function Screenshots3DPhoneView({
       }
 
       // Gentle floating levitation
-      const levitation = Math.sin(elapsed * 1.5) * 0.05;
-      cardGroup.position.y = levitation;
-      cardGroup.position.z = -cardBounceRef.current;
+      const levitation = Math.sin(elapsed * 1.3) * 0.04;
+      centerPhone.group.position.y = levitation;
+      centerPhone.group.position.z = -cardBounceRef.current;
 
-      if (leftGroup) leftGroup.position.y = levitation;
-      if (rightGroup) rightGroup.position.y = levitation;
+      if (leftPhone.group) leftPhone.group.position.y = levitation;
+      if (rightPhone.group) rightPhone.group.position.y = levitation;
 
       controls.update();
       renderer.render(scene, camera);
@@ -600,22 +666,10 @@ export function Screenshots3DPhoneView({
       observer.disconnect();
       resizeObserver.disconnect();
       controls.dispose();
-      // Dispose textures
-      centerTextureRef.current?.dispose();
-      leftCompTexRef.current?.dispose();
-      rightCompTexRef.current?.dispose();
-      centerTextureRef.current = null;
-      leftCompTexRef.current = null;
-      rightCompTexRef.current = null;
-      textureLoaderRef.current = null;
-      centerMatRef.current = null;
-      leftMatRef.current = null;
-      rightMatRef.current = null;
       disposeThreeScene(scene);
       renderer.dispose();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [app, screenshots, totalCount, onSelectScreenshot, resetManualLockWithTimeout]);
+  }, [totalCount, loadTexture, applyTextureToMat, onSelectScreenshot, resetManualLockWithTimeout]);
 
   // Pointer position tracker to distinguish between 3D orbit drag and click
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -787,7 +841,7 @@ export function Screenshots3DPhoneView({
     if (!controlsRef.current || !cameraRef.current) return;
     controlsRef.current.reset();
     const isMobile = (containerRef.current?.clientWidth || 800) < 640;
-    cameraRef.current.position.set(0, 0.05, isMobile ? 7.2 : 6.6);
+    cameraRef.current.position.set(0, 0.0, isMobile ? 9.2 : 8.2);
     controlsRef.current.autoRotate = true;
     cardFlipAngle.current = 0;
   };
@@ -809,7 +863,7 @@ export function Screenshots3DPhoneView({
 
   return (
     <div className="relative w-full flex flex-col items-center animate-in fade-in duration-300">
-      {/* 3D WebGL Canvas Viewport */}
+      {/* 3D WebGL Canvas Viewport — Luxury flagship smartphone showcase */}
       <div
         ref={containerRef}
         onClick={handleCanvasClick}
@@ -819,7 +873,7 @@ export function Screenshots3DPhoneView({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative w-full h-[480px] sm:h-[560px] md:h-[600px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-[#0d0d18] to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center select-none cursor-grab"
+        className="relative w-full h-[500px] xs:h-[560px] sm:h-[620px] md:h-[660px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-[#0c0c16] to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center select-none cursor-grab"
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
@@ -831,7 +885,7 @@ export function Screenshots3DPhoneView({
               e.stopPropagation();
               handleResetCamera();
             }}
-            className="p-2 sm:p-2.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95"
+            className="p-2 sm:p-2.5 rounded-xl bg-zinc-900/85 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-md cursor-pointer hover:scale-105 active:scale-95"
             title="Reset 3D Perspective"
           >
             <RotateCcw className="w-4 h-4" />
@@ -860,7 +914,7 @@ export function Screenshots3DPhoneView({
                 e.stopPropagation();
                 handlePrevScreenshot();
               }}
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-zinc-900/80 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-zinc-900/85 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
               title="Previous Screenshot"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -871,7 +925,7 @@ export function Screenshots3DPhoneView({
                 e.stopPropagation();
                 handleNextScreenshot();
               }}
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-zinc-900/80 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-zinc-900/85 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/60 transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
               title="Next Screenshot"
             >
               <ChevronRight className="w-5 h-5" />
@@ -880,7 +934,7 @@ export function Screenshots3DPhoneView({
         )}
       </div>
 
-      {/* Compact Info Bar + Bottom Thumbnail Strip */}
+      {/* Compact Status Bar + Bottom Thumbnail Strip */}
       <div className="w-full mt-3 flex flex-col items-center gap-2.5">
         {/* Compact "Viewing" status bar */}
         <div className="w-full flex items-center justify-between px-1">
@@ -905,7 +959,7 @@ export function Screenshots3DPhoneView({
                   hasUserManuallySelected.current = true;
                   onSelectScreenshot(idx);
                 }}
-                className={`relative shrink-0 w-10 sm:w-12 h-20 sm:h-24 md:h-28 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
+                className={`relative shrink-0 w-11 sm:w-13 h-22 sm:h-26 md:h-28 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
                   isSelected
                     ? 'border-purple-500 scale-105 shadow-lg shadow-purple-600/40 ring-2 ring-purple-500/30'
                     : 'border-zinc-800 opacity-60 hover:opacity-100 hover:border-zinc-700'

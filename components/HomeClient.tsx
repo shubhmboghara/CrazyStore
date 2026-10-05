@@ -69,6 +69,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
   const [apps, setApps] = useState<AndroidApp[]>(initialApps);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [ratingsMap, setRatingsMap] = useState<Record<string, { avg: number; count: number }>>(initialRatingsMap);
   const [categories, setCategories] = useState<string[]>(() => {
     const uniqueCats = new Set<string>();
@@ -139,9 +140,6 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
       }
     }
 
-    // DO NOT load on mount since we have initial data from server!
-    // loadApps(true);
-
     const handleAppsUpdated = () => {
       loadApps(false);
     };
@@ -181,10 +179,19 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
     };
   }, []);
 
-  const filteredApps =
-    selectedCategory === 'All'
-      ? apps
-      : apps.filter((app) => app.category === selectedCategory);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredApps = apps.filter((app) => {
+    const matchesCategory = selectedCategory === 'All' || app.category === selectedCategory;
+    if (!matchesCategory) return false;
+    if (!normalizedQuery) return true;
+    return (
+      app.name.toLowerCase().includes(normalizedQuery) ||
+      (app.shortDescription && app.shortDescription.toLowerCase().includes(normalizedQuery)) ||
+      (app.tagline && app.tagline.toLowerCase().includes(normalizedQuery)) ||
+      (app.badge && app.badge.toLowerCase().includes(normalizedQuery)) ||
+      (app.techStack && app.techStack.some((tech) => tech.toLowerCase().includes(normalizedQuery)))
+    );
+  });
 
   const getIconComponent = (symbol: string) => {
     switch (symbol) {
@@ -300,8 +307,8 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
           </div>
         </section>
 
-        {/* Feature Grid */}
-        <section className="py-12 bg-zinc-900/50 border-y border-zinc-800">
+        {/* Feature Grid with accessible anchor id="features" */}
+        <section id="features" className="py-12 bg-zinc-900/50 border-y border-zinc-800 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
               <div className="flex items-start gap-4 p-4 rounded-2xl bg-purple-950/20 border border-purple-900/30">
@@ -340,48 +347,110 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
           </div>
         </section>
 
-        {/* App Catalog Section */}
-        <section id="catalog" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
+        {/* App Catalog Section with Search & Instant Filters */}
+        <section id="catalog" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/40">
                   Curated Catalog
                 </span>
+                <span className="text-xs text-zinc-400">
+                  {filteredApps.length} of {apps.length} apps
+                </span>
               </div>
-              <h2 className="text-2xl font-black mb-1 mt-1 text-zinc-100">Explore Applications</h2>
-              <p className="text-xs text-zinc-400">Discover high-performance Android applications with native Jetpack Compose &amp; Kotlin.</p>
+              <h2 className="text-2xl sm:text-3xl font-black mb-1 mt-1 text-zinc-100">
+                Explore Applications
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-xl">
+                Discover high-performance Android applications with native Jetpack Compose &amp; Kotlin.
+              </p>
             </div>
 
-            {/* Category Filter */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto hide-scrollbar">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    setSelectedCategory(cat);
-                    trackEvent({
-                      eventType: 'category_filter',
-                      details: `Filtered apps by "${cat}" category`,
-                    });
+            {/* Instant Search Bar */}
+            <div className="w-full md:w-80 relative">
+              <label htmlFor="catalog-search" className="sr-only">
+                Search applications
+              </label>
+              <div className="relative">
+                <input
+                  id="catalog-search"
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setSearchQuery('');
                   }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                    selectedCategory === cat
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                      : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border border-zinc-800'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+                  placeholder="Search by name, tag, or tech..."
+                  className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-100 placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-inner"
+                />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                </div>
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1 rounded-md cursor-pointer"
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* 3D Perspective Tilt Cards Grid */}
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 hide-scrollbar">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                  trackEvent({
+                    eventType: 'category_filter',
+                    details: `Filtered apps by "${cat}" category`,
+                  });
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer min-h-[38px] ${
+                  selectedCategory === cat
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20 ring-2 ring-purple-600/20'
+                    : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border border-zinc-800'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* 3D Perspective Tilt Cards Grid / Empty State */}
           {isLoading ? (
             <AppCardSkeleton count={6} />
+          ) : filteredApps.length === 0 ? (
+            <div className="p-12 text-center bg-zinc-900/40 rounded-3xl border border-dashed border-zinc-800 space-y-4 animate-in fade-in duration-200">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-950/60 border border-purple-800/40 flex items-center justify-center text-purple-400">
+                <Boxes className="w-7 h-7" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-zinc-100">No applications found</h3>
+                <p className="text-xs text-zinc-400 max-w-md mx-auto">
+                  We couldn&apos;t find any applications matching &quot;{searchQuery}&quot; in category &quot;{selectedCategory}&quot;.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('All');
+                }}
+                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 cursor-pointer"
+              >
+                Reset Search &amp; Filters
+              </button>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 card-container">
                 {filteredApps.map((app, idx) => (
                 <Card3DTilt key={app.slug} className="h-full">
                   <Link
@@ -395,7 +464,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                         details: `Explored App Details: ${app.name}`,
                       });
                     }}
-                    className="group flex flex-col h-full bg-zinc-900 border border-zinc-800 hover:border-purple-800/60 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:shadow-purple-900/20 transition-all duration-300 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4"
+                    className="group flex flex-col h-full bg-zinc-900 border border-zinc-800 hover:border-purple-800/60 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:shadow-purple-900/20 transition-all duration-300 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 focus-visible:ring-2 focus-visible:ring-purple-500"
                     style={{ animationDelay: `${idx * 100}ms` }}
                   >
                     {/* Decorative background banner / ambient glow */}
@@ -472,8 +541,8 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
           )}
         </section>
 
-        {/* Generative Engine Optimization (GEO) & FOSS Architecture Standards Section */}
-        <section className="py-16 bg-zinc-900/40 border-y border-zinc-800">
+        {/* Generative Engine Optimization (GEO) & FOSS Architecture Standards Section with anchor id="standards" */}
+        <section id="standards" className="py-16 bg-zinc-900/40 border-y border-zinc-800 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-12">
               <span className="text-xs font-bold uppercase tracking-wider text-purple-400 bg-purple-950/60 border border-purple-800/40 px-3 py-1 rounded-full">

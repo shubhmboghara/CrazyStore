@@ -1,6 +1,132 @@
 @import "tailwindcss";
 
-/* Hide scrollbar utility for clean App Highlights reels */
+/* -------------------------------------------------------------
+   MODERN WEB GUIDANCE: DESIGN TOKENS (OKLCH Color Space)
+   Perceptually uniform, accessible contrast ratios across dark mode
+   ------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+  --color-primary: oklch(0.62 0.26 295);
+  --color-primary-hover: oklch(0.68 0.24 295);
+  --color-primary-subtle: oklch(0.24 0.08 295 / 0.5);
+  --color-accent-cyan: oklch(0.78 0.16 200);
+  --color-accent-amber: oklch(0.79 0.17 75);
+  --color-surface-bg: oklch(0.12 0.01 285);
+  --color-surface-card: oklch(0.16 0.015 285);
+  --color-surface-card-hover: oklch(0.20 0.02 285);
+  --color-surface-border: oklch(0.27 0.02 285);
+  --color-text-main: oklch(0.97 0.005 285);
+  --color-text-muted: oklch(0.72 0.015 285);
+  --color-text-subtle: oklch(0.55 0.015 285);
+}
+
+html {
+  background-color: var(--color-surface-bg, #09090b);
+  color: var(--color-text-main, #f4f4f5);
+  color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--color-surface-bg, #09090b);
+  color: var(--color-text-main, #f4f4f5);
+  min-height: 100dvh;
+}
+
+/* -------------------------------------------------------------
+   1. REFINED TYPOGRAPHY (text-wrap: balance & pretty)
+   Eliminates typographic orphans and optimizes headline ragging
+   ------------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+p, li, dd {
+  text-wrap: pretty;
+}
+
+/* -------------------------------------------------------------
+   2. ACCESSIBLE FOCUS & INTERACTION
+   WCAG 2.2 compliant high-contrast focus rings
+   ------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid oklch(0.68 0.24 295);
+  outline-offset: 2px;
+}
+
+button, a, input, textarea, select {
+  touch-action: manipulation;
+}
+
+/* -------------------------------------------------------------
+   3. MODERN FORM UX & DYNAMIC SIZING
+   - field-sizing: content on textarea for auto-expanding input
+   - :user-invalid and :user-valid for non-premature error states
+   ------------------------------------------------------------- */
+textarea.auto-expanding {
+  field-sizing: content;
+  min-height: 5.5rem;
+  max-height: 24rem;
+}
+
+input:user-invalid,
+textarea:user-invalid {
+  border-color: oklch(0.65 0.22 25) !important;
+  box-shadow: 0 0 0 1px oklch(0.65 0.22 25 / 0.4);
+}
+
+input:user-valid:not(:placeholder-shown),
+textarea:user-valid:not(:placeholder-shown) {
+  border-color: oklch(0.68 0.18 150 / 0.5);
+}
+
+/* -------------------------------------------------------------
+   4. FLUID TRANSITIONS & DISCRETE ANIMATIONS (@starting-style)
+   Native dialogs, popovers, and animated states
+   ------------------------------------------------------------- */
+dialog[open],
+[popover]:popover-open {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              display 0.25s allow-discrete,
+              overlay 0.25s allow-discrete;
+}
+
+@starting-style {
+  dialog[open],
+  [popover]:popover-open {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+dialog::backdrop {
+  background-color: oklch(0 0 0 / 0.85);
+  backdrop-filter: blur(12px);
+  opacity: 1;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              display 0.25s allow-discrete,
+              overlay 0.25s allow-discrete;
+}
+
+@starting-style {
+  dialog::backdrop {
+    opacity: 0;
+  }
+}
+
+/* -------------------------------------------------------------
+   5. CONTAINER QUERY UTILITIES
+   ------------------------------------------------------------- */
+.card-container {
+  container-type: inline-size;
+}
+
+/* -------------------------------------------------------------
+   6. SCROLLBAR UTILITIES
+   ------------------------------------------------------------- */
 .hide-scrollbar::-webkit-scrollbar,
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -14,27 +140,19 @@
   scrollbar-width: none;
 }
 
-:root {
-  color-scheme: dark;
-}
-
-html {
-  background-color: #09090b;
-  color: #f4f4f5;
-  color-scheme: dark;
-}
-
-body {
-  background-color: #09090b;
-  color: #f4f4f5;
-}
-
 @keyframes heroTimelineFill {
   0% {
     width: 0%;
   }
   100% {
     width: 100%;
+  }
+}
+
+/* Smooth scrolling for users who prefer motion */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
   }
 }
 
