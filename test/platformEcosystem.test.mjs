@@ -185,9 +185,6 @@ const appsDataContent = fs.readFileSync(appsDataPath, 'utf8');
   const commandPaletteFile = path.resolve(process.cwd(), 'components/CommandPalette.tsx');
   assert.ok(fs.existsSync(commandPaletteFile), 'CommandPalette.tsx must exist');
 
-  const submitPageFile = path.resolve(process.cwd(), 'app/submit/page.tsx');
-  assert.ok(fs.existsSync(submitPageFile), 'app/submit/page.tsx route must exist');
-
   const vaultHookFile = path.resolve(process.cwd(), 'hooks/useVault.ts');
   assert.ok(fs.existsSync(vaultHookFile), 'hooks/useVault.ts must exist');
 

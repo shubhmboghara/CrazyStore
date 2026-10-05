@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Search, ShieldCheck, Sparkles, Layers, Bookmark, UploadCloud } from 'lucide-react';
+import { Menu, X, Search, ShieldCheck, Sparkles, Layers, Bookmark } from 'lucide-react';
 import { NavLogo3D } from '@/components/three';
 import { CommandPalette } from '@/components/CommandPalette';
 import { useVault } from '@/hooks/useVault';
@@ -16,7 +16,6 @@ export function Navbar() {
 
   const isHomeRoute = pathname === '/';
   const isAppDetail = pathname.startsWith('/apps/');
-  const isSubmitRoute = pathname === '/submit';
 
   // Global Cmd+K / Ctrl+K and / shortcut listener
   useEffect(() => {
@@ -111,18 +110,6 @@ export function Navbar() {
             </Link>
 
             <Link
-              href="/submit"
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] inline-flex items-center gap-1.5 ${
-                isSubmitRoute
-                  ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40 shadow-xs'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
-              }`}
-            >
-              <UploadCloud className="w-3.5 h-3.5 text-purple-400" />
-              Submit App
-            </Link>
-
-            <Link
               href="/apps/videohub"
               className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] inline-flex items-center gap-1.5 ${
                 isAppDetail
@@ -214,15 +201,6 @@ export function Navbar() {
             >
               <Search className="w-4 h-4 text-purple-400" />
               <span>Browse Catalog &amp; Search</span>
-            </Link>
-
-            <Link
-              href="/submit"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900 min-h-[48px]"
-            >
-              <UploadCloud className="w-4 h-4 text-purple-400" />
-              <span>Submit New App</span>
             </Link>
 
             <Link
