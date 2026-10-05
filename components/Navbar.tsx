@@ -3,15 +3,40 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Search, ShieldCheck, Sparkles, Layers } from 'lucide-react';
+import { Menu, X, Search, ShieldCheck, Sparkles, Layers, Bookmark, UploadCloud } from 'lucide-react';
 import { NavLogo3D } from '@/components/three';
+import { CommandPalette } from '@/components/CommandPalette';
+import { useVault } from '@/hooks/useVault';
 
 export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const { count: vaultCount } = useVault();
 
   const isHomeRoute = pathname === '/';
   const isAppDetail = pathname.startsWith('/apps/');
+  const isSubmitRoute = pathname === '/submit';
+
+  // Global Cmd+K / Ctrl+K and / shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      } else if (
+        e.key === '/' &&
+        !isCommandPaletteOpen &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCommandPaletteOpen]);
 
   // Close mobile drawer on Escape key
   useEffect(() => {
@@ -37,98 +62,123 @@ export function Navbar() {
   }, [isMobileMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/85 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand Logo & Context */}
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            id="nav-logo"
-            className="flex items-center gap-3 group transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-purple-500 rounded-xl"
-            aria-label="CrazyStore Home"
-          >
-            <NavLogo3D size="md" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-lg text-zinc-100 tracking-tight">
-                  CrazyStore
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800/50">
-                  FOSS
-                </span>
+    <>
+      <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/85 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          {/* Brand Logo & Context */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              id="nav-logo"
+              className="flex items-center gap-3 group transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-purple-500 rounded-xl"
+              aria-label="CrazyStore Home"
+            >
+              <NavLogo3D size="md" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-lg text-zinc-100 tracking-tight">
+                    CrazyStore
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800/50">
+                    FOSS
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400 font-medium hidden sm:block">
+                  Open-Source Android App Vault
+                </p>
               </div>
-              <p className="text-[11px] text-zinc-400 font-medium hidden sm:block">
-                Open-Source Android App Vault
-              </p>
-            </div>
-          </Link>
+            </Link>
+          </div>
+
+          {/* Desktop Navigation Links */}
+          <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1.5">
+            <Link
+              href="/"
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] inline-flex items-center ${
+                isHomeRoute
+                  ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40 shadow-xs'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+              }`}
+            >
+              Storefront
+            </Link>
+
+            <Link
+              href="/#catalog"
+              className="px-3 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all min-h-[40px] inline-flex items-center"
+            >
+              Catalog
+            </Link>
+
+            <Link
+              href="/submit"
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] inline-flex items-center gap-1.5 ${
+                isSubmitRoute
+                  ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40 shadow-xs'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+              }`}
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-purple-400" />
+              Submit App
+            </Link>
+
+            <Link
+              href="/apps/videohub"
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] inline-flex items-center gap-1.5 ${
+                isAppDetail
+                  ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40 shadow-xs'
+                  : 'text-zinc-400 hover:text-purple-300 hover:bg-purple-950/40'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              3D Studio
+            </Link>
+          </nav>
+
+          {/* Right side controls */}
+          <div className="flex items-center gap-2">
+            {/* Spotlight Command Palette Button */}
+            <button
+              type="button"
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 text-xs font-medium transition-all cursor-pointer min-h-[36px]"
+              title="Search apps (Ctrl+K or Cmd+K)"
+            >
+              <Search className="w-3.5 h-3.5 text-purple-400" />
+              <span>Search apps...</span>
+              <kbd className="hidden lg:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-950 text-zinc-400 border border-zinc-700">
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* Saved Vault Indicator Link */}
+            <Link
+              href="/#catalog"
+              className="relative p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+              title="Your Saved Apps Vault"
+              aria-label="Your Saved Apps Vault"
+            >
+              <Bookmark className="w-4 h-4 text-purple-400" />
+              {vaultCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center">
+                  {vaultCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Mobile menu hamburger button with WCAG 44x44 touch target */}
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2.5 rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer transition-colors"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-nav-drawer"
+              aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-purple-400" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
-
-        {/* Desktop Navigation Links */}
-        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1.5">
-          <Link
-            href="/"
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] inline-flex items-center ${
-              isHomeRoute
-                ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40 shadow-xs'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
-            }`}
-          >
-            Storefront
-          </Link>
-
-          <Link
-            href="/#catalog"
-            className="px-3.5 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all min-h-[40px] inline-flex items-center"
-          >
-            Apps Catalog
-          </Link>
-
-          <Link
-            href="/#standards"
-            className="px-3.5 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all min-h-[40px] inline-flex items-center"
-          >
-            Standards
-          </Link>
-
-          <Link
-            href="/apps/videohub"
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] inline-flex items-center gap-1.5 ${
-              isAppDetail
-                ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40 shadow-xs'
-                : 'text-zinc-400 hover:text-purple-300 hover:bg-purple-950/40'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            3D Studio
-          </Link>
-        </nav>
-
-        {/* Right side controls */}
-        <div className="flex items-center gap-2">
-          {/* Quick Search Shortcut to Catalog */}
-          <Link
-            href="/#catalog"
-            className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 text-xs font-medium transition-all"
-            title="Search apps in catalog"
-          >
-            <Search className="w-3.5 h-3.5 text-purple-400" />
-            <span>Search apps...</span>
-          </Link>
-
-          {/* Mobile menu hamburger button with WCAG 44x44 touch target */}
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2.5 rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer transition-colors"
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="mobile-nav-drawer"
-            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-          >
-            {isMobileMenuOpen ? <X className="w-5 h-5 text-purple-400" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
 
       {/* Accessible Mobile Drawer & Backdrop */}
       {isMobileMenuOpen && (
@@ -167,6 +217,15 @@ export function Navbar() {
             </Link>
 
             <Link
+              href="/submit"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900 min-h-[48px]"
+            >
+              <UploadCloud className="w-4 h-4 text-purple-400" />
+              <span>Submit New App</span>
+            </Link>
+
+            <Link
               href="/#standards"
               onClick={() => setIsMobileMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900 min-h-[48px]"
@@ -186,5 +245,11 @@ export function Navbar() {
         </>
       )}
     </header>
+
+    <CommandPalette
+      isOpen={isCommandPaletteOpen}
+      onClose={() => setIsCommandPaletteOpen(false)}
+    />
+  </>
   );
 }

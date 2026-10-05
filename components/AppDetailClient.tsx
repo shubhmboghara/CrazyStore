@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { AndroidApp } from '@/lib/appsData';
 import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
@@ -14,6 +14,12 @@ import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { useToast } from '@/components/Toast';
 import { trackEvent } from '@/lib/analytics';
 import { Screenshots3DBackdrop, Screenshots3DPhoneView } from '@/components/three';
+import { DataSafetyCard } from '@/components/DataSafetyCard';
+import { DownloadQrModal } from '@/components/DownloadQrModal';
+import { AppCompareModal } from '@/components/AppCompareModal';
+import { VersionChangelogModal } from '@/components/VersionChangelogModal';
+import { checkDeviceCompatibility } from '@/lib/deviceCompatibility';
+import { useVault } from '@/hooks/useVault';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -43,6 +49,11 @@ import {
   ZoomOut,
   RotateCcw,
   Boxes,
+  QrCode,
+  ArrowRightLeft,
+  History,
+  Bookmark,
+  FileCheck,
 } from 'lucide-react';
 
 function AppLogoImage({
@@ -87,17 +98,30 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [averageRating, setAverageRating] = useState<number>(initialApp.initialRating || 5.0);
   const [totalCount, setTotalCount] = useState<number>(initialApp.initialReviewCount || 0);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tech'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'safety' | 'reviews' | 'tech'>('overview');
   const [selected3DIdx, setSelected3DIdx] = useState<number>(0);
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxZoom, setLightboxZoom] = useState<number>(1);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
-  const handleTabKeyDown = (e: React.KeyboardEvent, currentTab: 'overview' | 'reviews' | 'tech') => {
-    const tabs: ('overview' | 'reviews' | 'tech')[] = ['overview', 'reviews', 'tech'];
+  // Advanced App Store Feature Modals & Utilities
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  const [isChangelogModalOpen, setIsChangelogModalOpen] = useState(false);
+  const { isSaved, toggleSaved } = useVault();
+  const [savedLocally, setSavedLocally] = useState(false);
+
+  useEffect(() => {
+    setSavedLocally(isSaved(appData.slug));
+  }, [isSaved, appData.slug]);
+
+  const compat = useMemo(() => checkDeviceCompatibility(appData.minAndroid), [appData.minAndroid]);
+
+  const handleTabKeyDown = (e: React.KeyboardEvent, currentTab: 'overview' | 'safety' | 'reviews' | 'tech') => {
+    const tabs: ('overview' | 'safety' | 'reviews' | 'tech')[] = ['overview', 'safety', 'reviews', 'tech'];
     const currentIdx = tabs.indexOf(currentTab);
-    let nextTab: 'overview' | 'reviews' | 'tech' | null = null;
+    let nextTab: 'overview' | 'safety' | 'reviews' | 'tech' | null = null;
 
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
@@ -445,13 +469,20 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   />
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="px-2.5 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-800/50 text-[10px] font-bold">
                       {appData.badge || 'Kotlin + Compose'}
                     </span>
                     <span className="px-2.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-bold">
                       {appData.version}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-md bg-emerald-950/80 text-emerald-400 border border-emerald-800/40 text-[10px] font-bold flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" />
+                      0 Trackers
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-md bg-zinc-900 text-zinc-300 border border-zinc-800 text-[10px] font-mono font-bold">
+                      {appData.license || 'GPL-3.0'}
                     </span>
                   </div>
 
@@ -463,56 +494,138 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     {appData.tagline || appData.shortDescription}
                   </p>
 
-                  <div className="pt-2 flex items-center gap-3">
+                  <div className="pt-1 flex items-center gap-4 flex-wrap">
                     <StarRating rating={averageRating} showNumber={true} reviewCount={totalCount} />
+
+                    {/* Automatic Device Compatibility Indicator */}
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-300 px-2.5 py-1 rounded-xl bg-zinc-950 border border-zinc-800">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          compat.status === 'compatible'
+                            ? 'bg-emerald-400 shadow-xs shadow-emerald-400/50 animate-pulse'
+                            : compat.status === 'warning'
+                            ? 'bg-amber-400'
+                            : 'bg-purple-400'
+                        }`}
+                      />
+                      <span>{compat.message}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Download & GitHub CTA Buttons */}
-              <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
-                <a
-                  href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => handleDownloadClick('header_cta')}
-                  className={`w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-bold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    isDownloading
-                      ? 'bg-emerald-600 shadow-emerald-600/30 ring-2 ring-emerald-400/50'
-                      : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'
-                  }`}
-                  aria-live="polite"
-                >
-                  {isDownloading ? (
-                    <>
-                      <CheckCircle2 className="w-5 h-5 text-white animate-in zoom-in-75" />
-                      <span>Downloading APK...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-5 h-5" />
-                      <span>Download APK</span>
-                    </>
-                  )}
-                </a>
-                {appData.githubUrl && (
+              {/* Download & Feature Action Buttons */}
+              <div className="w-full sm:w-auto flex flex-col gap-2.5">
+                <div className="flex flex-col sm:flex-row gap-2.5">
                   <a
-                    href={appData.githubUrl}
+                    href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => {
-                      trackEvent({
-                        eventType: 'github_click',
-                        appSlug: appData.slug,
-                        appName: appData.name,
-                        details: `Viewed GitHub Source: ${appData.name}`,
-                      });
-                    }}
-                    className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-zinc-800 text-white font-bold text-sm text-center hover:bg-zinc-700 transition-all flex items-center justify-center gap-2 shadow-md border border-zinc-700/50"
+                    onClick={() => handleDownloadClick('header_cta')}
+                    className={`w-full sm:w-auto px-7 py-3.5 rounded-2xl text-white font-bold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      isDownloading
+                        ? 'bg-emerald-600 shadow-emerald-600/30 ring-2 ring-emerald-400/50'
+                        : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'
+                    }`}
+                    aria-live="polite"
                   >
-                    <FaGithub className="w-5 h-5" /> GitHub Source
+                    {isDownloading ? (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 text-white animate-in zoom-in-75" />
+                        <span>Downloading APK...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5" />
+                        <span>Download APK</span>
+                      </>
+                    )}
                   </a>
-                )}
+
+                  {appData.githubUrl && (
+                    <a
+                      href={appData.githubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        trackEvent({
+                          eventType: 'github_click',
+                          appSlug: appData.slug,
+                          appName: appData.name,
+                          details: `Viewed GitHub Source: ${appData.name}`,
+                        });
+                      }}
+                      className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-zinc-800 text-white font-bold text-sm text-center hover:bg-zinc-700 transition-all flex items-center justify-center gap-2 shadow-md border border-zinc-700/50"
+                    >
+                      <FaGithub className="w-5 h-5" /> GitHub Source
+                    </a>
+                  )}
+                </div>
+
+                {/* Secondary Quick-Action Tools */}
+                <div className="flex items-center gap-1.5 justify-start sm:justify-end flex-wrap pt-1">
+                  {/* Scan QR Code button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsQrModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px]"
+                    title="Scan QR Code to install directly on phone"
+                  >
+                    <QrCode className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Scan QR</span>
+                  </button>
+
+                  {/* Compare App button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCompareModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px]"
+                    title="Compare side-by-side with other open source apps"
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Compare</span>
+                  </button>
+
+                  {/* Save to Vault (Wishlist) button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleSaved(appData.slug);
+                      showToast(savedLocally ? 'Removed from your Saved Vault' : 'Saved to your Vault!', 'info');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] ${
+                      savedLocally
+                        ? 'bg-purple-950 text-purple-300 border-purple-800/60 shadow-xs'
+                        : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border-zinc-800'
+                    }`}
+                    title={savedLocally ? 'Saved to Vault' : 'Save to Vault'}
+                  >
+                    <Bookmark className={`w-3.5 h-3.5 ${savedLocally ? 'text-purple-400 fill-purple-400' : 'text-zinc-400'}`} />
+                    <span>{savedLocally ? 'Saved' : 'Save'}</span>
+                  </button>
+
+                  {/* Version Changelog button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsChangelogModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px]"
+                    title="View version release notes and changelog"
+                  >
+                    <History className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Changelog</span>
+                  </button>
+
+                  {/* Share button */}
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px]"
+                    title="Share app profile"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Share</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -635,6 +748,23 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   }`}
                 >
                   <Info className="w-4 h-4" /> About &amp; Features
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="tab-safety"
+                  aria-selected={activeTab === 'safety'}
+                  aria-controls="panel-safety"
+                  tabIndex={activeTab === 'safety' ? 0 : -1}
+                  onClick={() => setActiveTab('safety')}
+                  onKeyDown={(e) => handleTabKeyDown(e, 'safety')}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 ${
+                    activeTab === 'safety'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
+                      : 'text-zinc-400 hover:bg-zinc-800/60'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" /> Data Safety &amp; Privacy
                 </button>
                 <button
                   type="button"
@@ -787,6 +917,13 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
                   {/* GEO Knowledge Base & Instant Answers FAQ */}
                   <GeoKnowledgeBase app={appData} />
+                </div>
+              )}
+
+              {/* Tab: Data Safety & Privacy */}
+              {activeTab === 'safety' && (
+                <div role="tabpanel" id="panel-safety" aria-labelledby="tab-safety" tabIndex={0} className="space-y-6 outline-hidden animate-in fade-in duration-300">
+                  <DataSafetyCard app={appData} />
                 </div>
               )}
 
@@ -1236,6 +1373,27 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
         </div>
       </main>
       <Footer />
+
+      {/* Advanced Feature Modals */}
+      <DownloadQrModal
+        isOpen={isQrModalOpen}
+        onClose={() => setIsQrModalOpen(false)}
+        appName={appData.name}
+        version={appData.version}
+        downloadUrl={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
+      />
+
+      <AppCompareModal
+        isOpen={isCompareModalOpen}
+        onClose={() => setIsCompareModalOpen(false)}
+        baseApp={appData}
+      />
+
+      <VersionChangelogModal
+        isOpen={isChangelogModalOpen}
+        onClose={() => setIsChangelogModalOpen(false)}
+        app={appData}
+      />
     </div>
   );
 }

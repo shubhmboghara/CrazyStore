@@ -181,6 +181,42 @@ export function normalizeAppRecord(dbApp: any): any {
         .filter(Boolean)
     : [];
 
+  let permissions = dbApp.permissions ?? [];
+  if (typeof permissions === 'string') {
+    try {
+      permissions = JSON.parse(permissions);
+    } catch {
+      permissions = permissions.split(',').map((p: string) => ({ name: p.trim(), description: 'Required for app functionality.' }));
+    }
+  }
+
+  let changelog = dbApp.changelog ?? [];
+  if (typeof changelog === 'string') {
+    try {
+      changelog = JSON.parse(changelog);
+    } catch {
+      changelog = [];
+    }
+  }
+
+  let mirrors = dbApp.mirrors ?? [];
+  if (typeof mirrors === 'string') {
+    try {
+      mirrors = JSON.parse(mirrors);
+    } catch {
+      mirrors = [];
+    }
+  }
+
+  let architectures = dbApp.architectures ?? ['arm64-v8a', 'armeabi-v7a', 'x86_64'];
+  if (typeof architectures === 'string') {
+    try {
+      architectures = JSON.parse(architectures);
+    } catch {
+      architectures = architectures.split(',').map((a: string) => a.trim()).filter(Boolean);
+    }
+  }
+
   return {
     ...dbApp,
     slug: dbApp.slug ? String(dbApp.slug).trim() : '',
@@ -207,5 +243,12 @@ export function normalizeAppRecord(dbApp: any): any {
     initialReviewCount: dbApp.initialReviewCount ?? dbApp.initial_review_count ?? dbApp.initialreviewcount ?? 0,
     isCustom: dbApp.isCustom ?? dbApp.is_custom ?? dbApp.iscustom ?? true,
     createdAt: dbApp.createdAt || dbApp.created_at || dbApp.createdat || new Date().toISOString(),
+    license: dbApp.license || 'GPL-3.0',
+    trackersCount: typeof dbApp.trackersCount === 'number' ? dbApp.trackersCount : (dbApp.trackers_count ?? 0),
+    sha256: dbApp.sha256 || '',
+    permissions,
+    changelog,
+    mirrors,
+    architectures,
   };
 }
