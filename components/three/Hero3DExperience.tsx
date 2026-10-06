@@ -250,7 +250,8 @@ export function Hero3DExperience({
     const width = container.clientWidth || 500;
     const height = container.clientHeight || 580;
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 8.5);
+    const initialZ = width < 480 ? 9.8 : width < 768 ? 9.0 : 8.5;
+    camera.position.set(0, 0, initialZ);
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({
@@ -495,6 +496,12 @@ export function Hero3DExperience({
         const deltaX = e.clientX - previousPointerPosition.current.x;
         const deltaY = e.clientY - previousPointerPosition.current.y;
 
+        // If pointer is touch and movement is mostly vertical, release drag so page scrolls natively
+        if (e.pointerType === 'touch' && Math.abs(deltaY) > Math.abs(deltaX) * 1.3) {
+          isDraggingRef.current = false;
+          return;
+        }
+
         rotationVelocityRef.current = {
           x: deltaY * 0.005,
           y: deltaX * 0.005,
@@ -521,6 +528,7 @@ export function Hero3DExperience({
       const newWidth = container.clientWidth;
       const newHeight = container.clientHeight;
       camera.aspect = newWidth / newHeight;
+      camera.position.z = newWidth < 480 ? 9.8 : newWidth < 768 ? 9.0 : 8.5;
       camera.updateProjectionMatrix();
       rendererRef.current.setSize(newWidth, newHeight);
     };
@@ -620,8 +628,8 @@ export function Hero3DExperience({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[520px] sm:h-[600px] flex items-center justify-center select-none overflow-hidden rounded-3xl"
-      style={{ touchAction: 'none' }}
+      className="relative w-full h-[320px] xs:h-[360px] sm:h-[420px] md:h-[480px] lg:h-[540px] xl:h-[580px] flex items-center justify-center select-none overflow-hidden rounded-3xl"
+      style={{ touchAction: 'pan-y' }}
     >
       {/* Three.js Canvas */}
       {hasWebGL ? (

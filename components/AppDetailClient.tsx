@@ -563,12 +563,12 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </div>
 
                 {/* Secondary Quick-Action Tools */}
-                <div className="flex items-center gap-1.5 justify-start sm:justify-end flex-wrap pt-1">
+                <div className="flex items-center gap-1.5 justify-start sm:justify-end overflow-x-auto hide-scrollbar max-w-full pb-1 pt-1 [scrollbar-width:none]">
                   {/* Scan QR Code button */}
                   <button
                     type="button"
                     onClick={() => setIsQrModalOpen(true)}
-                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px]"
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0"
                     title="Scan QR Code to install directly on phone"
                   >
                     <QrCode className="w-3.5 h-3.5 text-purple-400" />
@@ -579,7 +579,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   <button
                     type="button"
                     onClick={() => setIsCompareModalOpen(true)}
-                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px]"
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0"
                     title="Compare side-by-side with other open source apps"
                   >
                     <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
@@ -593,7 +593,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                       toggleSaved(appData.slug);
                       showToast(savedLocally ? 'Removed from your Saved Vault' : 'Saved to your Vault!', 'info');
                     }}
-                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] ${
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0 ${
                       savedLocally
                         ? 'bg-purple-950 text-purple-300 border-purple-800/60 shadow-xs'
                         : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border-zinc-800'
@@ -608,7 +608,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   <button
                     type="button"
                     onClick={() => setIsChangelogModalOpen(true)}
-                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px]"
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0"
                     title="View version release notes and changelog"
                   >
                     <History className="w-3.5 h-3.5 text-amber-400" />
@@ -619,7 +619,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   <button
                     type="button"
                     onClick={handleShare}
-                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px]"
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0"
                     title="Share app profile"
                   >
                     <Share2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -727,9 +727,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
         {/* Content Tabs & Main Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left Main Content Column (8 cols) */}
-            <div className="lg:col-span-8 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+            {/* Left Main Content Column (8 cols on lg, 7 cols on md) */}
+            <div className="md:col-span-7 lg:col-span-8 space-y-6 sm:space-y-8">
               {/* Tab Navigation with WAI-ARIA pattern */}
               <div role="tablist" aria-label="Application Details Tabs" className="flex items-center gap-2 border-b border-zinc-800 pb-2 overflow-x-auto hide-scrollbar no-scrollbar [scrollbar-width:none]">
                 <button
@@ -995,8 +995,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
               )}
             </div>
 
-            {/* Right Sidebar Column (4 cols) */}
-            <div className="lg:col-span-4 space-y-6">
+            {/* Right Sidebar Column (4 cols on lg, 5 cols on md) */}
+            <div className="md:col-span-5 lg:col-span-4 space-y-6">
               {/* Quick Download Card */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-md space-y-5">
                 <div className="flex items-center gap-4">

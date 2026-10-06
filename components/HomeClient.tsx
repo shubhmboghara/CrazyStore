@@ -258,35 +258,35 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
 
       <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         {/* 3D WebGL Hero Section */}
-        <section className="relative py-12 sm:py-20 overflow-hidden">
-          {/* Background Ambient Glows */}
-          <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
-          <div className="absolute top-1/2 right-10 w-[450px] h-[450px] bg-indigo-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
+        <section className="relative py-8 sm:py-14 md:py-16 lg:py-20 overflow-hidden">
+          {/* Background Ambient Glows - Bounded to avoid mobile horizontal scroll */}
+          <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[280px] sm:w-[480px] lg:w-[650px] h-[280px] sm:h-[480px] lg:h-[650px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="absolute top-1/2 right-4 sm:right-10 w-[220px] sm:w-[360px] lg:w-[450px] h-[220px] sm:h-[360px] lg:h-[450px] bg-indigo-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-8 lg:gap-12 items-center">
               {/* Left Column: Headline, Highlights & Actions */}
-              <div className="lg:col-span-6 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/70 border border-purple-800/50 text-purple-300 text-xs font-bold mb-6 animate-in fade-in slide-in-from-bottom-2">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                  <span>100% Free &amp; Open Source • Kotlin &amp; Compose</span>
+              <div className="md:col-span-6 lg:col-span-6 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-purple-950/70 border border-purple-800/50 text-purple-300 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 animate-in fade-in slide-in-from-bottom-2">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                  <span className="truncate">100% Free &amp; Open Source • Kotlin &amp; Compose</span>
                 </div>
 
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-[1.1] text-zinc-100">
-                  The Open Vault for <br />
+                <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-4 sm:mb-6 leading-[1.15] text-zinc-100">
+                  The Open Vault for <br className="hidden xs:inline" />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-300 to-cyan-300">
                     Native Android Apps
                   </span>
                 </h1>
 
-                <p className="max-w-xl mx-auto lg:mx-0 text-sm sm:text-base text-zinc-400 mb-8 leading-relaxed font-normal">
+                <p className="max-w-xl mx-auto md:mx-0 text-xs sm:text-sm md:text-base text-zinc-400 mb-6 sm:mb-8 leading-relaxed font-normal">
                   Curated directory of high-performance, ad-free Android applications built natively with Kotlin and Jetpack Compose. Zero telemetry, reproducible builds, and verified open-source code.
                 </p>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
+                <div className="flex flex-col xs:flex-row items-center justify-center md:justify-start gap-3 sm:gap-4 mb-6 sm:mb-8">
                   <Link
                     href="#catalog"
-                    className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-xl shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full xs:w-auto px-6 sm:px-7 py-3 sm:py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>Browse Catalog</span>
                     <ChevronRight className="w-4 h-4" />
@@ -296,32 +296,32 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                     href="https://github.com/shubhmboghara/CrazyStore"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-sm border border-zinc-800 shadow-md hover:border-zinc-700 transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full xs:w-auto px-6 sm:px-7 py-3 sm:py-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs sm:text-sm border border-zinc-800 shadow-md hover:border-zinc-700 transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <FaGithub className="w-4 h-4" /> View GitHub Source
                   </a>
                 </div>
 
                 {/* Micro Highlights */}
-                <div className="grid grid-cols-3 gap-3 pt-6 border-t border-zinc-800/80 max-w-md mx-auto lg:mx-0 text-left">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-5 sm:pt-6 border-t border-zinc-800/80 max-w-md mx-auto md:mx-0 text-center md:text-left">
                   <div>
-                    <span className="block text-lg font-black text-zinc-100">0%</span>
-                    <span className="text-[11px] text-zinc-400 font-medium">Zero Telemetry</span>
+                    <span className="block text-base sm:text-lg font-black text-zinc-100">0%</span>
+                    <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium">Zero Telemetry</span>
                   </div>
                   <div>
-                    <span className="block text-lg font-black text-purple-400">120Hz</span>
-                    <span className="text-[11px] text-zinc-400 font-medium">Compose Native</span>
+                    <span className="block text-base sm:text-lg font-black text-purple-400">120Hz</span>
+                    <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium">Compose Native</span>
                   </div>
                   <div>
-                    <span className="block text-lg font-black text-indigo-400">3D</span>
-                    <span className="text-[11px] text-zinc-400 font-medium">WebGL Live View</span>
+                    <span className="block text-base sm:text-lg font-black text-indigo-400">3D</span>
+                    <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium">WebGL Live View</span>
                   </div>
                 </div>
               </div>
 
               {/* Right Column: Interactive 3D WebGL Phone Experience */}
-              <div className="lg:col-span-6 relative flex items-center justify-center">
-                <div className="w-full max-w-[560px] relative">
+              <div className="md:col-span-6 lg:col-span-6 relative flex items-center justify-center">
+                <div className="w-full max-w-[420px] md:max-w-full lg:max-w-[560px] relative">
                   <Hero3DExperience apps={apps} />
                 </div>
               </div>
@@ -330,9 +330,9 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
         </section>
 
         {/* Feature Grid with accessible anchor id="features" */}
-        <section id="features" className="py-12 bg-zinc-900/50 border-y border-zinc-800 scroll-mt-20">
+        <section id="features" className="py-8 sm:py-12 bg-zinc-900/50 border-y border-zinc-800 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               <div className="flex items-start gap-4 p-4 rounded-2xl bg-purple-950/20 border border-purple-900/30">
                 <Feature3DCanvas type="shield" />
                 <div>

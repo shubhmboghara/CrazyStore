@@ -308,7 +308,41 @@ console.log('Running automated test suite for CrazyStore UI/UX & Modern Web Guid
   console.log('✓ Test 19 Passed: WAI-ARIA APG Arrow Key Navigation for Details Tabs verified');
 }
 
-console.log('\n🎉 ALL 19 UI/UX & DEEP FRICTION-FREE PLATFORM TEST SUITES PASSED WITH 100% SUCCESS!\n');
+// 20. Verify Mobile & Tablet Touch-Scrolling (touchAction: pan-y and Card3DTilt canHover)
+{
+  const heroPath = path.join(rootDir, 'components', 'three', 'Hero3DExperience.tsx');
+  const shotsPath = path.join(rootDir, 'components', 'three', 'Screenshots3DPhoneView.tsx');
+  const tiltPath = path.join(rootDir, 'components', 'three', 'Card3DTilt.tsx');
+
+  const hero = fs.readFileSync(heroPath, 'utf8');
+  assert.ok(hero.includes("touchAction: 'pan-y'"), 'Hero3DExperience must set touchAction: pan-y so mobile users can scroll vertically');
+  assert.ok(hero.includes("pointerType === 'touch'"), 'Hero3DExperience must detect touch pointer for smooth scroll pass-through');
+
+  const shots = fs.readFileSync(shotsPath, 'utf8');
+  assert.ok(shots.includes("touchAction: 'pan-y'"), 'Screenshots3DPhoneView must set touchAction: pan-y to prevent mobile gesture jamming');
+
+  const tilt = fs.readFileSync(tiltPath, 'utf8');
+  assert.ok(tilt.includes('canHover'), 'Card3DTilt must respect canHover to prevent awkward 3D tilt jumps on mobile/tablet touchscreens');
+
+  console.log('✓ Test 20 Passed: Mobile and tablet touch-scrolling (pan-y) and touch tilt suppression verified');
+}
+
+// 21. Verify Tablet (md: 768px+) 2-Column Responsive Layouts
+{
+  const homePath = path.join(rootDir, 'components', 'HomeClient.tsx');
+  const detailPath = path.join(rootDir, 'components', 'AppDetailClient.tsx');
+
+  const home = fs.readFileSync(homePath, 'utf8');
+  assert.ok(home.includes('md:grid-cols-12'), 'HomeClient must enable 2-column layout on tablet viewports (md: 768px+)');
+
+  const detail = fs.readFileSync(detailPath, 'utf8');
+  assert.ok(detail.includes('md:grid-cols-12'), 'AppDetailClient must enable 2-column layout on tablet viewports (md: 768px+)');
+  assert.ok(detail.includes('md:col-span-7') || detail.includes('md:col-span-8'), 'AppDetailClient main content must scale on tablet');
+
+  console.log('✓ Test 21 Passed: Tablet 2-column responsive layout architectures verified');
+}
+
+console.log('\n🎉 ALL 21 UI/UX & DEEP FRICTION-FREE PLATFORM TEST SUITES PASSED WITH 100% SUCCESS!\n');
 
 
 

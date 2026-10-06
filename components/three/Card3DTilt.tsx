@@ -33,6 +33,7 @@ export function Card3DTilt({
     background: 'radial-gradient(circle at 50% 50%, rgba(192, 132, 252, 0.4), transparent 60%)',
   });
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [canHover, setCanHover] = useState(true);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -40,13 +41,22 @@ export function Card3DTilt({
       setPrefersReducedMotion(media.matches);
       const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
       media.addEventListener('change', listener);
-      return () => media.removeEventListener('change', listener);
+
+      const hoverMedia = window.matchMedia('(hover: hover) and (pointer: fine)');
+      setCanHover(hoverMedia.matches);
+      const hoverListener = (e: MediaQueryListEvent) => setCanHover(e.matches);
+      hoverMedia.addEventListener('change', hoverListener);
+
+      return () => {
+        media.removeEventListener('change', listener);
+        hoverMedia.removeEventListener('change', hoverListener);
+      };
     }
   }, []);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (prefersReducedMotion || !cardRef.current) return;
+      if (prefersReducedMotion || !canHover || !cardRef.current) return;
 
       const rect = cardRef.current.getBoundingClientRect();
       const clientX = e.clientX;

@@ -191,7 +191,8 @@ export function Navbar() {
                   : 'text-zinc-300 hover:bg-zinc-900'
               }`}
             >
-              🛍️ Storefront &amp; Discover
+              <Layers className="w-4 h-4 text-purple-400" />
+              <span>Storefront &amp; Discover</span>
             </Link>
 
             <Link
@@ -217,7 +218,8 @@ export function Navbar() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-purple-300 bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800/40 min-h-[48px]"
             >
-              📱 3D Device Studio
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              <span>3D Device Studio</span>
             </Link>
           </div>
         </>
