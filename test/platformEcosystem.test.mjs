@@ -123,11 +123,11 @@ const appsDataContent = fs.readFileSync(appsDataPath, 'utf8');
   }
 
   const rawDbRecord = {
-    slug: 'aegis-authenticator',
-    name: 'Aegis Authenticator',
+    slug: 'videohub',
+    name: 'VideoHub',
     license: 'GPL-3.0',
     trackers_count: 0,
-    sha256: '4a1e945c71b3e70cf23282f1b40283b91a7e283281057e62a04879b698293671',
+    sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     permissions: JSON.stringify([{ name: 'CAMERA', description: 'Scan QR' }]),
     changelog: JSON.stringify([{ version: 'v3.2.1', date: '2026', notes: ['Vault sync'] }]),
     architectures: JSON.stringify(['arm64-v8a', 'x86_64']),
@@ -136,7 +136,7 @@ const appsDataContent = fs.readFileSync(appsDataPath, 'utf8');
   const normalized = normalizeAppRecord(rawDbRecord);
   assert.strictEqual(normalized.license, 'GPL-3.0');
   assert.strictEqual(normalized.trackersCount, 0);
-  assert.strictEqual(normalized.sha256, '4a1e945c71b3e70cf23282f1b40283b91a7e283281057e62a04879b698293671');
+  assert.strictEqual(normalized.sha256, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
   assert.strictEqual(normalized.permissions.length, 1);
   assert.strictEqual(normalized.changelog.length, 1);
   assert.deepStrictEqual(normalized.architectures, ['arm64-v8a', 'x86_64']);
