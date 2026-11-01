@@ -74,7 +74,7 @@ export const ANDROID_APPS: AndroidApp[] = [
     iconSymbol: 'play',
     badge: 'Kotlin + Compose',
     techStack: ['Kotlin 2.0', 'Jetpack Compose', 'Coroutines', 'ExoPlayer', 'Material 3', 'Ktor'],
-    downloadUrl: 'https://drive.google.com/uc?export=download&id=1sFcDuM0OEzCq2c9FEXilhcP0IbIymW3E',
+    downloadUrl: 'https://drive.google.com/uc?export=download&id=1eA8aA9LR-tXARe2efn9NbQjCxW8YjY2a',
     githubUrl: 'https://github.com/shubhmboghara/CrazyStore',
     license: 'GPL-3.0',
     trackersCount: 0,
@@ -122,7 +122,7 @@ export const ANDROID_APPS: AndroidApp[] = [
       }
     ],
     mirrors: [
-      { name: 'Primary Google Drive CDN', url: 'https://drive.google.com/uc?export=download&id=1sFcDuM0OEzCq2c9FEXilhcP0IbIymW3E', type: 'direct' },
+      { name: 'Primary Google Drive CDN', url: 'https://drive.google.com/uc?export=download&id=1eA8aA9LR-tXARe2efn9NbQjCxW8YjY2a', type: 'direct' },
       { name: 'GitHub Releases Mirror', url: 'https://github.com/shubhmboghara/CrazyStore/releases', type: 'github' }
     ],
     screenshots: [
