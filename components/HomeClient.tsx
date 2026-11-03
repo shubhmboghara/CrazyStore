@@ -40,6 +40,7 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Tag,
+  Star,
 } from 'lucide-react';
 import {
   HighlightedText,
@@ -56,25 +57,33 @@ function AppLogoImage({
   fallback,
   className = "w-full h-full object-cover",
 }: {
-  src: string;
+  src?: string;
   alt: string;
   fallback: React.ReactNode;
   className?: string;
 }) {
+  const [currentSrc, setCurrentSrc] = useState<string | undefined>(src || '/videohub-logo.png');
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    setCurrentSrc(src || '/videohub-logo.png');
     setHasError(false);
   }, [src]);
 
-  if (hasError || !src) {
+  if (hasError || !currentSrc) {
     return <>{fallback}</>;
   }
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={alt}
-      onError={() => setHasError(true)}
+      onError={() => {
+        if (currentSrc !== '/videohub-logo.png') {
+          setCurrentSrc('/videohub-logo.png');
+        } else {
+          setHasError(true);
+        }
+      }}
       className={className}
     />
   );
@@ -95,6 +104,25 @@ export function HomeClient({
   const [quickFilter, setQuickFilter] = useState<QuickFilterOption>('all');
   const [ratingsMap, setRatingsMap] = useState<Record<string, { avg: number; count: number }>>(initialRatingsMap);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchDropdownRef = useRef<HTMLDivElement>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchInputRef.current &&
+        !searchInputRef.current.contains(e.target as Node) &&
+        searchDropdownRef.current &&
+        !searchDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const [categories, setCategories] = useState<string[]>(() => {
     const uniqueCats = new Set<string>();
@@ -454,9 +482,16 @@ export function HomeClient({
                     value={searchQuery}
                     autoComplete="off"
                     spellCheck="false"
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsSearchFocused(true);
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === 'Escape') setSearchQuery('');
+                      if (e.key === 'Escape') {
+                        setSearchQuery('');
+                        setIsSearchFocused(false);
+                      }
                     }}
                     placeholder="Search by name, tag, or tech..."
                     className="w-full py-2.5 pr-20 bg-transparent text-zinc-100 placeholder-zinc-500 text-sm sm:text-xs focus:outline-hidden"
@@ -469,6 +504,7 @@ export function HomeClient({
                         type="button"
                         onClick={() => {
                           setSearchQuery('');
+                          setIsSearchFocused(false);
                           searchInputRef.current?.focus();
                         }}
                         className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 cursor-pointer transition-colors"
@@ -483,6 +519,101 @@ export function HomeClient({
                     )}
                   </div>
                 </div>
+
+                {/* Instant Autocomplete / Live Search Preview Dropdown */}
+                {isSearchFocused && searchQuery.trim().length > 0 && (
+                  <div
+                    ref={searchDropdownRef}
+                    className="absolute left-0 right-0 top-full mt-2 z-40 p-2 rounded-2xl bg-zinc-950/95 border border-zinc-800 shadow-2xl shadow-purple-950/50 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150"
+                  >
+                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-900 text-[11px] text-zinc-400 font-semibold">
+                      <span className="flex items-center gap-1.5 text-purple-300">
+                        <Sparkles className="w-3 h-3 text-purple-400" />
+                        <span>Matching Applications ({filteredApps.length})</span>
+                      </span>
+                      <span className="text-[10px] text-zinc-500 font-mono">ESC to dismiss</span>
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto space-y-1 p-1">
+                      {filteredApps.length > 0 ? (
+                        filteredApps.slice(0, 5).map((app) => (
+                          <Link
+                            key={app.slug}
+                            href={`/apps/${app.slug}`}
+                            onClick={() => {
+                              setIsSearchFocused(false);
+                              trackEvent({
+                                eventType: 'app_view',
+                                appSlug: app.slug,
+                                appName: app.name,
+                                path: `/apps/${app.slug}`,
+                                details: `Live Search dropdown opened: ${app.name}`,
+                              });
+                            }}
+                            className="flex items-center justify-between p-2.5 rounded-xl hover:bg-zinc-900/90 border border-transparent hover:border-purple-800/40 text-zinc-300 hover:text-white transition-all cursor-pointer group/item"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className={`w-10 h-10 rounded-xl bg-gradient-to-br ${
+                                  app.iconBg || 'from-purple-600 to-indigo-600'
+                                } flex items-center justify-center text-white shrink-0 shadow-md ring-1 ring-white/10 overflow-hidden relative`}
+                              >
+                                <AppLogoImage
+                                  key={app.logoUrl || app.slug}
+                                  src={app.logoUrl || (app.slug === 'videohub' ? '/videohub-logo.png' : undefined)}
+                                  alt={app.name}
+                                  fallback={getIconComponent(app.iconSymbol)}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-xs text-zinc-100 truncate">
+                                    <HighlightedText text={app.name} query={searchQuery} />
+                                  </span>
+                                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-zinc-900 text-zinc-400 border border-zinc-800 shrink-0">
+                                    {app.version}
+                                  </span>
+                                  {app.initialRating && (
+                                    <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-amber-950/70 text-amber-300 border border-amber-800/40 flex items-center gap-0.5 shrink-0">
+                                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                                      <span>{app.initialRating.toFixed(1)}</span>
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-zinc-400 truncate mt-0.5">
+                                  <HighlightedText text={app.tagline || app.shortDescription} query={searchQuery} />
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="p-1 rounded-lg text-zinc-500 group-hover/item:text-purple-400 group-hover/item:translate-x-0.5 transition-all">
+                              <ChevronRight className="w-4 h-4" />
+                            </div>
+                          </Link>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center space-y-2">
+                          <p className="text-xs text-zinc-400">
+                            No apps found for &ldquo;{searchQuery}&rdquo; in &ldquo;{selectedCategory}&rdquo;.
+                          </p>
+                          {selectedCategory !== 'All' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory('All');
+                                setQuickFilter('all');
+                              }}
+                              className="px-3 py-1 rounded-lg bg-purple-950 text-purple-300 border border-purple-800/50 text-[11px] font-bold hover:bg-purple-900/60 transition-colors cursor-pointer"
+                            >
+                              Search across All Categories
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Sort Dropdown Selector */}
@@ -739,10 +870,10 @@ export function HomeClient({
 
                     <div className="flex items-start justify-between mb-6 relative z-10">
                       <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} flex items-center justify-center shadow-lg shadow-purple-500/20 transform group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 shrink-0 overflow-hidden`}>
-                        {app.logoUrl ? (
+                        {app.logoUrl || app.slug === 'videohub' ? (
                           <AppLogoImage
                             key={app.logoUrl || app.slug}
-                            src={app.logoUrl}
+                            src={app.logoUrl || '/videohub-logo.png'}
                             alt={app.name}
                             fallback={getIconComponent(app.iconSymbol)}
                           />

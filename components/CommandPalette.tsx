@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   History,
   Trash2,
-  Bookmark,
   Star,
   ExternalLink,
   Tag,
@@ -33,16 +32,68 @@ interface CommandPaletteProps {
   apps?: AndroidApp[];
 }
 
+function CommandPaletteAppLogo({ app }: { app: AndroidApp }) {
+  const [imgSrc, setImgSrc] = useState<string | null>(
+    app.logoUrl || (app.slug === 'videohub' ? '/videohub-logo.png' : null)
+  );
+
+  useEffect(() => {
+    setImgSrc(app.logoUrl || (app.slug === 'videohub' ? '/videohub-logo.png' : null));
+  }, [app.logoUrl, app.slug]);
+
+  if (imgSrc) {
+    return (
+      <img
+        src={imgSrc}
+        alt={app.name}
+        className="w-full h-full object-cover"
+        onError={() => {
+          if (imgSrc !== '/videohub-logo.png') {
+            setImgSrc('/videohub-logo.png');
+          } else {
+            setImgSrc(null);
+          }
+        }}
+      />
+    );
+  }
+
+  return <Smartphone className="w-5 h-5 text-white" />;
+}
+
 export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: CommandPaletteProps) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  const [activeApps, setActiveApps] = useState<AndroidApp[]>(apps);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  useEffect(() => {
+    setActiveApps(apps);
+  }, [apps]);
+
+  // Sync with live database apps on modal open
+  useEffect(() => {
+    if (isOpen) {
+      let isSubscribed = true;
+      fetch('/api/apps')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (isSubscribed && data && Array.isArray(data.apps) && data.apps.length > 0) {
+            setActiveApps(data.apps);
+          }
+        })
+        .catch(() => {});
+      return () => {
+        isSubscribed = false;
+      };
+    }
+  }, [isOpen]);
 
   // Refresh recent searches when opening dialog
   useEffect(() => {
@@ -74,24 +125,24 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
   // Categories list with counts
   const categoriesWithCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    apps.forEach((a) => {
+    activeApps.forEach((a) => {
       if (a.category) {
         counts.set(a.category, (counts.get(a.category) || 0) + 1);
       }
     });
     return [
-      { name: 'All', count: apps.length },
+      { name: 'All', count: activeApps.length },
       ...Array.from(counts.entries()).map(([name, count]) => ({ name, count })),
     ];
-  }, [apps]);
+  }, [activeApps]);
 
   // Filtered and ranked apps
   const filteredApps = useMemo(() => {
-    return filterApps(apps, {
+    return filterApps(activeApps, {
       query,
       category: selectedCategory,
     });
-  }, [apps, query, selectedCategory]);
+  }, [activeApps, query, selectedCategory]);
 
   // Keep selected index bounded
   useEffect(() => {
@@ -114,6 +165,9 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
       }
       onClose();
       router.push(`/apps/${slug}`);
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     },
     [onClose, query, router]
   );
@@ -159,6 +213,11 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
   return (
     <dialog
       ref={dialogRef}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) {
+          onClose();
+        }
+      }}
       onClose={onClose}
       onKeyDown={handleKeyDown}
       className="fixed inset-0 m-auto z-50 p-0 rounded-3xl bg-zinc-950/95 border border-zinc-800 text-white max-w-2xl w-[94vw] shadow-2xl shadow-purple-950/40 backdrop:bg-black/80 backdrop:backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-150"
@@ -327,9 +386,9 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
                     <div
                       className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${
                         app.iconBg || 'from-purple-600 to-indigo-600'
-                      } flex items-center justify-center text-white shrink-0 shadow-md ring-1 ring-white/10`}
+                      } flex items-center justify-center text-white shrink-0 shadow-md ring-1 ring-white/10 overflow-hidden relative`}
                     >
-                      <Smartphone className="w-5 h-5" />
+                      <CommandPaletteAppLogo app={app} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">

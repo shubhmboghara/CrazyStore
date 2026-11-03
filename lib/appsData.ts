@@ -121,6 +121,7 @@ export const ANDROID_APPS: AndroidApp[] = [
         ]
       }
     ],
+    logoUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/logo_RKSbJJFtA.svg',
     mirrors: [
       { name: 'Primary Google Drive CDN', url: 'https://drive.google.com/uc?export=download&id=1eA8aA9LR-tXARe2efn9NbQjCxW8YjY2a', type: 'direct' },
       { name: 'GitHub Releases Mirror', url: 'https://github.com/shubhmboghara/CrazyStore/releases', type: 'github' }
