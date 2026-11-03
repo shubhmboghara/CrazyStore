@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { isWebGLAvailable, disposeThreeScene } from '@/lib/threeUtils';
+import { isWebGLAvailable, disposeThreeScene, createRoundedRectGeometry } from '@/lib/threeUtils';
 import { AndroidApp } from '@/lib/appsData';
 import { Maximize2, RotateCcw, ChevronLeft, ChevronRight, Smartphone } from 'lucide-react';
 
@@ -13,49 +13,6 @@ interface Screenshots3DPhoneViewProps {
   activeIdx: number;
   onSelectScreenshot: (idx: number) => void;
   onOpenLightbox: (idx: number) => void;
-}
-
-/**
- * Creates a 2D rounded rectangle Shape in Three.js
- */
-function createRoundedRectShape(w: number, h: number, r: number): THREE.Shape {
-  const shape = new THREE.Shape();
-  const x = -w / 2;
-  const y = -h / 2;
-  const radius = Math.min(r, w / 2, h / 2);
-
-  shape.moveTo(x + radius, y);
-  shape.lineTo(x + w - radius, y);
-  shape.absarc(x + w - radius, y + radius, radius, -Math.PI / 2, 0, false);
-  shape.lineTo(x + w, y + h - radius);
-  shape.absarc(x + w - radius, y + h - radius, radius, 0, Math.PI / 2, false);
-  shape.lineTo(x + radius, y + h);
-  shape.absarc(x + radius, y + h - radius, radius, Math.PI / 2, Math.PI, false);
-  shape.lineTo(x, y + radius);
-  shape.absarc(x + radius, y + radius, radius, Math.PI, Math.PI * 1.5, false);
-
-  return shape;
-}
-
-/**
- * Generates a BufferGeometry for a rounded rectangle with normalized UVs (0..1)
- */
-function createRoundedRectGeometry(w: number, h: number, r: number, segments = 16): THREE.BufferGeometry {
-  const shape = createRoundedRectShape(w, h, r);
-  const geo = new THREE.ShapeGeometry(shape, segments);
-  const pos = geo.attributes.position;
-  const uvs = new Float32Array(pos.count * 2);
-
-  for (let i = 0; i < pos.count; i++) {
-    const px = pos.getX(i);
-    const py = pos.getY(i);
-    uvs[i * 2] = (px + w / 2) / w;
-    uvs[i * 2 + 1] = (py + h / 2) / h;
-  }
-
-  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  geo.computeVertexNormals();
-  return geo;
 }
 
 // Helper to determine if an intersected 3D mesh is a child of a specific group
@@ -73,13 +30,16 @@ function ScreenshotThumbnailItem({
   screenshot,
   idx,
   isSelected,
+  appSlug,
   onClick,
 }: {
   screenshot: any;
   idx: number;
   isSelected: boolean;
+  appSlug?: string;
   onClick: () => void;
 }) {
+  const isVideohub = appSlug?.toLowerCase() === 'videohub';
   const fallbackPngs = [
     '/screenshots/videohub-feed.png',
     '/screenshots/videohub-player.png',
@@ -103,11 +63,13 @@ function ScreenshotThumbnailItem({
     const list: string[] = [];
     if (screenshot?.imageUrl) list.push(screenshot.imageUrl);
     if (screenshot?.url && screenshot.url !== screenshot.imageUrl) list.push(screenshot.url);
-    list.push(imageKitUrls[idx % imageKitUrls.length]);
-    list.push(fallbackPngs[idx % fallbackPngs.length]);
-    list.push(fallbackSvgs[idx % fallbackSvgs.length]);
+    if (isVideohub) {
+      list.push(imageKitUrls[idx % imageKitUrls.length]);
+      list.push(fallbackPngs[idx % fallbackPngs.length]);
+      list.push(fallbackSvgs[idx % fallbackSvgs.length]);
+    }
     return Array.from(new Set(list.filter(Boolean)));
-  }, [screenshot?.imageUrl, screenshot?.url, idx]);
+  }, [screenshot?.imageUrl, screenshot?.url, idx, isVideohub]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
   const [hasError, setHasError] = useState(false);
@@ -301,6 +263,7 @@ export function Screenshots3DPhoneView({
     (url: string, targetIdx: number, callback: (t: THREE.Texture) => void) => {
       if (!textureLoaderRef.current) return;
 
+      const isVideohub = app.slug?.toLowerCase() === 'videohub';
       const fallbackPngs = [
         '/screenshots/videohub-feed.png',
         '/screenshots/videohub-player.png',
@@ -322,9 +285,11 @@ export function Screenshots3DPhoneView({
 
       const candidates: string[] = [];
       if (url) candidates.push(url);
-      candidates.push(imageKitUrls[targetIdx % imageKitUrls.length]);
-      candidates.push(fallbackPngs[targetIdx % fallbackPngs.length]);
-      candidates.push(fallbackSvgs[targetIdx % fallbackSvgs.length]);
+      if (isVideohub) {
+        candidates.push(imageKitUrls[targetIdx % imageKitUrls.length]);
+        candidates.push(fallbackPngs[targetIdx % fallbackPngs.length]);
+        candidates.push(fallbackSvgs[targetIdx % fallbackSvgs.length]);
+      }
       const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
 
       const tryLoad = (idxToLoad: number) => {
@@ -1129,6 +1094,7 @@ export function Screenshots3DPhoneView({
               screenshot={s}
               idx={idx}
               isSelected={idx === activeIdx}
+              appSlug={app.slug}
               onClick={() => {
                 hasUserManuallySelected.current = true;
                 onSelectScreenshot(idx);

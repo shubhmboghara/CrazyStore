@@ -55,13 +55,15 @@ export default async function HomePage() {
     appsMap.set(app.slug.toLowerCase(), normalizeAppRecord({ ...app }));
   }
 
-  // 2. Override only known curated apps from DB (keeps store clean, avoids test/unwanted apps)
+  // 2. Merge database apps (override curated apps or include newly published apps from DB)
   for (const dbApp of dbApps) {
     if (dbApp && dbApp.slug) {
       const key = dbApp.slug.toLowerCase();
       if (appsMap.has(key)) {
         const baseApp = appsMap.get(key);
         appsMap.set(key, mergeAppWithDefaults(baseApp, dbApp));
+      } else {
+        appsMap.set(key, normalizeAppRecord(dbApp));
       }
     }
   }

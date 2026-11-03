@@ -1,11 +1,35 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import * as THREE from 'three';
-import { isWebGLAvailable, disposeThreeScene, drawAndroidScreenCanvas } from '@/lib/threeUtils';
-import { AndroidApp, ANDROID_APPS } from '@/lib/appsData';
+import {
+  isWebGLAvailable,
+  disposeThreeScene,
+  drawAndroidScreenCanvas,
+  createRoundedRectGeometry,
+} from '@/lib/threeUtils';
+import { AndroidApp } from '@/lib/appsData';
 import { normalizeAppRecord } from '@/lib/appUtils';
-import { Smartphone } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
+  RotateCcw,
+  Smartphone,
+  ExternalLink,
+  Sparkles,
+} from 'lucide-react';
+
+export interface ShowcaseScreenshot {
+  id: string;
+  url: string;
+  imageUrl?: string;
+  title: string;
+  subtitle?: string;
+  type?: string;
+}
 
 export interface ShowcaseApp {
   slug: string;
@@ -17,7 +41,7 @@ export interface ShowcaseApp {
   color1: string;
   color2: string;
   tagline: string;
-  screenshotUrl?: string | null;
+  screenshots: ShowcaseScreenshot[];
 }
 
 const SHOWCASE_PALETTES = [
@@ -30,16 +54,64 @@ const SHOWCASE_PALETTES = [
   { color1: '#14b8a6', color2: '#8b5cf6' }, // Teal -> Violet
 ];
 
+const VIDEOHUB_FALLBACK_SCREENSHOTS: ShowcaseScreenshot[] = [
+  {
+    id: '1',
+    title: 'Trending Feed & Discovery',
+    subtitle: 'Fluid 120Hz Jetpack Compose LazyColumn with real-time video previews',
+    url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
+    imageUrl: '/screenshots/videohub-feed.png',
+    type: 'feed',
+  },
+  {
+    id: '2',
+    title: 'Immersive 4K ExoPlayer',
+    subtitle: 'Hardware-accelerated 4K 60fps playback with live SponsorBlock skip markers',
+    url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
+    imageUrl: '/screenshots/videohub-player.png',
+    type: 'player',
+  },
+  {
+    id: '3',
+    title: 'Background Audio & Lockscreen',
+    subtitle: 'AMOLED lockscreen controller, 320kbps Opus Hi-Fi audio & visualizer',
+    url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
+    imageUrl: '/screenshots/videohub-audio.png',
+    type: 'stats',
+  },
+  {
+    id: '4',
+    title: 'Material You & Settings',
+    subtitle: 'Android 15 Dynamic Color palettes & granular SponsorBlock filters',
+    url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
+    imageUrl: '/screenshots/videohub-settings.png',
+    type: 'settings',
+  },
+];
+
 export function toShowcaseApp(app: any, index: number = 0): ShowcaseApp {
   const palette = SHOWCASE_PALETTES[index % SHOWCASE_PALETTES.length];
 
-  let screenshotUrl: string | null = null;
+  const screenshots: ShowcaseScreenshot[] = [];
   if (Array.isArray(app.screenshots) && app.screenshots.length > 0) {
-    const s = app.screenshots[0];
-    const raw = typeof s === 'string' ? s : (s?.imageUrl || s?.url || null);
-    if (raw && typeof raw === 'string' && raw.trim()) {
-      screenshotUrl = raw.trim();
-    }
+    app.screenshots.forEach((s: any, sIdx: number) => {
+      const rawUrl = typeof s === 'string' ? s : (s?.imageUrl || s?.url || '');
+      if (rawUrl && typeof rawUrl === 'string' && rawUrl.trim()) {
+        screenshots.push({
+          id: s?.id || `screenshot-${sIdx + 1}`,
+          url: rawUrl.trim(),
+          imageUrl: typeof s === 'object' && s?.imageUrl ? s.imageUrl.trim() : rawUrl.trim(),
+          title: s?.title || `Screen ${sIdx + 1}`,
+          subtitle: s?.subtitle || '',
+          type: s?.type || '',
+        });
+      }
+    });
+  }
+
+  // If app is videohub and has no screenshots, supply the 4 authentic screenshots
+  if (app.slug === 'videohub' && screenshots.length === 0) {
+    screenshots.push(...VIDEOHUB_FALLBACK_SCREENSHOTS);
   }
 
   return {
@@ -52,7 +124,7 @@ export function toShowcaseApp(app: any, index: number = 0): ShowcaseApp {
     color1: palette.color1,
     color2: palette.color2,
     tagline: app.tagline || app.shortDescription || 'Modern Native Android Jetpack Compose Application',
-    screenshotUrl,
+    screenshots,
   };
 }
 
@@ -67,31 +139,7 @@ const DEFAULT_FALLBACK_APPS: ShowcaseApp[] = [
     color1: '#8b5cf6',
     color2: '#6366f1',
     tagline: 'Ad-Free High-Definition Player for Android',
-    screenshotUrl: '/screenshots/videohub-feed.svg',
-  },
-  {
-    slug: 'audioforge',
-    name: 'AudioForge',
-    category: 'Music & Audio',
-    badge: 'Modern Jetpack M3',
-    version: 'v2.1.0',
-    rating: 5.0,
-    color1: '#ec4899',
-    color2: '#8b5cf6',
-    tagline: 'Lossless Hi-Res Audio Engine & Visualizer',
-    screenshotUrl: null,
-  },
-  {
-    slug: 'fittrack-pro',
-    name: 'FitTrack Pro',
-    category: 'Health & Fitness',
-    badge: 'Room + Coroutines',
-    version: 'v1.0.8',
-    rating: 4.8,
-    color1: '#10b981',
-    color2: '#06b6d4',
-    tagline: 'Zero-Telemetry Native Workout Companion',
-    screenshotUrl: null,
+    screenshots: VIDEOHUB_FALLBACK_SCREENSHOTS,
   },
 ];
 
@@ -104,13 +152,15 @@ interface Hero3DExperienceProps {
 export function Hero3DExperience({
   onExploreClick,
   apps,
-  cycleIntervalMs = 10000, // 10s calculated optimal showcase duration
+  cycleIntervalMs = 4000, // 4s optimal per-screenshot showcase duration
 }: Hero3DExperienceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [hasWebGL, setHasWebGL] = useState<boolean>(true);
   const [activeAppIdx, setActiveAppIdx] = useState<number>(0);
+  const [activeScreenshotIdx, setActiveScreenshotIdx] = useState<number>(0);
+  const [isAutoPlay, setIsAutoPlay] = useState<boolean>(true);
   const [internalApps, setInternalApps] = useState<AndroidApp[]>([]);
 
   // Fallback fetch in case Hero3DExperience is used standalone without apps prop
@@ -147,28 +197,25 @@ export function Hero3DExperience({
     return DEFAULT_FALLBACK_APPS;
   }, [apps, internalApps]);
 
-  // Keep index within bounds if apps list changes dynamically
+  const currentApp = showcaseApps[activeAppIdx] || showcaseApps[0] || DEFAULT_FALLBACK_APPS[0];
+  const totalScreenshots = currentApp?.screenshots?.length || 0;
+  const currentScreenshot = totalScreenshots > 0 ? currentApp.screenshots[activeScreenshotIdx] : null;
+
+  // Keep indices in valid bounds if apps list changes
   useEffect(() => {
     if (activeAppIdx >= showcaseApps.length && showcaseApps.length > 0) {
       setActiveAppIdx(0);
+      setActiveScreenshotIdx(0);
     }
   }, [showcaseApps.length, activeAppIdx]);
 
-  // Auto-cycle through all synchronized apps every N seconds
   useEffect(() => {
-    if (showcaseApps.length <= 1) return;
+    if (activeScreenshotIdx >= totalScreenshots && totalScreenshots > 0) {
+      setActiveScreenshotIdx(0);
+    }
+  }, [totalScreenshots, activeScreenshotIdx]);
 
-    const interval = setInterval(() => {
-      // Pause advancing if user is actively dragging the 3D model
-      if (!isDraggingRef.current) {
-        setActiveAppIdx((prev) => (prev + 1) % showcaseApps.length);
-      }
-    }, cycleIntervalMs);
-
-    return () => clearInterval(interval);
-  }, [showcaseApps.length, cycleIntervalMs]);
-
-  // References for Three.js state
+  // Three.js References
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const phoneGroupRef = useRef<THREE.Group | null>(null);
@@ -179,57 +226,230 @@ export function Hero3DExperience({
   const neonLightRef = useRef<THREE.PointLight | null>(null);
   const cyanLightRef = useRef<THREE.PointLight | null>(null);
 
-  // Mouse / Drag state
+  // Mesh & Material references for direct texture swaps
+  const textureLoaderRef = useRef<THREE.TextureLoader | null>(null);
+  const textureCacheRef = useRef<Map<string, THREE.Texture>>(new Map());
+  const screenMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const screenMeshRef = useRef<THREE.Mesh | null>(null);
+
+  // Mouse & Gesture interaction state
   const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
   const isDraggingRef = useRef(false);
+  const pointerDownPos = useRef({ x: 0, y: 0, time: 0 });
   const previousPointerPosition = useRef({ x: 0, y: 0 });
   const rotationVelocityRef = useRef({ x: 0, y: 0 });
+  const prevActiveScreenshotRef = useRef<number>(0);
 
-  // Update screen canvas texture when active app changes
-  const updateScreenTexture = useCallback((app: ShowcaseApp) => {
-    if (!screenCanvasRef.current || !screenTextureRef.current) return;
+  // Physical dimension constants for phone model
+  const phoneWidth = 2.45;
+  const phoneHeight = 4.95;
+  const phoneDepth = 0.22;
+  const screenW = phoneWidth - 0.12; // 2.33
+  const screenH = phoneHeight - 0.14; // 4.81
 
-    const renderToCanvas = (previewImg: HTMLImageElement | null = null) => {
-      if (!screenCanvasRef.current || !screenTextureRef.current) return;
-      drawAndroidScreenCanvas(screenCanvasRef.current, {
-        appName: app.name,
-        tagline: app.tagline,
-        category: app.category,
-        badge: app.badge,
-        version: app.version,
-        rating: app.rating,
-        accentColor: app.color1,
-        secondaryColor: app.color2,
-        previewImage: previewImg,
-      });
-      screenTextureRef.current.needsUpdate = true;
-    };
+  // Dynamic aspect ratio contain fitting so screenshots are never distorted
+  const adjustMeshAspect = useCallback((mesh: THREE.Mesh | null, texture: THREE.Texture, maxW: number, maxH: number) => {
+    if (!mesh || !texture.image) return;
+    const img = texture.image as any;
+    const imgW = typeof img.naturalWidth === 'number' && img.naturalWidth > 0 ? img.naturalWidth : (img.width || 0);
+    const imgH = typeof img.naturalHeight === 'number' && img.naturalHeight > 0 ? img.naturalHeight : (img.height || 0);
+    if (imgW <= 0 || imgH <= 0) return;
 
-    if (app.screenshotUrl) {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => renderToCanvas(img);
-      img.onerror = () => renderToCanvas(null);
-      img.src = app.screenshotUrl;
+    const imgAspect = imgW / imgH;
+    const maxAspect = maxW / maxH;
+
+    if (imgAspect > maxAspect) {
+      const fitH = maxW / imgAspect;
+      mesh.scale.set(1, fitH / maxH, 1);
     } else {
-      renderToCanvas(null);
+      const fitW = maxH * imgAspect;
+      mesh.scale.set(fitW / maxW, 1, 1);
+    }
+  }, []);
+
+  // Texture loader helper with multi-tier candidate resolution
+  const loadScreenshotTexture = useCallback(
+    (appSlug: string, screenshot: ShowcaseScreenshot, sIdx: number, callback?: (tex: THREE.Texture) => void) => {
+      if (!textureLoaderRef.current) return;
+
+      const candidates: string[] = [];
+      if (screenshot.imageUrl) candidates.push(screenshot.imageUrl);
+      if (screenshot.url && screenshot.url !== screenshot.imageUrl) candidates.push(screenshot.url);
+
+      if (appSlug.toLowerCase() === 'videohub') {
+        const localPngs = [
+          '/screenshots/videohub-feed.png',
+          '/screenshots/videohub-player.png',
+          '/screenshots/videohub-audio.png',
+          '/screenshots/videohub-settings.png',
+        ];
+        const ikUrls = [
+          'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
+          'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
+          'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
+          'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
+        ];
+        candidates.push(localPngs[sIdx % localPngs.length]);
+        candidates.push(ikUrls[sIdx % ikUrls.length]);
+      }
+
+      const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
+      if (uniqueCandidates.length === 0) return;
+
+      const cacheKey = `${appSlug}-${sIdx}-${uniqueCandidates[0]}`;
+      const cached = textureCacheRef.current.get(cacheKey);
+      if (cached) {
+        callback?.(cached);
+        return;
+      }
+
+      const tryLoad = (idx: number) => {
+        if (idx >= uniqueCandidates.length || !textureLoaderRef.current) return;
+        const urlToTry = uniqueCandidates[idx];
+
+        textureLoaderRef.current.load(
+          urlToTry,
+          (texture) => {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.generateMipmaps = false;
+            texture.needsUpdate = true;
+            textureCacheRef.current.set(cacheKey, texture);
+            callback?.(texture);
+          },
+          undefined,
+          () => {
+            tryLoad(idx + 1);
+          }
+        );
+      };
+
+      tryLoad(0);
+    },
+    []
+  );
+
+  // Apply texture to screen mesh
+  const applyTextureToScreen = useCallback(
+    (texture: THREE.Texture) => {
+      if (!screenMatRef.current) return;
+      screenMatRef.current.map = texture;
+      screenMatRef.current.color.set(0xffffff);
+      screenMatRef.current.needsUpdate = true;
+      adjustMeshAspect(screenMeshRef.current, texture, screenW, screenH);
+    },
+    [adjustMeshAspect, screenW, screenH]
+  );
+
+  // Preload all screenshots for the active app into texture cache
+  useEffect(() => {
+    if (!textureLoaderRef.current || !currentApp?.screenshots) return;
+    currentApp.screenshots.forEach((s, idx) => {
+      loadScreenshotTexture(currentApp.slug, s, idx);
+    });
+  }, [currentApp, loadScreenshotTexture]);
+
+  // Update screen texture whenever active app or active screenshot changes
+  useEffect(() => {
+    if (!currentApp) return;
+
+    if (totalScreenshots > 0 && currentScreenshot) {
+      loadScreenshotTexture(currentApp.slug, currentScreenshot, activeScreenshotIdx, (tex) => {
+        applyTextureToScreen(tex);
+      });
+    } else {
+      // Fallback: draw Android Screen Canvas if app has 0 screenshots
+      if (screenCanvasRef.current && screenTextureRef.current && screenMatRef.current) {
+        drawAndroidScreenCanvas(screenCanvasRef.current, {
+          appName: currentApp.name,
+          tagline: currentApp.tagline,
+          category: currentApp.category,
+          badge: currentApp.badge,
+          version: currentApp.version,
+          rating: currentApp.rating,
+          accentColor: currentApp.color1,
+          secondaryColor: currentApp.color2,
+        });
+        screenTextureRef.current.needsUpdate = true;
+        screenMatRef.current.map = screenTextureRef.current;
+        screenMatRef.current.color.set(0xffffff);
+        screenMatRef.current.needsUpdate = true;
+      }
     }
 
     // Dynamic light color update to match current app's branding
     if (neonLightRef.current && cyanLightRef.current) {
-      neonLightRef.current.color.set(app.color1);
-      cyanLightRef.current.color.set(app.color2);
+      neonLightRef.current.color.set(currentApp.color1);
+      cyanLightRef.current.color.set(currentApp.color2);
+    }
+  }, [
+    currentApp,
+    activeScreenshotIdx,
+    totalScreenshots,
+    currentScreenshot,
+    loadScreenshotTexture,
+    applyTextureToScreen,
+  ]);
+
+  // Subtle 3D rotational turn impulse when active screenshot advances
+  useEffect(() => {
+    if (prevActiveScreenshotRef.current !== activeScreenshotIdx && phoneGroupRef.current) {
+      const isForward =
+        (activeScreenshotIdx > prevActiveScreenshotRef.current &&
+          !(prevActiveScreenshotRef.current === 0 && activeScreenshotIdx === totalScreenshots - 1)) ||
+        (prevActiveScreenshotRef.current === totalScreenshots - 1 && activeScreenshotIdx === 0);
+      phoneGroupRef.current.rotation.y += isForward ? -0.16 : 0.16;
+      prevActiveScreenshotRef.current = activeScreenshotIdx;
+    }
+  }, [activeScreenshotIdx, totalScreenshots]);
+
+  // Auto-cycle through screenshots and apps sequentially
+  useEffect(() => {
+    if (!isAutoPlay) return;
+
+    const interval = setInterval(() => {
+      // Pause advancing if user is actively dragging the 3D model
+      if (isDraggingRef.current) return;
+
+      if (totalScreenshots > 1) {
+        setActiveScreenshotIdx((prevS) => {
+          const nextS = prevS + 1;
+          if (nextS < totalScreenshots) {
+            return nextS;
+          }
+          // Completed all screenshots for this app! If multiple apps exist, transition to next app
+          if (showcaseApps.length > 1) {
+            setActiveAppIdx((prevA) => (prevA + 1) % showcaseApps.length);
+          }
+          return 0;
+        });
+      } else if (showcaseApps.length > 1) {
+        setActiveAppIdx((prevA) => (prevA + 1) % showcaseApps.length);
+        setActiveScreenshotIdx(0);
+      }
+    }, cycleIntervalMs);
+
+    return () => clearInterval(interval);
+  }, [isAutoPlay, totalScreenshots, showcaseApps.length, cycleIntervalMs]);
+
+  // Manual navigation helpers
+  const handlePrevScreenshot = useCallback(() => {
+    if (totalScreenshots <= 1) return;
+    setActiveScreenshotIdx((prev) => (prev - 1 + totalScreenshots) % totalScreenshots);
+  }, [totalScreenshots]);
+
+  const handleNextScreenshot = useCallback(() => {
+    if (totalScreenshots <= 1) return;
+    setActiveScreenshotIdx((prev) => (prev + 1) % totalScreenshots);
+  }, [totalScreenshots]);
+
+  const handleResetRotation = useCallback(() => {
+    if (phoneGroupRef.current) {
+      phoneGroupRef.current.rotation.set(0.15, -0.32, 0);
+      rotationVelocityRef.current = { x: 0, y: 0 };
     }
   }, []);
-
-  // Update canvas texture whenever activeAppIdx or showcaseApps changes
-  useEffect(() => {
-    if (showcaseApps.length === 0) return;
-    const current = showcaseApps[activeAppIdx] || showcaseApps[0];
-    if (current) {
-      updateScreenTexture(current);
-    }
-  }, [activeAppIdx, showcaseApps, updateScreenTexture]);
 
   // Main Three.js Scene Setup
   useEffect(() => {
@@ -267,14 +487,14 @@ export function Hero3DExperience({
     rendererRef.current = renderer;
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
     dirLight.position.set(5, 8, 6);
     scene.add(dirLight);
 
-    const backLight = new THREE.DirectionalLight(0x8b5cf6, 2.8);
+    const backLight = new THREE.DirectionalLight(0x8b5cf6, 2.5);
     backLight.position.set(-6, -4, -6);
     scene.add(backLight);
 
@@ -288,6 +508,11 @@ export function Hero3DExperience({
     scene.add(cyanPointLight);
     cyanLightRef.current = cyanPointLight;
 
+    // Texture Loader
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+    textureLoaderRef.current = loader;
+
     // ==========================================
     // 3D Flagship Phone Model Construction
     // ==========================================
@@ -295,9 +520,6 @@ export function Hero3DExperience({
     phoneGroupRef.current = phoneGroup;
 
     // 1. Phone Frame (Dark Titanium Curved Edge)
-    const phoneWidth = 2.45;
-    const phoneHeight = 4.95;
-    const phoneDepth = 0.22;
     const frameGeometry = new THREE.BoxGeometry(phoneWidth, phoneHeight, phoneDepth);
     const frameMaterial = new THREE.MeshStandardMaterial({
       color: 0x18181b,
@@ -319,7 +541,7 @@ export function Hero3DExperience({
     const rimMesh = new THREE.Mesh(rimGeom, rimMat);
     phoneGroup.add(rimMesh);
 
-    // 3. Dynamic Screen Texture (Offscreen Canvas)
+    // 3. Fallback Offscreen Canvas Texture
     const screenCanvas = document.createElement('canvas');
     screenCanvas.width = 512;
     screenCanvas.height = 1024;
@@ -341,25 +563,26 @@ export function Hero3DExperience({
     screenTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     screenTextureRef.current = screenTexture;
 
-    const screenGeometry = new THREE.PlaneGeometry(phoneWidth - 0.12, phoneHeight - 0.14);
-    const screenMaterial = new THREE.MeshStandardMaterial({
+    // 4. OLED Screen Mesh with Rounded Geometry
+    const screenGeometry = createRoundedRectGeometry(screenW, screenH, 0.16);
+    const screenMaterial = new THREE.MeshBasicMaterial({
       map: screenTexture,
-      roughness: 0.2,
-      metalness: 0.1,
-      emissive: 0xffffff,
-      emissiveMap: screenTexture,
-      emissiveIntensity: 0.38,
+      color: 0xffffff,
+      toneMapped: true,
     });
+    screenMatRef.current = screenMaterial;
+
     const screenMesh = new THREE.Mesh(screenGeometry, screenMaterial);
     screenMesh.position.z = phoneDepth / 2 + 0.005;
+    screenMeshRef.current = screenMesh;
     phoneGroup.add(screenMesh);
 
-    // 4. Glass Reflection Front Overlay
-    const glassGeometry = new THREE.PlaneGeometry(phoneWidth - 0.06, phoneHeight - 0.06);
+    // 5. Glass Reflection Front Overlay
+    const glassGeometry = createRoundedRectGeometry(screenW + 0.04, screenH + 0.04, 0.18);
     const glassMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.1,
       roughness: 0.05,
       metalness: 0.1,
       clearcoat: 1.0,
@@ -369,7 +592,28 @@ export function Hero3DExperience({
     glassMesh.position.z = phoneDepth / 2 + 0.01;
     phoneGroup.add(glassMesh);
 
-    // 5. Triple Camera Island on Back
+    // 6. Camera Punch-Hole & Top Sensor at Front
+    const punchHoleGeo = new THREE.CircleGeometry(0.045, 24);
+    const punchHoleMat = new THREE.MeshBasicMaterial({ color: 0x050508 });
+    const punchHoleMesh = new THREE.Mesh(punchHoleGeo, punchHoleMat);
+    punchHoleMesh.position.set(0, phoneHeight / 2 - 0.22, phoneDepth / 2 + 0.012);
+    phoneGroup.add(punchHoleMesh);
+
+    // Lens inner reflection dot
+    const lensDotGeo = new THREE.CircleGeometry(0.018, 16);
+    const lensDotMat = new THREE.MeshBasicMaterial({ color: 0x1e3a8a });
+    const lensDotMesh = new THREE.Mesh(lensDotGeo, lensDotMat);
+    lensDotMesh.position.set(0, phoneHeight / 2 - 0.22, phoneDepth / 2 + 0.013);
+    phoneGroup.add(lensDotMesh);
+
+    // Speaker slit
+    const speakerGeo = createRoundedRectGeometry(0.38, 0.022, 0.01);
+    const speakerMat = new THREE.MeshBasicMaterial({ color: 0x27272a });
+    const speakerMesh = new THREE.Mesh(speakerGeo, speakerMat);
+    speakerMesh.position.set(0, phoneHeight / 2 - 0.08, phoneDepth / 2 + 0.012);
+    phoneGroup.add(speakerMesh);
+
+    // 7. Triple Camera Island on Back
     const camIslandGeom = new THREE.BoxGeometry(0.85, 1.35, 0.08);
     const camIslandMat = new THREE.MeshStandardMaterial({
       color: 0x09090b,
@@ -380,7 +624,6 @@ export function Hero3DExperience({
     camIsland.position.set(-phoneWidth / 4, phoneHeight / 4, -(phoneDepth / 2 + 0.04));
     phoneGroup.add(camIsland);
 
-    // Camera Lenses
     for (let i = 0; i < 3; i++) {
       const lensGeom = new THREE.CylinderGeometry(0.12, 0.12, 0.04, 32);
       lensGeom.rotateX(Math.PI / 2);
@@ -392,11 +635,7 @@ export function Hero3DExperience({
         emissiveIntensity: 0.5,
       });
       const lens = new THREE.Mesh(lensGeom, lensMat);
-      lens.position.set(
-        -phoneWidth / 4,
-        phoneHeight / 4 + 0.42 - i * 0.42,
-        -(phoneDepth / 2 + 0.085)
-      );
+      lens.position.set(-phoneWidth / 4, phoneHeight / 4 + 0.42 - i * 0.42, -(phoneDepth / 2 + 0.085));
       phoneGroup.add(lens);
     }
 
@@ -417,10 +656,20 @@ export function Hero3DExperience({
     phoneGroup.rotation.x = 0.15;
     scene.add(phoneGroup);
 
+    // Immediately load first screenshot
+    const firstScreenshot = initialApp.screenshots?.[0];
+    if (firstScreenshot) {
+      loadScreenshotTexture(initialApp.slug, firstScreenshot, 0, (tex) => {
+        screenMaterial.map = tex;
+        screenMaterial.color.set(0xffffff);
+        screenMaterial.needsUpdate = true;
+        adjustMeshAspect(screenMesh, tex, screenW, screenH);
+      });
+    }
+
     // ==========================================
-    // Holographic Cyber Rings & Orbiting Tokens
+    // Holographic Cyber Rings
     // ==========================================
-    // Subtle Studio Pedestal Glow Ring beneath Phone
     const holoRingsGroup = new THREE.Group();
     holoRingsGroupRef.current = holoRingsGroup;
 
@@ -480,23 +729,21 @@ export function Hero3DExperience({
     // ==========================================
     const handlePointerDown = (e: PointerEvent) => {
       isDraggingRef.current = true;
+      pointerDownPos.current = { x: e.clientX, y: e.clientY, time: Date.now() };
       previousPointerPosition.current = { x: e.clientX, y: e.clientY };
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-      // Parallax mouse coordinates
       const rect = container.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
       mouseRef.current.targetX = x * 0.45;
       mouseRef.current.targetY = y * 0.35;
 
-      // Drag rotation
       if (isDraggingRef.current && phoneGroupRef.current) {
         const deltaX = e.clientX - previousPointerPosition.current.x;
         const deltaY = e.clientY - previousPointerPosition.current.y;
 
-        // If pointer is touch and movement is mostly vertical, release drag so page scrolls natively
         if (e.pointerType === 'touch' && Math.abs(deltaY) > Math.abs(deltaX) * 1.3) {
           isDraggingRef.current = false;
           return;
@@ -514,8 +761,19 @@ export function Hero3DExperience({
       }
     };
 
-    const handlePointerUp = () => {
+    const handlePointerUp = (e: PointerEvent) => {
       isDraggingRef.current = false;
+      const dt = Date.now() - pointerDownPos.current.time;
+      const dist = Math.hypot(e.clientX - pointerDownPos.current.x, e.clientY - pointerDownPos.current.y);
+
+      // Fast horizontal swipe gesture detection
+      if (dt < 400 && dist > 40 && Math.abs(e.clientX - pointerDownPos.current.x) > Math.abs(e.clientY - pointerDownPos.current.y)) {
+        if (e.clientX < pointerDownPos.current.x) {
+          handleNextScreenshot();
+        } else {
+          handlePrevScreenshot();
+        }
+      }
     };
 
     container.addEventListener('pointerdown', handlePointerDown);
@@ -540,11 +798,10 @@ export function Hero3DExperience({
     // Animation Loop
     // ==========================================
     let animationFrameId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-
       const elapsedTime = clock.getElapsedTime();
 
       // Smooth mouse lerping
@@ -558,7 +815,7 @@ export function Hero3DExperience({
 
         // Auto rotation when not dragging
         if (!isDraggingRef.current) {
-          phoneGroupRef.current.rotation.y += 0.005;
+          phoneGroupRef.current.rotation.y += 0.004;
           // Inertia damping
           phoneGroupRef.current.rotation.y += rotationVelocityRef.current.y;
           phoneGroupRef.current.rotation.x += rotationVelocityRef.current.x;
@@ -570,30 +827,10 @@ export function Hero3DExperience({
         }
       }
 
-      // Rotate holographic rings and floating tokens
+      // Rotate holographic ring
       if (holoRingsGroupRef.current) {
         holoRingsGroupRef.current.rotation.y = elapsedTime * 0.15;
         holoRingsGroupRef.current.rotation.z = Math.sin(elapsedTime * 0.5) * 0.1;
-
-        // Animate Kotlin gem & Compose token
-        const gem = holoRingsGroupRef.current.children[2];
-        if (gem) {
-          gem.rotation.y += 0.02;
-          gem.rotation.x += 0.015;
-          gem.position.y = 1.8 + Math.sin(elapsedTime * 2.0) * 0.12;
-        }
-
-        const compose = holoRingsGroupRef.current.children[3];
-        if (compose) {
-          compose.rotation.z += 0.02;
-          compose.position.y = -1.2 + Math.cos(elapsedTime * 2.2) * 0.12;
-        }
-
-        const star = holoRingsGroupRef.current.children[4];
-        if (star) {
-          star.rotation.y += 0.025;
-          star.position.y = 2.2 + Math.sin(elapsedTime * 1.8 + 1) * 0.1;
-        }
       }
 
       // Animate background particles
@@ -623,12 +860,20 @@ export function Hero3DExperience({
       disposeThreeScene(scene);
       renderer.dispose();
     };
-  }, []);
+  }, [
+    showcaseApps,
+    loadScreenshotTexture,
+    adjustMeshAspect,
+    handleNextScreenshot,
+    handlePrevScreenshot,
+    screenW,
+    screenH,
+  ]);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[320px] xs:h-[360px] sm:h-[420px] md:h-[480px] lg:h-[540px] xl:h-[580px] flex items-center justify-center select-none overflow-hidden rounded-3xl"
+      className="relative w-full h-[380px] xs:h-[420px] sm:h-[480px] md:h-[540px] lg:h-[600px] xl:h-[620px] flex items-center justify-center select-none overflow-hidden rounded-3xl group"
       style={{ touchAction: 'pan-y' }}
     >
       {/* Three.js Canvas */}
@@ -636,20 +881,145 @@ export function Hero3DExperience({
         <canvas
           ref={canvasRef}
           className="w-full h-full cursor-grab active:cursor-grabbing outline-none"
-          title="Interactive 3D Android Device"
+          title="Interactive 3D Android Device — Drag to rotate 360°"
         />
       ) : (
-        /* CSS 3D Fallback for legacy browsers without WebGL */
         <div className="flex flex-col items-center justify-center p-8 text-center bg-zinc-900/60 border border-purple-900/40 rounded-3xl">
           <Smartphone className="w-16 h-16 text-purple-400 mb-4 animate-bounce" />
-          <h4 className="font-bold text-lg text-zinc-100">
-            {showcaseApps[activeAppIdx]?.name || 'Android Compose 3D'}
-          </h4>
-          <p className="text-xs text-zinc-400 max-w-xs mt-2">
-            {showcaseApps[activeAppIdx]?.tagline || 'Rendering modern Android Jetpack Compose native applications with zero telemetry.'}
-          </p>
+          <h4 className="font-bold text-lg text-zinc-100">{currentApp.name}</h4>
+          <p className="text-xs text-zinc-400 max-w-xs mt-2">{currentApp.tagline}</p>
         </div>
       )}
+
+      {/* Floating Top Header Bar */}
+      <div className="absolute top-3 inset-x-3 sm:inset-x-4 flex items-center justify-between z-20 pointer-events-none">
+        <Link
+          href={`/apps/${currentApp.slug}`}
+          className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-950/80 hover:bg-zinc-900 backdrop-blur-md border border-purple-900/50 shadow-xl transition-all duration-200 group/link"
+          title={`View ${currentApp.name} Details`}
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span className="font-bold text-xs text-zinc-100 group-hover/link:text-purple-300 transition-colors">
+            {currentApp.name}
+          </span>
+          <span className="text-zinc-600">•</span>
+          <span className="text-[11px] text-purple-300 font-medium hidden xs:inline">{currentApp.badge}</span>
+          <ExternalLink className="w-3 h-3 text-zinc-400 group-hover/link:text-purple-300 transition-colors shrink-0" />
+        </Link>
+
+        {/* Play/Pause & Reset 3D Controls */}
+        <div className="pointer-events-auto flex items-center gap-1 bg-zinc-950/80 backdrop-blur-md border border-zinc-800 rounded-full p-1 shadow-lg">
+          <button
+            type="button"
+            onClick={() => setIsAutoPlay((prev) => !prev)}
+            className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+            title={isAutoPlay ? 'Pause screenshot rotation' : 'Play screenshot rotation'}
+            aria-label={isAutoPlay ? 'Pause screenshot rotation' : 'Play screenshot rotation'}
+          >
+            {isAutoPlay ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+          </button>
+          <button
+            type="button"
+            onClick={handleResetRotation}
+            className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+            title="Reset 3D angle"
+            aria-label="Reset 3D angle"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Multi-App Switcher Tabs (if 2 or more apps exist in the directory) */}
+      {showcaseApps.length > 1 && (
+        <div className="absolute top-14 inset-x-3 sm:inset-x-4 flex items-center justify-center z-20 pointer-events-none">
+          <div className="pointer-events-auto inline-flex items-center gap-1 p-1 rounded-full bg-zinc-950/85 backdrop-blur-md border border-zinc-800 shadow-xl max-w-full overflow-x-auto">
+            {showcaseApps.map((a, aIdx) => (
+              <button
+                key={a.slug}
+                type="button"
+                onClick={() => {
+                  setActiveAppIdx(aIdx);
+                  setActiveScreenshotIdx(0);
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                  activeAppIdx === aIdx
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/40 ring-1 ring-purple-400/50'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                }`}
+              >
+                {a.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Left / Right Arrow Buttons to Browse Screenshots */}
+      {totalScreenshots > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={handlePrevScreenshot}
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-950/80 hover:bg-purple-600 backdrop-blur-md border border-zinc-800 hover:border-purple-500 flex items-center justify-center text-zinc-300 hover:text-white shadow-xl transition-all duration-200 opacity-75 hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+            title="Previous screenshot"
+            aria-label="Previous screenshot"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNextScreenshot}
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-950/80 hover:bg-purple-600 backdrop-blur-md border border-zinc-800 hover:border-purple-500 flex items-center justify-center text-zinc-300 hover:text-white shadow-xl transition-all duration-200 opacity-75 hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+            title="Next screenshot"
+            aria-label="Next screenshot"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </>
+      )}
+
+      {/* Bottom HUD: Screenshot Title & Interactive Step Dots */}
+      <div className="absolute bottom-3 inset-x-3 sm:inset-x-4 z-20 pointer-events-none flex flex-col items-center gap-2">
+        {/* Active Screenshot Title & Subtitle Badge */}
+        {currentScreenshot && (
+          <div className="pointer-events-auto max-w-[94%] sm:max-w-md w-full px-3.5 py-2 rounded-2xl bg-zinc-950/90 backdrop-blur-md border border-purple-900/40 shadow-2xl text-center">
+            <div className="flex items-center justify-center gap-2 text-xs font-bold text-zinc-100">
+              <span className="px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300 text-[10px] font-mono border border-purple-700/50">
+                {activeScreenshotIdx + 1}/{totalScreenshots}
+              </span>
+              <span className="truncate">{currentScreenshot.title || `Screenshot ${activeScreenshotIdx + 1}`}</span>
+            </div>
+            {currentScreenshot.subtitle && (
+              <p className="text-[11px] text-zinc-400 truncate mt-0.5 font-normal">
+                {currentScreenshot.subtitle}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Screenshot Step Navigation Dots */}
+        {totalScreenshots > 1 && (
+          <div className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-950/80 backdrop-blur-md border border-zinc-800 shadow-lg">
+            {currentApp.screenshots.map((s, idx) => (
+              <button
+                key={s.id || idx}
+                type="button"
+                onClick={() => {
+                  setActiveScreenshotIdx(idx);
+                }}
+                className={`transition-all duration-300 rounded-full cursor-pointer ${
+                  activeScreenshotIdx === idx
+                    ? 'w-7 h-2 bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400 shadow-md shadow-purple-500/50'
+                    : 'w-2 h-2 bg-zinc-700 hover:bg-zinc-500'
+                }`}
+                title={s.title || `Go to screenshot ${idx + 1}`}
+                aria-label={s.title || `Go to screenshot ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

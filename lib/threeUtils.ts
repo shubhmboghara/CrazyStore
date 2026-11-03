@@ -50,6 +50,49 @@ export function disposeThreeScene(scene: THREE.Object3D, renderer?: THREE.WebGLR
   }
 }
 
+/**
+ * Creates a 2D rounded rectangle Shape in Three.js
+ */
+export function createRoundedRectShape(w: number, h: number, r: number): THREE.Shape {
+  const shape = new THREE.Shape();
+  const x = -w / 2;
+  const y = -h / 2;
+  const radius = Math.min(r, w / 2, h / 2);
+
+  shape.moveTo(x + radius, y);
+  shape.lineTo(x + w - radius, y);
+  shape.absarc(x + w - radius, y + radius, radius, -Math.PI / 2, 0, false);
+  shape.lineTo(x + w, y + h - radius);
+  shape.absarc(x + w - radius, y + h - radius, radius, 0, Math.PI / 2, false);
+  shape.lineTo(x + radius, y + h);
+  shape.absarc(x + radius, y + h - radius, radius, Math.PI / 2, Math.PI, false);
+  shape.lineTo(x, y + radius);
+  shape.absarc(x + radius, y + radius, radius, Math.PI, Math.PI * 1.5, false);
+
+  return shape;
+}
+
+/**
+ * Generates a BufferGeometry for a rounded rectangle with normalized UVs (0..1)
+ */
+export function createRoundedRectGeometry(w: number, h: number, r: number, segments = 16): THREE.BufferGeometry {
+  const shape = createRoundedRectShape(w, h, r);
+  const geo = new THREE.ShapeGeometry(shape, segments);
+  const pos = geo.attributes.position;
+  const uvs = new Float32Array(pos.count * 2);
+
+  for (let i = 0; i < pos.count; i++) {
+    const px = pos.getX(i);
+    const py = pos.getY(i);
+    uvs[i * 2] = (px + w / 2) / w;
+    uvs[i * 2 + 1] = (py + h / 2) / h;
+  }
+
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geo.computeVertexNormals();
+  return geo;
+}
+
 function disposeMaterial(material: any): void {
   if (!material) return;
   // Dispose all possible texture maps

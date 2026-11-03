@@ -42,13 +42,15 @@ export async function GET(req: NextRequest) {
       appsMap.set(app.slug.toLowerCase(), normalizeAppRecord({ ...app }));
     }
 
-    // 2. Override or add from DB (only curated apps, ensure VideoHub authentic icon)
+    // 2. Override or add from DB (curated apps or newly published apps)
     for (const dbApp of dbApps) {
       if (dbApp && dbApp.slug) {
         const key = dbApp.slug.toLowerCase();
         if (appsMap.has(key)) {
           const baseApp = appsMap.get(key);
           appsMap.set(key, mergeAppWithDefaults(baseApp, dbApp));
+        } else {
+          appsMap.set(key, normalizeAppRecord(dbApp));
         }
       }
     }
