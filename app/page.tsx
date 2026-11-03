@@ -50,22 +50,28 @@ export default async function HomePage() {
   // Merge default apps with database apps (database overrides static)
   const appsMap = new Map<string, any>();
 
-  // 1. Seed with default apps
+  // 1. Seed with curated default apps
   for (const app of ANDROID_APPS) {
     appsMap.set(app.slug.toLowerCase(), normalizeAppRecord({ ...app }));
   }
 
-  // 2. Override or add from DB
+  // 2. Override only known curated apps from DB (keeps store clean, avoids test/unwanted apps)
   for (const dbApp of dbApps) {
     if (dbApp && dbApp.slug) {
       const key = dbApp.slug.toLowerCase();
-      const baseApp = appsMap.get(key) || {};
-      appsMap.set(key, {
-        ...baseApp,
-        ...dbApp,
-        downloadUrl: dbApp.downloadUrl ? formatDownloadUrl(dbApp.downloadUrl) : baseApp.downloadUrl,
-        isCustom: true,
-      });
+      if (appsMap.has(key)) {
+        const baseApp = appsMap.get(key) || {};
+        appsMap.set(key, {
+          ...baseApp,
+          ...dbApp,
+          // VideoHub maintains its authentic native Play icon
+          logoUrl: key === 'videohub' ? '' : (dbApp.logoUrl || ''),
+          iconSymbol: key === 'videohub' ? 'play' : (dbApp.iconSymbol || baseApp.iconSymbol),
+          iconBg: key === 'videohub' ? 'from-purple-600 to-indigo-600' : (dbApp.iconBg || baseApp.iconBg),
+          downloadUrl: dbApp.downloadUrl ? formatDownloadUrl(dbApp.downloadUrl) : baseApp.downloadUrl,
+          isCustom: true,
+        });
+      }
     }
   }
 

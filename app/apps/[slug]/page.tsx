@@ -36,6 +36,9 @@ const getApp = cache(async (slug: string): Promise<AndroidApp | null> => {
       return {
         ...(baseApp || {}),
         ...normalizedDbApp,
+        logoUrl: normalizedSlug === 'videohub' ? '' : (normalizedDbApp.logoUrl || ''),
+        iconSymbol: normalizedSlug === 'videohub' ? 'play' : (normalizedDbApp.iconSymbol || baseApp?.iconSymbol),
+        iconBg: normalizedSlug === 'videohub' ? 'from-purple-600 to-indigo-600' : (normalizedDbApp.iconBg || baseApp?.iconBg),
         downloadUrl: normalizedDbApp.downloadUrl ? formatDownloadUrl(normalizedDbApp.downloadUrl) : (baseApp?.downloadUrl || ''),
         isCustom: true,
       } as AndroidApp;

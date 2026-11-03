@@ -42,17 +42,22 @@ export async function GET(req: NextRequest) {
       appsMap.set(app.slug.toLowerCase(), normalizeAppRecord({ ...app }));
     }
 
-    // 2. Override or add from DB
+    // 2. Override or add from DB (only curated apps, ensure VideoHub authentic icon)
     for (const dbApp of dbApps) {
       if (dbApp && dbApp.slug) {
         const key = dbApp.slug.toLowerCase();
-        const baseApp = appsMap.get(key) || {};
-        appsMap.set(key, {
-          ...baseApp,
-          ...dbApp,
-          downloadUrl: dbApp.downloadUrl ? formatDownloadUrl(dbApp.downloadUrl) : baseApp.downloadUrl,
-          isCustom: true,
-        });
+        if (appsMap.has(key)) {
+          const baseApp = appsMap.get(key) || {};
+          appsMap.set(key, {
+            ...baseApp,
+            ...dbApp,
+            logoUrl: key === 'videohub' ? '' : (dbApp.logoUrl || ''),
+            iconSymbol: key === 'videohub' ? 'play' : (dbApp.iconSymbol || baseApp.iconSymbol),
+            iconBg: key === 'videohub' ? 'from-purple-600 to-indigo-600' : (dbApp.iconBg || baseApp.iconBg),
+            downloadUrl: dbApp.downloadUrl ? formatDownloadUrl(dbApp.downloadUrl) : baseApp.downloadUrl,
+            isCustom: true,
+          });
+        }
       }
     }
 

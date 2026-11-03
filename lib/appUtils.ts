@@ -230,7 +230,7 @@ export function normalizeAppRecord(dbApp: any): any {
     iconBg: dbApp.iconBg || dbApp.icon_bg || dbApp.iconbg || 'from-purple-600 to-indigo-600',
     iconSymbol: dbApp.iconSymbol || dbApp.icon_symbol || dbApp.iconsymbol || 'smartphone',
     badge: dbApp.badge || 'Kotlin + Compose',
-    logoUrl: dbApp.logoUrl || dbApp.logo_url || dbApp.logourl || '',
+    logoUrl: (dbApp.slug?.toLowerCase() === 'videohub' && (String(dbApp.logoUrl || dbApp.logo_url || '').includes('AppLogo_aQ35OykOj') || String(dbApp.logoUrl || dbApp.logo_url || '').includes('logo_RKSbJJFtA'))) ? '' : (dbApp.logoUrl || dbApp.logo_url || dbApp.logourl || ''),
     bannerUrl: dbApp.bannerUrl || dbApp.banner_url || dbApp.bannerurl || '',
     githubUrl: dbApp.githubUrl || dbApp.github_url || dbApp.githuburl || '',
     downloadUrl: formatDownloadUrl(downloadUrl),
