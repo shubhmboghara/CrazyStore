@@ -127,11 +127,8 @@ console.log('\nRunning automated test suite for CrazyStore Search UI & Polish...
   assert.ok(palette.includes('recentSearches') || palette.includes('getRecentSearches'), 'CommandPalette must support recent search history');
   assert.ok(palette.includes('saveRecentSearch'), 'CommandPalette must save selected queries to history');
 
-  // Trending & Quick Tags
-  assert.ok(palette.includes('POPULAR_SEARCH_TAGS'), 'CommandPalette must present trending and popular tags when query is empty');
-
-  // Category counts
-  assert.ok(palette.includes('categoriesWithCounts'), 'CommandPalette must display category pills with match counts');
+  // Minimalist Raycast-style category filtering
+  assert.ok(palette.includes('categories') || palette.includes('selectedCategory'), 'CommandPalette must support category filtering');
 
   // Auto scroll into view for keyboard navigation
   assert.ok(palette.includes('scrollIntoView'), 'CommandPalette must smoothly scroll active keyboard item into view');

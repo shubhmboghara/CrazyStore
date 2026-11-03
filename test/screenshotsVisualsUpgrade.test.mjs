@@ -95,7 +95,9 @@ assert.ok(!appDetailContent.includes('visualsViewMode'), 'Gallery toggle must be
 assert.ok(!appDetailContent.includes('Gallery Flow'), 'Gallery Flow branch must not exist in component');
 assert.ok(appDetailContent.includes('lightboxZoom'), 'AppDetailClient must contain lightboxZoom state');
 assert.ok(appDetailContent.includes('ZoomIn') && appDetailContent.includes('ZoomOut'), 'AppDetailClient must contain zoom controls');
-console.log('✓ Test 4 Passed: AppDetailClient 3D-only mode, spotlight banner, and lightbox zoom verified');
+assert.ok(!appDetailContent.includes('title="Open original image in new tab"'), 'Fullscreen lightbox modal must not contain download/original button');
+assert.ok(!appDetailContent.includes('>Original</span>'), 'Fullscreen lightbox modal must not contain Original text button');
+console.log('✓ Test 4 Passed: AppDetailClient 3D-only mode, spotlight banner, lightbox zoom verified, and download/original button removed');
 
 // Test 5: Verify Hero3DExperience includes fallback screenshot for VideoHub
 const heroPath = path.resolve(process.cwd(), 'components/three/Hero3DExperience.tsx');

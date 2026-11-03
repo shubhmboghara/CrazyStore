@@ -994,18 +994,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   )}
                 </div>
 
-                {/* Download / Open Original */}
-                <a
-                  href={validPreviews[lightboxIndex].imageUrl || validPreviews[lightboxIndex].url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-md border border-white/10 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                  title="Open original image in new tab"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Original</span>
-                </a>
-
                 {/* Close Button */}
                 <button
                   type="button"
