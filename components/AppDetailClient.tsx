@@ -1070,16 +1070,16 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                       key={preview.id || idx}
                       type="button"
                       onClick={() => setLightboxIndex(idx)}
-                      className={`w-9 h-13 sm:w-11 sm:h-16 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all shrink-0 relative cursor-pointer ${
+                      className={`h-14 sm:h-16 aspect-[9/19.5] rounded-lg sm:rounded-xl overflow-hidden transition-all shrink-0 relative cursor-pointer bg-zinc-950 flex items-center justify-center p-0.5 ${
                         idx === lightboxIndex
-                          ? 'border-purple-500 scale-105 shadow-lg shadow-purple-500/50 ring-2 ring-purple-400'
-                          : 'border-white/20 opacity-50 hover:opacity-100 hover:border-white/60'
+                          ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-black border border-purple-400/80 shadow-md shadow-purple-500/30 scale-105'
+                          : 'border border-white/20 opacity-60 hover:opacity-100 hover:border-white/60 hover:scale-102'
                       }`}
                     >
                       <img
                         src={preview.imageUrl || preview.url}
                         alt={preview.title || `Screenshot thumbnail ${idx + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain rounded-md"
                       />
                     </button>
                   ))}

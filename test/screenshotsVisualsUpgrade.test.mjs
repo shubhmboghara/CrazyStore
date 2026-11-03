@@ -105,4 +105,17 @@ const heroContent = fs.readFileSync(heroPath, 'utf8');
 assert.ok(heroContent.includes("videohub-feed"), 'Hero3DExperience must reference videohub-feed');
 console.log('✓ Test 5 Passed: Hero3DExperience includes high-res screenshot URL for VideoHub');
 
-console.log('\n🎉 ALL 5 SCREENSHOTS & VISUALS UPGRADE TESTS PASSED WITH 100% SUCCESS!\n');
+// Test 6: Verify unclipped thumbnail framing and refined border highlight
+const phoneViewPath = path.resolve(process.cwd(), 'components/three/Screenshots3DPhoneView.tsx');
+const phoneViewContent = fs.readFileSync(phoneViewPath, 'utf8');
+assert.ok(phoneViewContent.includes('aspect-[9/19.5]'), 'Screenshots3DPhoneView thumbnails must use 9:19.5 phone aspect ratio');
+assert.ok(phoneViewContent.includes('object-contain'), 'Screenshots3DPhoneView thumbnails must use object-contain to prevent clipping left/right content');
+assert.ok(phoneViewContent.includes('ring-offset-2 ring-offset-zinc-950'), 'Screenshots3DPhoneView active thumbnail must use ring-offset to avoid obscuring screenshot edges');
+assert.ok(!phoneViewContent.includes('bg-purple-600/10'), 'Screenshots3DPhoneView must not overlay purple tint wash over screenshot');
+
+assert.ok(appDetailContent.includes('aspect-[9/19.5]'), 'AppDetailClient lightbox thumbnails must use 9:19.5 aspect ratio');
+assert.ok(appDetailContent.includes('object-contain'), 'AppDetailClient lightbox thumbnails must use object-contain');
+assert.ok(appDetailContent.includes('ring-offset-2 ring-offset-black'), 'AppDetailClient lightbox active thumbnail must use ring-offset');
+console.log('✓ Test 6 Passed: Unclipped screenshot thumbnail framing and non-obscuring border highlight verified');
+
+console.log('\n🎉 ALL 6 SCREENSHOTS & VISUALS UPGRADE TESTS PASSED WITH 100% SUCCESS!\n');

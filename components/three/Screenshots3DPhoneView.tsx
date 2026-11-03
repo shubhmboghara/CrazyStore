@@ -85,10 +85,10 @@ function ScreenshotThumbnailItem({
     <button
       type="button"
       onClick={onClick}
-      className={`relative shrink-0 w-11 sm:w-13 h-22 sm:h-26 md:h-28 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
+      className={`relative shrink-0 h-22 sm:h-26 md:h-28 aspect-[9/19.5] rounded-xl overflow-hidden transition-all duration-200 cursor-pointer bg-zinc-950 flex items-center justify-center p-0.5 ${
         isSelected
-          ? 'border-purple-500 scale-105 shadow-lg shadow-purple-600/40 ring-2 ring-purple-500/30'
-          : 'border-zinc-800 opacity-60 hover:opacity-100 hover:border-zinc-700'
+          ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-zinc-950 border border-purple-400/80 shadow-md shadow-purple-500/25 scale-105'
+          : 'border border-zinc-800/90 opacity-70 hover:opacity-100 hover:border-zinc-600 hover:scale-102'
       }`}
       title={screenshot.title || `Screenshot ${idx + 1}`}
       aria-label={screenshot.title || `Screenshot ${idx + 1}`}
@@ -99,7 +99,7 @@ function ScreenshotThumbnailItem({
           alt=""
           aria-hidden="true"
           loading="lazy"
-          className="w-full h-full object-cover bg-zinc-900"
+          className="w-full h-full object-contain rounded-lg"
           onError={() => {
             if (candidateIdx + 1 < candidates.length) {
               setCandidateIdx((prev) => prev + 1);
@@ -113,9 +113,6 @@ function ScreenshotThumbnailItem({
           <Smartphone className="w-4 h-4 text-purple-400 mb-1" />
           <span className="text-[9px] font-bold text-zinc-400">#{idx + 1}</span>
         </div>
-      )}
-      {isSelected && (
-        <div className="absolute inset-0 bg-purple-600/10 pointer-events-none" />
       )}
     </button>
   );
