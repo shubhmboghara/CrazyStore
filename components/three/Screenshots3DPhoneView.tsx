@@ -92,17 +92,32 @@ function ScreenshotThumbnailItem({
     '/screenshots/videohub-audio.svg',
     '/screenshots/videohub-settings.svg',
   ];
-  const defaultPng = fallbackPngs[idx % fallbackPngs.length];
-  const defaultSvg = fallbackSvgs[idx % fallbackSvgs.length];
+  const imageKitUrls = [
+    'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
+    'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
+    'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
+    'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
+  ];
 
-  const initialSrc = screenshot.imageUrl || screenshot.url || defaultPng;
-  const [imgSrc, setImgSrc] = useState<string>(initialSrc);
+  const candidates = React.useMemo(() => {
+    const list: string[] = [];
+    if (screenshot?.imageUrl) list.push(screenshot.imageUrl);
+    if (screenshot?.url && screenshot.url !== screenshot.imageUrl) list.push(screenshot.url);
+    list.push(imageKitUrls[idx % imageKitUrls.length]);
+    list.push(fallbackPngs[idx % fallbackPngs.length]);
+    list.push(fallbackSvgs[idx % fallbackSvgs.length]);
+    return Array.from(new Set(list.filter(Boolean)));
+  }, [screenshot?.imageUrl, screenshot?.url, idx]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    setImgSrc(screenshot.imageUrl || screenshot.url || defaultPng);
+    setCandidateIdx(0);
     setHasError(false);
-  }, [screenshot.imageUrl, screenshot.url, defaultPng]);
+  }, [screenshot?.imageUrl, screenshot?.url]);
+
+  const currentSrc = candidates[candidateIdx] || fallbackPngs[idx % fallbackPngs.length];
 
   return (
     <button
@@ -114,18 +129,18 @@ function ScreenshotThumbnailItem({
           : 'border-zinc-800 opacity-60 hover:opacity-100 hover:border-zinc-700'
       }`}
       title={screenshot.title || `Screenshot ${idx + 1}`}
+      aria-label={screenshot.title || `Screenshot ${idx + 1}`}
     >
       {!hasError ? (
         <img
-          src={imgSrc}
-          alt={screenshot.title || `Thumbnail ${idx + 1}`}
+          src={currentSrc}
+          alt=""
+          aria-hidden="true"
           loading="lazy"
           className="w-full h-full object-cover bg-zinc-900"
           onError={() => {
-            if (imgSrc !== defaultPng) {
-              setImgSrc(defaultPng);
-            } else if (imgSrc !== defaultSvg) {
-              setImgSrc(defaultSvg);
+            if (candidateIdx + 1 < candidates.length) {
+              setCandidateIdx((prev) => prev + 1);
             } else {
               setHasError(true);
             }
@@ -281,64 +296,62 @@ export function Screenshots3DPhoneView({
     [adjustMeshAspect]
   );
 
-  // Load a URL via TextureLoader and call callback on success
+  // Load a URL via TextureLoader with hierarchical multi-tier fallback (ImageKit CDN -> Local PNG -> Local SVG)
   const loadTexture = useCallback(
-    (url: string, callback: (t: THREE.Texture) => void) => {
-      if (!textureLoaderRef.current || !url) return;
-      textureLoaderRef.current.load(
-        url,
-        (texture) => {
-          texture.colorSpace = THREE.SRGBColorSpace;
-          texture.minFilter = THREE.LinearFilter;
-          texture.magFilter = THREE.LinearFilter;
-          texture.generateMipmaps = false;
-          texture.needsUpdate = true;
-          callback(texture);
-        },
-        undefined,
-        (err) => {
-          console.warn(`[3D Viewer] Texture load error for ${url}:`, err);
-          // Fallback to local PNG or SVG if remote URL encounters issues
-          if (textureLoaderRef.current) {
-            const fallbackPngs = [
-              '/screenshots/videohub-feed.png',
-              '/screenshots/videohub-player.png',
-              '/screenshots/videohub-audio.png',
-              '/screenshots/videohub-settings.png'
-            ];
-            const fallbackSvgs = [
-              '/screenshots/videohub-feed.svg',
-              '/screenshots/videohub-player.svg',
-              '/screenshots/videohub-audio.svg',
-              '/screenshots/videohub-settings.svg'
-            ];
-            const fallbackUrl = fallbackPngs[activeIdx % fallbackPngs.length];
-            textureLoaderRef.current.load(
-              fallbackUrl,
-              (tex) => {
-                tex.colorSpace = THREE.SRGBColorSpace;
-                tex.minFilter = THREE.LinearFilter;
-                tex.magFilter = THREE.LinearFilter;
-                tex.needsUpdate = true;
-                callback(tex);
-              },
-              undefined,
-              () => {
-                const svgUrl = fallbackSvgs[activeIdx % fallbackSvgs.length];
-                textureLoaderRef.current?.load(svgUrl, (tex) => {
-                  tex.colorSpace = THREE.SRGBColorSpace;
-                  tex.minFilter = THREE.LinearFilter;
-                  tex.magFilter = THREE.LinearFilter;
-                  tex.needsUpdate = true;
-                  callback(tex);
-                });
-              }
-            );
+    (url: string, targetIdx: number, callback: (t: THREE.Texture) => void) => {
+      if (!textureLoaderRef.current) return;
+
+      const fallbackPngs = [
+        '/screenshots/videohub-feed.png',
+        '/screenshots/videohub-player.png',
+        '/screenshots/videohub-audio.png',
+        '/screenshots/videohub-settings.png',
+      ];
+      const fallbackSvgs = [
+        '/screenshots/videohub-feed.svg',
+        '/screenshots/videohub-player.svg',
+        '/screenshots/videohub-audio.svg',
+        '/screenshots/videohub-settings.svg',
+      ];
+      const imageKitUrls = [
+        'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
+        'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
+        'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
+        'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
+      ];
+
+      const candidates: string[] = [];
+      if (url) candidates.push(url);
+      candidates.push(imageKitUrls[targetIdx % imageKitUrls.length]);
+      candidates.push(fallbackPngs[targetIdx % fallbackPngs.length]);
+      candidates.push(fallbackSvgs[targetIdx % fallbackSvgs.length]);
+      const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
+
+      const tryLoad = (idxToLoad: number) => {
+        if (idxToLoad >= uniqueCandidates.length || !textureLoaderRef.current) return;
+        const currentUrl = uniqueCandidates[idxToLoad];
+
+        textureLoaderRef.current.load(
+          currentUrl,
+          (texture) => {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.generateMipmaps = false;
+            texture.needsUpdate = true;
+            callback(texture);
+          },
+          undefined,
+          (err) => {
+            console.warn(`[3D Viewer] Texture error for ${currentUrl}, attempting fallback candidate ${idxToLoad + 1}:`, err);
+            tryLoad(idxToLoad + 1);
           }
-        }
-      );
+        );
+      };
+
+      tryLoad(0);
     },
-    [activeIdx]
+    []
   );
 
   // Update center, left, and right textures whenever activeIdx changes
@@ -349,7 +362,7 @@ export function Screenshots3DPhoneView({
     const centerUrl = screenshots[activeIdx]?.imageUrl || screenshots[activeIdx]?.url || '';
     if (centerUrl && centerMatRef.current) {
       const mat = centerMatRef.current;
-      loadTexture(centerUrl, (tex) => {
+      loadTexture(centerUrl, activeIdx, (tex) => {
         applyTextureToMat(mat, tex, centerTextureRef, screenMeshRef, 2.26, 4.70);
         setIsSceneReady(true);
       });
@@ -360,7 +373,7 @@ export function Screenshots3DPhoneView({
       const leftUrl = screenshots[prevIdx]?.imageUrl || screenshots[prevIdx]?.url || '';
       if (leftUrl && leftMatRef.current) {
         const mat = leftMatRef.current;
-        loadTexture(leftUrl, (tex) => {
+        loadTexture(leftUrl, prevIdx, (tex) => {
           applyTextureToMat(mat, tex, leftCompTexRef, leftScreenMeshRef, 2.26 * 0.88, 4.70 * 0.88);
         });
       }
@@ -369,7 +382,7 @@ export function Screenshots3DPhoneView({
       const rightUrl = screenshots[nextIdx]?.imageUrl || screenshots[nextIdx]?.url || '';
       if (rightUrl && rightMatRef.current) {
         const mat = rightMatRef.current;
-        loadTexture(rightUrl, (tex) => {
+        loadTexture(rightUrl, nextIdx, (tex) => {
           applyTextureToMat(mat, tex, rightCompTexRef, rightScreenMeshRef, 2.26 * 0.88, 4.70 * 0.88);
         });
       }
@@ -632,7 +645,7 @@ export function Screenshots3DPhoneView({
     // Initial texture loading
     const initialUrl = screenshots[activeIdx]?.imageUrl || screenshots[activeIdx]?.url || '';
     if (initialUrl) {
-      loadTexture(initialUrl, (tex) => {
+      loadTexture(initialUrl, activeIdx, (tex) => {
         applyTextureToMat(centerPhone.screenMat, tex, centerTextureRef, screenMeshRef, 2.26, 4.70);
       });
     }
@@ -640,13 +653,13 @@ export function Screenshots3DPhoneView({
     if (totalCount > 1) {
       const leftUrl = screenshots[prevIdx]?.imageUrl || screenshots[prevIdx]?.url || '';
       if (leftUrl) {
-        loadTexture(leftUrl, (tex) => {
+        loadTexture(leftUrl, prevIdx, (tex) => {
           applyTextureToMat(leftPhone.screenMat, tex, leftCompTexRef, leftScreenMeshRef, 2.26 * 0.86, 4.70 * 0.86);
         });
       }
       const rightUrl = screenshots[nextIdx]?.imageUrl || screenshots[nextIdx]?.url || '';
       if (rightUrl) {
-        loadTexture(rightUrl, (tex) => {
+        loadTexture(rightUrl, nextIdx, (tex) => {
           applyTextureToMat(rightPhone.screenMat, tex, rightCompTexRef, rightScreenMeshRef, 2.26 * 0.86, 4.70 * 0.86);
         });
       }
