@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "clean": "next clean",
-    "test": "node test/appUtils.test.mjs && node test/threeUtils.test.mjs && node test/hero3DExperience.test.mjs && node test/screenshots3DGesture.test.mjs && node test/navLogo3D.test.mjs && node test/screenshotsVisualsUpgrade.test.mjs && node test/uiUxModernGuidance.test.mjs && node test/platformEcosystem.test.mjs && node test/searchPolish.test.mjs"
+    "test": "node test/appUtils.test.mjs && node test/threeUtils.test.mjs && node test/hero3DExperience.test.mjs && node test/screenshots3DGesture.test.mjs && node test/navLogo3D.test.mjs && node test/screenshotsVisualsUpgrade.test.mjs && node test/uiUxModernGuidance.test.mjs && node test/platformEcosystem.test.mjs && node test/searchPolish.test.mjs && node test/userReviewsPriority.test.mjs && node test/searchDropdownAndRealLogo.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

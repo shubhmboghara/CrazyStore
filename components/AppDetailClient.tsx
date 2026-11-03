@@ -66,21 +66,29 @@ function AppLogoImage({
   fallback: React.ReactNode;
   className?: string;
 }) {
+  const [currentSrc, setCurrentSrc] = useState<string | undefined>(src || '/videohub-logo.png');
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    setCurrentSrc(src || '/videohub-logo.png');
     setHasError(false);
   }, [src]);
 
-  if (hasError || !src) {
+  if (hasError || !currentSrc) {
     return <>{fallback}</>;
   }
 
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={alt}
-      onError={() => setHasError(true)}
+      onError={() => {
+        if (currentSrc !== '/videohub-logo.png') {
+          setCurrentSrc('/videohub-logo.png');
+        } else {
+          setHasError(true);
+        }
+      }}
       className={className}
     />
   );
@@ -97,7 +105,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [averageRating, setAverageRating] = useState<number>(initialApp.initialRating || 5.0);
   const [totalCount, setTotalCount] = useState<number>(initialApp.initialReviewCount || 0);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'safety' | 'reviews' | 'tech'>('overview');
+  const [activeTab, setActiveTab] = useState<'reviews' | 'overview' | 'safety' | 'tech'>('reviews');
   const [selected3DIdx, setSelected3DIdx] = useState<number>(0);
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -115,12 +123,27 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
     setSavedLocally(isSaved(appData.slug));
   }, [isSaved, appData.slug]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#about' || hash === '#overview') {
+        setActiveTab('overview');
+      } else if (hash === '#safety' || hash === '#privacy') {
+        setActiveTab('safety');
+      } else if (hash === '#tech' || hash === '#source') {
+        setActiveTab('tech');
+      } else if (hash === '#reviews') {
+        setActiveTab('reviews');
+      }
+    }
+  }, []);
+
   const compat = useMemo(() => checkDeviceCompatibility(appData.minAndroid), [appData.minAndroid]);
 
-  const handleTabKeyDown = (e: React.KeyboardEvent, currentTab: 'overview' | 'safety' | 'reviews' | 'tech') => {
-    const tabs: ('overview' | 'safety' | 'reviews' | 'tech')[] = ['overview', 'safety', 'reviews', 'tech'];
+  const handleTabKeyDown = (e: React.KeyboardEvent, currentTab: 'reviews' | 'overview' | 'safety' | 'tech') => {
+    const tabs: ('reviews' | 'overview' | 'safety' | 'tech')[] = ['reviews', 'overview', 'safety', 'tech'];
     const currentIdx = tabs.indexOf(currentTab);
-    let nextTab: 'overview' | 'safety' | 'reviews' | 'tech' | null = null;
+    let nextTab: 'reviews' | 'overview' | 'safety' | 'tech' | null = null;
 
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
@@ -462,7 +485,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 >
                   <AppLogoImage
                     key={appData.logoUrl || appData.slug}
-                    src={appData.logoUrl}
+                    src={appData.logoUrl || (appData.slug === 'videohub' ? '/videohub-logo.png' : undefined)}
                     alt={appData.name}
                     fallback={getIconComponent(appData.iconSymbol)}
                   />
@@ -704,6 +727,23 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 <button
                   type="button"
                   role="tab"
+                  id="tab-reviews"
+                  aria-selected={activeTab === 'reviews'}
+                  aria-controls="panel-reviews"
+                  tabIndex={activeTab === 'reviews' ? 0 : -1}
+                  onClick={() => setActiveTab('reviews')}
+                  onKeyDown={(e) => handleTabKeyDown(e, 'reviews')}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 ${
+                    activeTab === 'reviews'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
+                      : 'text-zinc-400 hover:bg-zinc-800/60'
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" /> User Reviews ({totalCount})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
                   id="tab-overview"
                   aria-selected={activeTab === 'overview'}
                   aria-controls="panel-overview"
@@ -738,23 +778,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 <button
                   type="button"
                   role="tab"
-                  id="tab-reviews"
-                  aria-selected={activeTab === 'reviews'}
-                  aria-controls="panel-reviews"
-                  tabIndex={activeTab === 'reviews' ? 0 : -1}
-                  onClick={() => setActiveTab('reviews')}
-                  onKeyDown={(e) => handleTabKeyDown(e, 'reviews')}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 ${
-                    activeTab === 'reviews'
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/20'
-                      : 'text-zinc-400 hover:bg-zinc-800/60'
-                  }`}
-                >
-                  <MessageSquare className="w-4 h-4" /> User Reviews ({totalCount})
-                </button>
-                <button
-                  type="button"
-                  role="tab"
                   id="tab-tech"
                   aria-selected={activeTab === 'tech'}
                   aria-controls="panel-tech"
@@ -771,7 +794,26 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </button>
               </div>
 
-              {/* Tab 1: Overview & About */}
+              {/* Tab 1: User Reviews (Primary focus) */}
+              {activeTab === 'reviews' && (
+                <div role="tabpanel" id="panel-reviews" aria-labelledby="tab-reviews" tabIndex={0} className="space-y-8 animate-in fade-in duration-300">
+                  <ReviewsList
+                    reviews={reviews}
+                    isLoading={isLoadingReviews}
+                    averageRating={averageRating}
+                    totalCount={totalCount}
+                    onWriteReviewClick={() => {
+                      const el = document.getElementById('review-form-container');
+                      el?.scrollIntoView({ behavior: 'smooth' });
+                      const input = document.getElementById('review-text-input');
+                      input?.focus();
+                    }}
+                  />
+                  <ReviewForm appSlug={appData.slug} onReviewSubmitted={fetchReviews} />
+                </div>
+              )}
+
+              {/* Tab 2: Overview & About */}
               {activeTab === 'overview' && (
                 <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabIndex={0} className="space-y-8 animate-in fade-in duration-300">
                   {/* Primary About Card */}
@@ -889,27 +931,14 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </div>
               )}
 
-              {/* Tab: Data Safety & Privacy */}
+              {/* Tab 3: Data Safety & Privacy */}
               {activeTab === 'safety' && (
                 <div role="tabpanel" id="panel-safety" aria-labelledby="tab-safety" tabIndex={0} className="space-y-6 outline-hidden animate-in fade-in duration-300">
                   <DataSafetyCard app={appData} />
                 </div>
               )}
 
-              {/* Tab 2: User Reviews */}
-              {activeTab === 'reviews' && (
-                <div role="tabpanel" id="panel-reviews" aria-labelledby="tab-reviews" tabIndex={0} className="space-y-8 animate-in fade-in duration-300">
-                  <ReviewForm appSlug={appData.slug} onReviewSubmitted={fetchReviews} />
-                  <ReviewsList
-                    reviews={reviews}
-                    isLoading={isLoadingReviews}
-                    averageRating={averageRating}
-                    totalCount={totalCount}
-                  />
-                </div>
-              )}
-
-              {/* Tab 3: Tech Stack & Architecture */}
+              {/* Tab 4: Tech Stack & Architecture */}
               {activeTab === 'tech' && (
                 <div role="tabpanel" id="panel-tech" aria-labelledby="tab-tech" tabIndex={0} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
                   <h3 className="text-lg font-black text-zinc-100">

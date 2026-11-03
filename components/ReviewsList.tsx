@@ -20,6 +20,7 @@ interface ReviewsListProps {
   isLoading: boolean;
   averageRating: number;
   totalCount: number;
+  onWriteReviewClick?: () => void;
 }
 
 export function ReviewsList({
@@ -27,6 +28,7 @@ export function ReviewsList({
   isLoading,
   averageRating,
   totalCount,
+  onWriteReviewClick,
 }: ReviewsListProps) {
   const [selectedStar, setSelectedStar] = React.useState<number | null>(null);
   const [helpfulMap, setHelpfulMap] = React.useState<Record<string, boolean>>({});
@@ -66,10 +68,29 @@ export function ReviewsList({
     <div id="reviews-section" className="space-y-6">
       {/* Average Rating Summary Card */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-zinc-100 mb-4 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-purple-400" />
-          Ratings &amp; Reviews
-        </h3>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h3 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-purple-400" />
+            Ratings &amp; Reviews
+          </h3>
+          <button
+            type="button"
+            onClick={
+              onWriteReviewClick
+                ? onWriteReviewClick
+                : () => {
+                    const el = document.getElementById('review-form-container');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                    const input = document.getElementById('review-text-input');
+                    input?.focus();
+                  }
+            }
+            className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 flex items-center gap-1.5 cursor-pointer"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Write a Review</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           {/* Big Score Number */}
           <div className="md:col-span-4 flex flex-col items-center justify-center p-4 rounded-xl bg-purple-950/20 border border-purple-900/40 text-center">
