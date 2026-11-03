@@ -217,11 +217,14 @@ export function normalizeAppRecord(dbApp: any): any {
     }
   }
 
-  const rawLogo = (dbApp.logoUrl || dbApp.logo_url || dbApp.logourl || '').trim();
+  let rawLogo = (dbApp.logoUrl || dbApp.logo_url || dbApp.logourl || '').trim();
+  if (rawLogo.includes('AppLogo_aQ35OykOj') || rawLogo.includes('logo_RKSbJJFtA')) {
+    rawLogo = '';
+  }
   const resolvedLogo = rawLogo !== ''
     ? rawLogo
     : (dbApp.slug?.toLowerCase() === 'videohub'
-      ? 'https://ik.imagekit.io/shubhambogharadev/android-apps/AppLogo_aQ35OykOj.svg'
+      ? '/videohub-logo.png'
       : '');
 
   return {
