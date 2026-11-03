@@ -356,44 +356,10 @@ export function HomeClient({
                   </span>
                 </h1>
 
-                <p className="max-w-xl mx-auto md:mx-0 text-xs sm:text-sm md:text-base text-zinc-400 mb-6 sm:mb-8 leading-relaxed font-normal">
+                <p className="max-w-xl mx-auto md:mx-0 text-xs sm:text-sm md:text-base text-zinc-400 leading-relaxed font-normal">
                   Curated directory of high-performance, ad-free Android applications built natively with Kotlin and Jetpack Compose. Zero telemetry, reproducible builds, and verified open-source code.
                 </p>
 
-                <div className="flex flex-col xs:flex-row items-center justify-center md:justify-start gap-3 sm:gap-4 mb-6 sm:mb-8">
-                  <Link
-                    href="#catalog"
-                    className="w-full xs:w-auto px-6 sm:px-7 py-3 sm:py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>Browse Catalog</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </Link>
-
-                  <a
-                    href="https://github.com/shubhmboghara/CrazyStore"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full xs:w-auto px-6 sm:px-7 py-3 sm:py-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs sm:text-sm border border-zinc-800 shadow-md hover:border-zinc-700 transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <FaGithub className="w-4 h-4" /> View GitHub Source
-                  </a>
-                </div>
-
-                {/* Micro Highlights */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-5 sm:pt-6 border-t border-zinc-800/80 max-w-md mx-auto md:mx-0 text-center md:text-left">
-                  <div>
-                    <span className="block text-base sm:text-lg font-black text-zinc-100">0%</span>
-                    <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium">Zero Telemetry</span>
-                  </div>
-                  <div>
-                    <span className="block text-base sm:text-lg font-black text-purple-400">120Hz</span>
-                    <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium">Compose Native</span>
-                  </div>
-                  <div>
-                    <span className="block text-base sm:text-lg font-black text-indigo-400">3D</span>
-                    <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium">WebGL Live View</span>
-                  </div>
-                </div>
               </div>
 
               {/* Right Column: Interactive 3D WebGL Phone Experience */}
