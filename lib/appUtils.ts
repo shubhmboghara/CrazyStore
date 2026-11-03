@@ -217,14 +217,11 @@ export function normalizeAppRecord(dbApp: any): any {
     }
   }
 
-  let rawLogo = (dbApp.logoUrl || dbApp.logo_url || dbApp.logourl || '').trim();
-  if (rawLogo.includes('AppLogo_aQ35OykOj') || rawLogo.includes('logo_RKSbJJFtA')) {
-    rawLogo = '';
-  }
+  const rawLogo = (dbApp.logoUrl || dbApp.logo_url || dbApp.logourl || '').trim();
   const resolvedLogo = rawLogo !== ''
     ? rawLogo
     : (dbApp.slug?.toLowerCase() === 'videohub'
-      ? '/videohub-logo.png'
+      ? 'https://ik.imagekit.io/shubhambogharadev/android-apps/AppLogo_aQ35OykOj.svg'
       : '');
 
   return {
@@ -288,7 +285,7 @@ export function mergeAppWithDefaults(baseApp?: AndroidApp | null, rawDbApp?: any
     fullDescription: (normDb.fullDescription && normDb.fullDescription.length > 0) ? normDb.fullDescription : (baseApp.fullDescription || []),
     screenshots: (normDb.screenshots && normDb.screenshots.length > 0) ? normDb.screenshots : (baseApp.screenshots || []),
     // Non-empty string fallbacks
-    logoUrl: (normDb.logoUrl && normDb.logoUrl.trim() !== '') ? normDb.logoUrl : (baseApp.logoUrl || '/videohub-logo.png'),
+    logoUrl: (normDb.logoUrl && normDb.logoUrl.trim() !== '') ? normDb.logoUrl : (baseApp.logoUrl || 'https://ik.imagekit.io/shubhambogharadev/android-apps/AppLogo_aQ35OykOj.svg'),
     bannerUrl: (normDb.bannerUrl && normDb.bannerUrl.trim() !== '') ? normDb.bannerUrl : (baseApp.bannerUrl || ''),
     tagline: (normDb.tagline && normDb.tagline.trim() !== '') ? normDb.tagline : (baseApp.tagline || ''),
     shortDescription: (normDb.shortDescription && normDb.shortDescription.trim() !== '') ? normDb.shortDescription : (baseApp.shortDescription || ''),
