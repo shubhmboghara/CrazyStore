@@ -3,16 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Search, ShieldCheck, Sparkles, Layers, Bookmark } from 'lucide-react';
+import { Menu, X, Search, ShieldCheck, Sparkles, Layers } from 'lucide-react';
 import { NavLogo3D } from '@/components/three';
 import { CommandPalette } from '@/components/CommandPalette';
-import { useVault } from '@/hooks/useVault';
 
 export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const { count: vaultCount } = useVault();
 
   const isHomeRoute = pathname === '/';
   const isAppDetail = pathname.startsWith('/apps/');
@@ -124,34 +122,30 @@ export function Navbar() {
 
           {/* Right side controls */}
           <div className="flex items-center gap-2">
-            {/* Spotlight Command Palette Button */}
+            {/* Desktop Spotlight Command Palette Button */}
             <button
               type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 text-xs font-medium transition-all cursor-pointer min-h-[36px]"
-              title="Search apps (Ctrl+K or Cmd+K)"
+              className="hidden sm:inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800/90 text-zinc-300 hover:text-zinc-100 border border-zinc-800 hover:border-purple-700/60 text-xs font-medium transition-all shadow-xs hover:shadow-purple-950/20 cursor-pointer min-h-[38px] group"
+              title="Search apps (Ctrl+K or Cmd+K or /)"
             >
-              <Search className="w-3.5 h-3.5 text-purple-400" />
+              <Search className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
               <span>Search apps...</span>
-              <kbd className="hidden lg:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-950 text-zinc-400 border border-zinc-700">
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-950 text-zinc-400 border border-zinc-700/80 group-hover:text-purple-300 group-hover:border-purple-800/60 transition-colors">
                 ⌘K
               </kbd>
             </button>
 
-            {/* Saved Vault Indicator Link */}
-            <Link
-              href="/#catalog"
-              className="relative p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
-              title="Your Saved Apps Vault"
-              aria-label="Your Saved Apps Vault"
+            {/* Mobile Dedicated Search Button with WCAG 44x44 Touch Target */}
+            <button
+              type="button"
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="sm:hidden p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+              aria-label="Search applications"
+              title="Search applications"
             >
-              <Bookmark className="w-4 h-4 text-purple-400" />
-              {vaultCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center">
-                  {vaultCount}
-                </span>
-              )}
-            </Link>
+              <Search className="w-5 h-5 text-purple-400" />
+            </button>
 
             {/* Mobile menu hamburger button with WCAG 44x44 touch target */}
             <button
@@ -167,69 +161,81 @@ export function Navbar() {
           </div>
         </div>
 
-      {/* Accessible Mobile Drawer & Backdrop */}
-      {isMobileMenuOpen && (
-        <>
-          <div
-            className="fixed inset-0 top-16 bg-black/70 backdrop-blur-xs z-30 md:hidden animate-in fade-in duration-200"
-            onClick={() => setIsMobileMenuOpen(false)}
-            aria-hidden="true"
-          />
-          <div
-            id="mobile-nav-drawer"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Mobile Navigation Menu"
-            className="relative z-40 md:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-5 space-y-2 animate-in slide-in-from-top-2 duration-200 shadow-2xl"
-          >
-            <Link
-              href="/"
+        {/* Accessible Mobile Drawer & Backdrop */}
+        {isMobileMenuOpen && (
+          <>
+            <div
+              className="fixed inset-0 top-16 bg-black/70 backdrop-blur-xs z-30 md:hidden animate-in fade-in duration-200"
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold min-h-[48px] ${
-                isHomeRoute
-                  ? 'bg-purple-950/80 text-purple-300 border border-purple-800/50'
-                  : 'text-zinc-300 hover:bg-zinc-900'
-              }`}
+              aria-hidden="true"
+            />
+            <div
+              id="mobile-nav-drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Mobile Navigation Menu"
+              className="relative z-40 md:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-5 space-y-2 animate-in slide-in-from-top-2 duration-200 shadow-2xl"
             >
-              <Layers className="w-4 h-4 text-purple-400" />
-              <span>Storefront &amp; Discover</span>
-            </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsCommandPaletteOpen(true);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-purple-200 bg-purple-950/60 hover:bg-purple-900/70 border border-purple-800/50 min-h-[48px] text-left cursor-pointer transition-all"
+              >
+                <Search className="w-4 h-4 text-purple-400" />
+                <span>Instant Spotlight Search</span>
+              </button>
 
-            <Link
-              href="/#catalog"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900 min-h-[48px]"
-            >
-              <Search className="w-4 h-4 text-purple-400" />
-              <span>Browse Catalog &amp; Search</span>
-            </Link>
+              <Link
+                href="/"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold min-h-[48px] ${
+                  isHomeRoute
+                    ? 'bg-purple-950/80 text-purple-300 border border-purple-800/50'
+                    : 'text-zinc-300 hover:bg-zinc-900'
+                }`}
+              >
+                <Layers className="w-4 h-4 text-purple-400" />
+                <span>Storefront &amp; Discover</span>
+              </Link>
 
-            <Link
-              href="/#standards"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900 min-h-[48px]"
-            >
-              <ShieldCheck className="w-4 h-4 text-purple-400" />
-              <span>FOSS Standards &amp; Safety</span>
-            </Link>
+              <Link
+                href="/#catalog"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900 min-h-[48px]"
+              >
+                <Search className="w-4 h-4 text-purple-400" />
+                <span>Browse Catalog &amp; Search</span>
+              </Link>
 
-            <Link
-              href="/apps/videohub"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-purple-300 bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800/40 min-h-[48px]"
-            >
-              <Sparkles className="w-4 h-4 text-purple-400" />
-              <span>3D Device Studio</span>
-            </Link>
-          </div>
-        </>
-      )}
-    </header>
+              <Link
+                href="/#standards"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900 min-h-[48px]"
+              >
+                <ShieldCheck className="w-4 h-4 text-purple-400" />
+                <span>FOSS Standards &amp; Safety</span>
+              </Link>
 
-    <CommandPalette
-      isOpen={isCommandPaletteOpen}
-      onClose={() => setIsCommandPaletteOpen(false)}
-    />
-  </>
+              <Link
+                href="/apps/videohub"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-purple-300 bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800/40 min-h-[48px]"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>3D Device Studio</span>
+              </Link>
+            </div>
+          </>
+        )}
+      </header>
+
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
+    </>
   );
 }

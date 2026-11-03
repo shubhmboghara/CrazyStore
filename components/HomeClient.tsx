@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { AndroidApp } from '@/lib/appsData';
 import { normalizeAppRecord } from '@/lib/appUtils';
@@ -16,7 +16,6 @@ import {
   Global3DBackground,
   Feature3DCanvas,
 } from '@/components/three';
-import { useVault } from '@/hooks/useVault';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -34,8 +33,22 @@ import {
   Lock,
   Boxes,
   ImageIcon,
-  Bookmark,
+  Search,
+  ArrowUpDown,
+  Filter,
+  X,
+  RotateCcw,
+  SlidersHorizontal,
+  Tag,
 } from 'lucide-react';
+import {
+  HighlightedText,
+  filterApps,
+  sortApps,
+  SortOption,
+  QuickFilterOption,
+  POPULAR_SEARCH_TAGS,
+} from '@/lib/searchUtils';
 
 function AppLogoImage({
   src,
@@ -67,13 +80,21 @@ function AppLogoImage({
   );
 }
 
-export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: AndroidApp[], initialRatingsMap: Record<string, { avg: number; count: number }> }) {
+export function HomeClient({
+  initialApps,
+  initialRatingsMap,
+}: {
+  initialApps: AndroidApp[];
+  initialRatingsMap: Record<string, { avg: number; count: number }>;
+}) {
   const [apps, setApps] = useState<AndroidApp[]>(initialApps);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sortBy, setSortBy] = useState<SortOption>('featured');
+  const [quickFilter, setQuickFilter] = useState<QuickFilterOption>('all');
   const [ratingsMap, setRatingsMap] = useState<Record<string, { avg: number; count: number }>>(initialRatingsMap);
-  const { isSaved, toggleSaved, count: vaultCount } = useVault();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [categories, setCategories] = useState<string[]>(() => {
     const uniqueCats = new Set<string>();
@@ -82,6 +103,24 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
     });
     return ['All', ...Array.from(uniqueCats)];
   });
+
+  // Hotkey listener: '/' to focus in-page catalog search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        // Prevent default slash behavior and focus catalog search
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     let isSubscribed = true;
@@ -196,24 +235,30 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
     };
   }, []);
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-  const filteredApps = apps.filter((app) => {
-    let matchesCategory = true;
-    if (selectedCategory === 'Saved Vault') {
-      matchesCategory = isSaved(app.slug);
-    } else if (selectedCategory !== 'All') {
-      matchesCategory = app.category === selectedCategory;
-    }
-    if (!matchesCategory) return false;
-    if (!normalizedQuery) return true;
-    return (
-      app.name.toLowerCase().includes(normalizedQuery) ||
-      (app.shortDescription && app.shortDescription.toLowerCase().includes(normalizedQuery)) ||
-      (app.tagline && app.tagline.toLowerCase().includes(normalizedQuery)) ||
-      (app.badge && app.badge.toLowerCase().includes(normalizedQuery)) ||
-      (app.techStack && app.techStack.some((tech) => tech.toLowerCase().includes(normalizedQuery)))
-    );
-  });
+  // Filter and sort apps dynamically with high-performance memoization
+  const filteredApps = useMemo(() => {
+    const filtered = filterApps(apps, {
+      query: searchQuery,
+      category: selectedCategory,
+      quickFilter,
+          });
+    return sortApps(filtered, sortBy, ratingsMap, searchQuery);
+  }, [apps, searchQuery, selectedCategory, quickFilter, sortBy, ratingsMap]);
+
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() ||
+    selectedCategory !== 'All' ||
+    quickFilter !== 'all' ||
+    sortBy !== 'featured'
+  );
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('All');
+    setQuickFilter('all');
+    setSortBy('featured');
+    searchInputRef.current?.focus();
+  };
 
   const getIconComponent = (symbol: string) => {
     switch (symbol) {
@@ -369,64 +414,108 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
           </div>
         </section>
 
-        {/* App Catalog Section with Search & Instant Filters */}
+        {/* App Catalog Section with Ultra-Modern Search & Instant Filters */}
         <section id="catalog" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+          {/* Section Header */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/40">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-800/40 flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-purple-400" />
                   Curated Catalog
                 </span>
-                <span className="text-xs text-zinc-400">
+                <span className="text-xs font-mono text-zinc-400 bg-zinc-900/80 px-2.5 py-0.5 rounded-full border border-zinc-800">
                   {filteredApps.length} of {apps.length} apps
                 </span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black mb-1 mt-1 text-zinc-100">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-1.5 text-zinc-100 tracking-tight">
                 Explore Applications
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-400 max-w-xl">
-                Discover high-performance Android applications with native Jetpack Compose &amp; Kotlin.
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-xl leading-relaxed">
+                Discover high-performance Android applications with native Jetpack Compose &amp; Kotlin. Ad-free, tracker-free, and verified open-source.
               </p>
             </div>
 
-            {/* Instant Search Bar */}
-            <div className="w-full md:w-80 relative">
-              <label htmlFor="catalog-search" className="sr-only">
-                Search applications
-              </label>
-              <div className="relative">
-                <input
-                  id="catalog-search"
-                  type="text"
-                  value={searchQuery}
-                  autoComplete="off"
-                  spellCheck="false"
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') setSearchQuery('');
-                  }}
-                  placeholder="Search by name, tag, or tech..."
-                  className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-100 placeholder-zinc-400 text-sm sm:text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-inner"
-                />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            {/* Prominent Search & Sort Bar Hub */}
+            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* Accessible Search Input Container */}
+              <div className="relative flex-1 sm:w-80 lg:w-96 group">
+                <label htmlFor="catalog-search" className="sr-only">
+                  Search applications
+                </label>
+                <div className="relative flex items-center rounded-2xl bg-zinc-900/90 border border-zinc-800 hover:border-zinc-700 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/25 transition-all shadow-inner">
+                  <div className="pl-3.5 pr-2 pointer-events-none text-zinc-400 group-focus-within:text-purple-400 transition-colors">
+                    <Search className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <input
+                    ref={searchInputRef}
+                    id="catalog-search"
+                    type="text"
+                    value={searchQuery}
+                    autoComplete="off"
+                    spellCheck="false"
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setSearchQuery('');
+                    }}
+                    placeholder="Search by name, tag, or tech..."
+                    className="w-full py-2.5 pr-20 bg-transparent text-zinc-100 placeholder-zinc-500 text-sm sm:text-xs focus:outline-hidden"
+                  />
+
+                  {/* Right side controls: Match count badge & Clear button */}
+                  <div className="absolute right-2.5 flex items-center gap-1.5">
+                    {searchQuery ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery('');
+                          searchInputRef.current?.focus();
+                        }}
+                        className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 cursor-pointer transition-colors"
+                        aria-label="Clear search query"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
+                      <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-950 text-zinc-500 border border-zinc-800 group-focus-within:border-purple-800/60 group-focus-within:text-purple-300 transition-colors" title="Press / to focus">
+                        /
+                      </kbd>
+                    )}
+                  </div>
                 </div>
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1.5 rounded-lg cursor-pointer min-w-[32px] min-h-[32px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-purple-500"
-                    aria-label="Clear search query"
+              </div>
+
+              {/* Sort Dropdown Selector */}
+              <div className="relative shrink-0">
+                <label htmlFor="catalog-sort" className="sr-only">
+                  Sort applications
+                </label>
+                <div className="relative flex items-center rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs font-semibold text-zinc-300 hover:border-zinc-700 transition-all">
+                  <div className="pl-3 pointer-events-none text-purple-400">
+                    <ArrowUpDown className="w-3.5 h-3.5" />
+                  </div>
+                  <select
+                    id="catalog-sort"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    className="w-full sm:w-auto py-2.5 pl-2.5 pr-8 bg-transparent text-zinc-200 text-xs font-medium cursor-pointer focus:outline-hidden appearance-none"
                   >
-                    ×
-                  </button>
-                )}
+                    <option value="featured" className="bg-zinc-900 text-zinc-200">Sort: Featured</option>
+                    <option value="rating-desc" className="bg-zinc-900 text-zinc-200">Sort: Highest Rated</option>
+                    <option value="name-asc" className="bg-zinc-900 text-zinc-200">Sort: Name (A - Z)</option>
+                    <option value="name-desc" className="bg-zinc-900 text-zinc-200">Sort: Name (Z - A)</option>
+                    <option value="size-asc" className="bg-zinc-900 text-zinc-200">Sort: Smallest Size</option>
+                  </select>
+                  <div className="pr-3 pointer-events-none text-zinc-500">
+                    <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 hide-scrollbar" role="tablist" aria-label="Filter applications by category">
+          {/* Category Filter Pills Bar */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 hide-scrollbar" role="tablist" aria-label="Filter applications by category">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -442,7 +531,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                 }}
                 className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer min-h-[40px] focus-visible:ring-2 focus-visible:ring-purple-500 ${
                   selectedCategory === cat
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20 ring-2 ring-purple-600/20'
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/30'
                     : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border border-zinc-800'
                 }`}
               >
@@ -450,51 +539,179 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
               </button>
             ))}
 
-            {/* Saved Vault Filter Pill */}
+            
+          </div>
+
+          {/* Quick Filter Badges Bar */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 hide-scrollbar text-xs">
+            <span className="text-zinc-500 font-medium flex items-center gap-1 pr-1 shrink-0">
+              <Filter className="w-3 h-3 text-purple-400" /> Quick tags:
+            </span>
+
             <button
               type="button"
-              role="tab"
-              aria-selected={selectedCategory === 'Saved Vault'}
-              onClick={() => setSelectedCategory('Saved Vault')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer min-h-[40px] flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-purple-500 ${
-                selectedCategory === 'Saved Vault'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20 ring-2 ring-purple-600/20'
-                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border border-zinc-800'
+              onClick={() => setQuickFilter((prev) => (prev === 'zero-trackers' ? 'all' : 'zero-trackers'))}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border ${
+                quickFilter === 'zero-trackers'
+                  ? 'bg-emerald-950 text-emerald-300 border-emerald-700/60 shadow-xs'
+                  : 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border-zinc-800/80'
               }`}
             >
-              <Bookmark className={`w-3.5 h-3.5 ${vaultCount > 0 ? 'text-purple-400 fill-purple-400' : ''}`} />
-              <span>Saved Vault ({vaultCount})</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>0 Trackers Only</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setQuickFilter((prev) => (prev === 'compose' ? 'all' : 'compose'))}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border ${
+                quickFilter === 'compose'
+                  ? 'bg-purple-950 text-purple-300 border-purple-700/60 shadow-xs'
+                  : 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border-zinc-800/80'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-purple-400" />
+              <span>Jetpack Compose</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setQuickFilter((prev) => (prev === 'material-you' ? 'all' : 'material-you'))}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border ${
+                quickFilter === 'material-you'
+                  ? 'bg-indigo-950 text-indigo-300 border-indigo-700/60 shadow-xs'
+                  : 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border-zinc-800/80'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Material You (M3)</span>
             </button>
           </div>
+
+          {/* Active Filters Summary Strip */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2 p-3 mb-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 text-xs text-zinc-400 animate-in fade-in duration-200">
+              <span className="font-semibold text-zinc-300 flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-purple-400" /> Active filters:
+              </span>
+
+              {searchQuery && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-950/70 border border-purple-800/50 text-purple-200">
+                  <span>Search: &ldquo;{searchQuery}&rdquo;</span>
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="hover:text-white p-0.5 rounded cursor-pointer"
+                    aria-label="Remove search filter"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              {selectedCategory !== 'All' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-950/70 border border-purple-800/50 text-purple-200">
+                  <span>Category: {selectedCategory}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory('All')}
+                    className="hover:text-white p-0.5 rounded cursor-pointer"
+                    aria-label="Remove category filter"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              {quickFilter !== 'all' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-950/70 border border-purple-800/50 text-purple-200">
+                  <span>Filter: {quickFilter}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuickFilter('all')}
+                    className="hover:text-white p-0.5 rounded cursor-pointer"
+                    aria-label="Remove quick filter"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              {sortBy !== 'featured' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-950/70 border border-purple-800/50 text-purple-200">
+                  <span>Sort: {sortBy}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSortBy('featured')}
+                    className="hover:text-white p-0.5 rounded cursor-pointer"
+                    aria-label="Reset sorting"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="ml-auto inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white font-medium transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset all</span>
+              </button>
+            </div>
+          )}
 
           {/* 3D Perspective Tilt Cards Grid / Empty State */}
           {isLoading ? (
             <AppCardSkeleton count={6} />
           ) : filteredApps.length === 0 ? (
-            <div className="p-12 text-center bg-zinc-900/40 rounded-3xl border border-dashed border-zinc-800 space-y-4 animate-in fade-in duration-200">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-950/60 border border-purple-800/40 flex items-center justify-center text-purple-400">
-                <Boxes className="w-7 h-7" />
+            <div className="p-12 text-center bg-zinc-900/40 rounded-3xl border border-dashed border-zinc-800 space-y-5 animate-in fade-in duration-200">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-purple-950/60 border border-purple-800/40 flex items-center justify-center text-purple-400 shadow-lg shadow-purple-950/40">
+                <Boxes className="w-8 h-8" />
               </div>
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-zinc-100">No applications found</h3>
-                <p className="text-xs text-zinc-400 max-w-md mx-auto">
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-bold text-zinc-100">No applications found</h3>
+                <p className="text-xs sm:text-sm text-zinc-400 max-w-md mx-auto leading-relaxed">
                   We couldn&apos;t find any applications matching &quot;{searchQuery}&quot; in category &quot;{selectedCategory}&quot;.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('All');
-                }}
-                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 cursor-pointer"
-              >
-                Reset Search &amp; Filters
-              </button>
+
+              {/* Suggestions chips */}
+              <div className="pt-2">
+                <p className="text-xs text-zinc-500 mb-2 font-medium">Try searching for popular keywords:</p>
+                <div className="flex flex-wrap items-center justify-center gap-2 max-w-lg mx-auto">
+                  {POPULAR_SEARCH_TAGS.slice(0, 5).map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery(tag);
+                        setSelectedCategory('All');
+                        setQuickFilter('all');
+                      }}
+                      className="px-3 py-1 rounded-xl bg-zinc-900 hover:bg-purple-950/60 border border-zinc-800 hover:border-purple-800/60 text-xs text-zinc-300 hover:text-purple-200 transition-all cursor-pointer"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-3">
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 cursor-pointer inline-flex items-center gap-2"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Search &amp; Filters</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 card-container">
-                {filteredApps.map((app, idx) => (
+              {filteredApps.map((app, idx) => (
                 <Card3DTilt key={app.slug} className="h-full">
                   <Link
                     href={`/apps/${app.slug}`}
@@ -535,24 +752,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                       </div>
                       <div className="flex flex-col items-end gap-1.5">
                         <div className="flex items-center gap-1.5">
-                          {/* Bookmark to Vault button */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleSaved(app.slug);
-                            }}
-                            className={`p-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
-                              isSaved(app.slug)
-                                ? 'bg-purple-950 text-purple-300 border-purple-800/60 shadow-xs'
-                                : 'bg-zinc-800 text-zinc-400 hover:text-white border-zinc-700/50'
-                            }`}
-                            title={isSaved(app.slug) ? 'Remove from Saved Vault' : 'Save to Vault'}
-                            aria-label={isSaved(app.slug) ? 'Remove from Saved Vault' : 'Save to Vault'}
-                          >
-                            <Bookmark className={`w-3.5 h-3.5 ${isSaved(app.slug) ? 'fill-purple-400 text-purple-400' : ''}`} />
-                          </button>
+                          
 
                           {app.githubUrl && (
                             <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700/50 text-[10px] font-bold flex items-center gap-1">
@@ -569,7 +769,7 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
                             <ShieldCheck className="w-3 h-3" /> 0 Trackers
                           </span>
                           <span className="px-2.5 py-1 rounded-lg bg-purple-950/50 text-purple-300 border border-purple-800/40 text-[10px] font-bold">
-                            {app.badge || 'Kotlin + Compose'}
+                            <HighlightedText text={app.badge || 'Kotlin + Compose'} query={searchQuery} />
                           </span>
                         </div>
                       </div>
@@ -577,11 +777,25 @@ export function HomeClient({ initialApps, initialRatingsMap }: { initialApps: An
 
                     <div className="flex-1">
                       <h3 className="text-xl font-black mb-2 text-zinc-100 group-hover:text-purple-400 transition-colors">
-                        {app.name}
+                        <HighlightedText text={app.name} query={searchQuery} />
                       </h3>
                       <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
-                        {app.tagline || app.shortDescription}
+                        <HighlightedText text={app.tagline || app.shortDescription} query={searchQuery} />
                       </p>
+
+                      {/* Tech Stack Preview with match highlights */}
+                      {app.techStack && app.techStack.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {app.techStack.slice(0, 3).map((tech) => (
+                            <span
+                              key={tech}
+                              className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-800/60 text-zinc-400 border border-zinc-800"
+                            >
+                              <HighlightedText text={tech} query={searchQuery} />
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-5 border-t border-zinc-800 flex items-center justify-between">

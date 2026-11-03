@@ -494,7 +494,20 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   </p>
 
                   <div className="pt-1 flex items-center gap-4 flex-wrap">
-                    <StarRating rating={averageRating} showNumber={true} reviewCount={totalCount} />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('reviews');
+                        document.getElementById('panel-reviews')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="hover:opacity-85 transition-opacity cursor-pointer text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded-lg p-0.5"
+                      title="View user reviews"
+                      aria-label={`Rating: ${averageRating.toFixed(1)} out of 5 stars with ${totalCount} reviews. Click to view user reviews.`}
+                    >
+                      <div className="pointer-events-none">
+                        <StarRating rating={averageRating} showNumber={true} reviewCount={totalCount} />
+                      </div>
+                    </button>
 
                     {/* Automatic Device Compatibility Indicator */}
                     <div className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-300 px-2.5 py-1 rounded-xl bg-zinc-950 border border-zinc-800">
