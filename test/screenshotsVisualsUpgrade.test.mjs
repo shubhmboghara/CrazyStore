@@ -26,13 +26,13 @@ const appsDataPath = path.resolve(process.cwd(), 'lib/appsData.ts');
 const appsDataContent = fs.readFileSync(appsDataPath, 'utf8');
 
 assert.ok(appsDataContent.includes("title: 'Trending Feed & Discovery'"), 'appsData.ts must include Trending Feed & Discovery');
-assert.ok(appsDataContent.includes("url: '/screenshots/videohub-feed.svg'"), 'appsData.ts must reference videohub-feed.svg');
+assert.ok(appsDataContent.includes("videohub-feed.svg") || appsDataContent.includes("Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png"), 'appsData.ts must reference videohub feed screenshot');
 assert.ok(appsDataContent.includes("title: 'Immersive 4K ExoPlayer'"), 'appsData.ts must include Immersive 4K ExoPlayer');
-assert.ok(appsDataContent.includes("url: '/screenshots/videohub-player.svg'"), 'appsData.ts must reference videohub-player.svg');
+assert.ok(appsDataContent.includes("videohub-player.svg") || appsDataContent.includes("Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png"), 'appsData.ts must reference videohub player screenshot');
 assert.ok(appsDataContent.includes("title: 'Background Audio & Lockscreen'"), 'appsData.ts must include Background Audio & Lockscreen');
-assert.ok(appsDataContent.includes("url: '/screenshots/videohub-audio.svg'"), 'appsData.ts must reference videohub-audio.svg');
+assert.ok(appsDataContent.includes("videohub-audio.svg") || appsDataContent.includes("Screenshot_20260925-133323.VideoHub_LEK80RUfT.png"), 'appsData.ts must reference videohub audio screenshot');
 assert.ok(appsDataContent.includes("title: 'Material You & Settings'"), 'appsData.ts must include Material You & Settings');
-assert.ok(appsDataContent.includes("url: '/screenshots/videohub-settings.svg'"), 'appsData.ts must reference videohub-settings.svg');
+assert.ok(appsDataContent.includes("videohub-settings.svg") || appsDataContent.includes("Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png"), 'appsData.ts must reference videohub settings screenshot');
 console.log('✓ Test 2 Passed: VideoHub screenshots metadata and URLs configured accurately in appsData.ts');
 
 // Test 3: Normalization logic resolves type-based and object screenshots

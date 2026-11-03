@@ -121,6 +121,7 @@ export const ANDROID_APPS: AndroidApp[] = [
         ]
       }
     ],
+    logoUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/logo_RKSbJJFtA.svg',
     mirrors: [
       { name: 'Primary Google Drive CDN', url: 'https://drive.google.com/uc?export=download&id=1eA8aA9LR-tXARe2efn9NbQjCxW8YjY2a', type: 'direct' },
       { name: 'GitHub Releases Mirror', url: 'https://github.com/shubhmboghara/CrazyStore/releases', type: 'github' }
@@ -132,8 +133,8 @@ export const ANDROID_APPS: AndroidApp[] = [
         subtitle: 'Fluid 120Hz Jetpack Compose LazyColumn with real-time video previews & ad-free streaming',
         accentColor: 'from-purple-900/40 to-purple-600/20',
         type: 'feed',
-        url: '/screenshots/videohub-feed.svg',
-        imageUrl: '/screenshots/videohub-feed.svg',
+        url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
+        imageUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
       },
       {
         id: '2',
@@ -141,8 +142,8 @@ export const ANDROID_APPS: AndroidApp[] = [
         subtitle: 'Hardware-accelerated 4K 60fps playback with live SponsorBlock skip markers and gesture HUD',
         accentColor: 'from-indigo-900/40 to-purple-900/20',
         type: 'player',
-        url: '/screenshots/videohub-player.svg',
-        imageUrl: '/screenshots/videohub-player.svg',
+        url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
+        imageUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
       },
       {
         id: '3',
@@ -150,8 +151,8 @@ export const ANDROID_APPS: AndroidApp[] = [
         subtitle: 'AMOLED lockscreen controller, 320kbps Opus Hi-Fi audio, waveform visualizer & time-saved telemetry',
         accentColor: 'from-violet-900/40 to-fuchsia-900/20',
         type: 'stats',
-        url: '/screenshots/videohub-audio.svg',
-        imageUrl: '/screenshots/videohub-audio.svg',
+        url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
+        imageUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
       },
       {
         id: '4',
@@ -159,8 +160,8 @@ export const ANDROID_APPS: AndroidApp[] = [
         subtitle: 'Android 15 Dynamic Color palettes, granular SponsorBlock filters & 100% De-Googled privacy controls',
         accentColor: 'from-fuchsia-900/40 to-pink-900/20',
         type: 'settings',
-        url: '/screenshots/videohub-settings.svg',
-        imageUrl: '/screenshots/videohub-settings.svg',
+        url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
+        imageUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
       },
     ],
     initialRating: 4.8,

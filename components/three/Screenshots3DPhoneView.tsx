@@ -221,12 +221,29 @@ export function Screenshots3DPhoneView({
           callback(texture);
         },
         undefined,
-        () => {
-          /* error: keep placeholder dark material, no crash */
+        (err) => {
+          console.warn(`[3D Viewer] Texture load error for ${url}:`, err);
+          // Fallback to local SVG if ImageKit URL encounters CORS or network issues
+          if (url.startsWith('http') && textureLoaderRef.current) {
+            const fallbackSvgs = [
+              '/screenshots/videohub-feed.svg',
+              '/screenshots/videohub-player.svg',
+              '/screenshots/videohub-audio.svg',
+              '/screenshots/videohub-settings.svg'
+            ];
+            const fallbackUrl = fallbackSvgs[activeIdx % fallbackSvgs.length];
+            textureLoaderRef.current.load(fallbackUrl, (tex) => {
+              tex.colorSpace = THREE.SRGBColorSpace;
+              tex.minFilter = THREE.LinearFilter;
+              tex.magFilter = THREE.LinearFilter;
+              tex.needsUpdate = true;
+              callback(tex);
+            });
+          }
         }
       );
     },
-    []
+    [activeIdx]
   );
 
   // Update center, left, and right textures whenever activeIdx changes
@@ -338,6 +355,7 @@ export function Screenshots3DPhoneView({
 
     // 6. Texture Loader — shared instance
     const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
     textureLoaderRef.current = loader;
 
     // 7. Helper: Build Flagship Smartphone 3D Model
@@ -1017,8 +1035,22 @@ export function Screenshots3DPhoneView({
                 <img
                   src={s.imageUrl || s.url}
                   alt={s.title || `Thumbnail ${idx + 1}`}
+                  crossOrigin="anonymous"
                   loading="lazy"
-                  className="w-full h-full object-contain bg-zinc-900"
+                  className="w-full h-full object-cover bg-zinc-900"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const fallbackSvgs = [
+                      '/screenshots/videohub-feed.svg',
+                      '/screenshots/videohub-player.svg',
+                      '/screenshots/videohub-audio.svg',
+                      '/screenshots/videohub-settings.svg'
+                    ];
+                    const fallback = fallbackSvgs[idx % fallbackSvgs.length];
+                    if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                      target.src = fallback;
+                    }
+                  }}
                 />
                 {isSelected && (
                   <div className="absolute inset-0 bg-purple-600/10 pointer-events-none" />
