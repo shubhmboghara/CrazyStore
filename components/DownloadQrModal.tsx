@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import QRCode from 'qrcode';
-import { X, QrCode, Smartphone, Copy, Check, ExternalLink, ShieldCheck } from 'lucide-react';
+import { X, QrCode, Smartphone, ExternalLink, ShieldCheck } from 'lucide-react';
 
 interface DownloadQrModalProps {
   isOpen: boolean;
@@ -21,7 +21,6 @@ export function DownloadQrModal({
 }: DownloadQrModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
-  const [copied, setCopied] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen && downloadUrl) {
@@ -53,16 +52,6 @@ export function DownloadQrModal({
       }
     }
   }, [isOpen]);
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(downloadUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -126,36 +115,8 @@ export function DownloadQrModal({
           </div>
         </div>
 
-        {/* Download Link & Copy Action */}
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              readOnly
-              value={downloadUrl}
-              className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-400 font-mono truncate focus:outline-hidden"
-              aria-label="Direct APK Download URL"
-            />
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer min-h-[40px] shrink-0"
-              aria-label={copied ? 'Link copied' : 'Copy download URL'}
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-400">Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-          </div>
-
+        {/* Direct Download Action Button */}
+        <div>
           <a
             href={downloadUrl}
             target="_blank"
