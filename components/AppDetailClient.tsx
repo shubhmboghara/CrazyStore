@@ -16,8 +16,6 @@ import { trackEvent } from '@/lib/analytics';
 import { Screenshots3DBackdrop, Screenshots3DPhoneView } from '@/components/three';
 import { DataSafetyCard } from '@/components/DataSafetyCard';
 import { DownloadQrModal } from '@/components/DownloadQrModal';
-import { AppCompareModal } from '@/components/AppCompareModal';
-import { VersionChangelogModal } from '@/components/VersionChangelogModal';
 import { checkDeviceCompatibility } from '@/lib/deviceCompatibility';
 import { FaGithub } from 'react-icons/fa6';
 import {
@@ -44,8 +42,6 @@ import {
   RotateCcw,
   Boxes,
   QrCode,
-  ArrowRightLeft,
-  History,
   FileCheck,
 } from 'lucide-react';
 
@@ -112,8 +108,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
   // Advanced App Store Feature Modals & Utilities
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
-  const [isChangelogModalOpen, setIsChangelogModalOpen] = useState(false);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.toLowerCase();
@@ -589,28 +583,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   >
                     <QrCode className="w-3.5 h-3.5 text-purple-400" />
                     <span>Scan QR</span>
-                  </button>
-
-                  {/* Compare App button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsCompareModalOpen(true)}
-                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0"
-                    title="Compare side-by-side with other open source apps"
-                  >
-                    <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Compare</span>
-                  </button>
-
-                  {/* Version Changelog button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsChangelogModalOpen(true)}
-                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0"
-                    title="View version release notes and changelog"
-                  >
-                    <History className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Changelog</span>
                   </button>
 
                   {/* Share button */}
@@ -1197,18 +1169,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
         appName={appData.name}
         version={appData.version}
         downloadUrl={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
-      />
-
-      <AppCompareModal
-        isOpen={isCompareModalOpen}
-        onClose={() => setIsCompareModalOpen(false)}
-        baseApp={appData}
-      />
-
-      <VersionChangelogModal
-        isOpen={isChangelogModalOpen}
-        onClose={() => setIsChangelogModalOpen(false)}
-        app={appData}
       />
     </div>
   );
