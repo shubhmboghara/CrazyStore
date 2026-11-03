@@ -26,10 +26,6 @@ import {
   Smartphone,
   ShieldCheck,
   CheckCircle2,
-  Calendar,
-  Layers,
-  HardDrive,
-  Cpu,
   Share2,
   Play,
   Activity,
@@ -697,11 +693,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
         {/* Content Tabs & Main Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-            {/* Left Main Content Column (8 cols on lg, 7 cols on md) */}
-            <div className="md:col-span-7 lg:col-span-8 space-y-6 sm:space-y-8">
-              {/* Tab Navigation with WAI-ARIA pattern */}
-              <div role="tablist" aria-label="Application Details Tabs" className="flex items-center gap-2 border-b border-zinc-800 pb-2 overflow-x-auto hide-scrollbar no-scrollbar [scrollbar-width:none]">
+          <div className="space-y-6 sm:space-y-8">
+            {/* Tab Navigation with WAI-ARIA pattern */}
+            <div role="tablist" aria-label="Application Details Tabs" className="flex items-center gap-2 border-b border-zinc-800 pb-2 overflow-x-auto hide-scrollbar no-scrollbar [scrollbar-width:none]">
                 <button
                   type="button"
                   role="tab"
@@ -969,151 +963,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Right Sidebar Column (4 cols on lg, 5 cols on md) */}
-            <div className="md:col-span-5 lg:col-span-4 space-y-6">
-              {/* Quick Download Card */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-md space-y-5">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${
-                      appData.iconBg || 'from-purple-600 to-indigo-600'
-                    } flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0 overflow-hidden relative`}
-                  >
-                    <AppLogoImage
-                      key={appData.slug}
-                      src={appData.logoUrl}
-                      fallbackSrc={appData.slug === 'videohub' ? '/videohub-logo.png' : undefined}
-                      alt={appData.name}
-                      fallback={getIconComponent(appData.iconSymbol)}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-base text-zinc-100 truncate">
-                      {appData.name}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-800/50 text-[10px] font-bold">
-                        {appData.version}
-                      </span>
-                      <span className="text-xs text-zinc-400">
-                        {appData.size}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <a
-                  href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => handleDownloadClick('sidebar')}
-                  className="w-full py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm text-center shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Download className="w-5 h-5" /> Download APK ({appData.size})
-                </a>
-
-                <div className="flex items-center justify-center gap-2 text-xs text-emerald-400 font-medium">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>100% Free &bull; Verified Safe &bull; No Ads</span>
-                </div>
-              </div>
-
-              {/* Quick Info Bento Box */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-sm space-y-5">
-                <h4 className="font-bold text-sm text-zinc-100 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-purple-400" />
-                  App Meta & Specs
-                </h4>
-
-                <div className="space-y-4 text-xs">
-                  <div className="flex items-center justify-between py-1 border-b border-zinc-800">
-                    <span className="text-zinc-400 flex items-center gap-1.5">
-                      <HardDrive className="w-3.5 h-3.5" /> File Size
-                    </span>
-                    <span className="font-bold text-zinc-100">{appData.size}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1 border-b border-zinc-800">
-                    <span className="text-zinc-400 flex items-center gap-1.5">
-                      <Cpu className="w-3.5 h-3.5" /> Min Android
-                    </span>
-                    <span className="font-bold text-zinc-100">{appData.minAndroid}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1 border-b border-zinc-800">
-                    <span className="text-zinc-400 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" /> Release Date
-                    </span>
-                    <span className="font-bold text-zinc-100">{appData.updatedAt || 'Recent'}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1 border-b border-zinc-800">
-                    <span className="text-zinc-400 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Security
-                    </span>
-                    <span className="font-bold text-emerald-400">Verified & Safe</span>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    className="w-full py-3 px-4 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer border border-zinc-700/50"
-                  >
-                    <Share2 className="w-4 h-4" /> {copied ? 'Link Copied!' : 'Share Application'}
-                  </button>
-                </div>
-              </div>
-
-              {/* App Specs & Safety Card */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-xs space-y-4">
-                <h4 className="font-bold text-sm text-zinc-100 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  App Details & Security
-                </h4>
-
-                <div className="space-y-3 text-xs divide-y divide-zinc-800/80">
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-zinc-400">Category</span>
-                    <span className="font-semibold text-zinc-200">{appData.category || 'Media & Utilities'}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2.5">
-                    <span className="text-zinc-400">Package Size</span>
-                    <span className="font-semibold text-zinc-200">{appData.size}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2.5">
-                    <span className="text-zinc-400">Target Platform</span>
-                    <span className="font-semibold text-zinc-200">{appData.minAndroid}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2.5">
-                    <span className="text-zinc-400">License</span>
-                    <span className="font-semibold text-purple-400">Open Source (MIT / Apache)</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2.5">
-                    <span className="text-zinc-400">Safety & Ads</span>
-                    <span className="font-semibold text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> 100% Free & No Ads
-                    </span>
-                  </div>
-                </div>
-
-                {appData.githubUrl && (
-                  <div className="pt-2">
-                    <a
-                      href={appData.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors border border-zinc-700/50"
-                    >
-                      <FaGithub className="w-4 h-4" /> View on GitHub
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         </section>
 
