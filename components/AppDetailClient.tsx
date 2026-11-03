@@ -44,8 +44,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Maximize2,
-  ZoomIn,
+    ZoomIn,
   ZoomOut,
   RotateCcw,
   Boxes,
@@ -659,49 +658,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   </div>
                 </div>
 
-              </div>
-
-              {/* Active Screenshot Feature Highlight Banner */}
-              <div className="relative z-10 mb-4 px-3.5 sm:px-4 py-2.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse shrink-0" />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-black text-zinc-100 truncate">
-                        {validPreviews[selected3DIdx]?.title || `Screen ${selected3DIdx + 1}`}
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-800/40 font-bold shrink-0">
-                        {selected3DIdx + 1} of {validPreviews.length}
-                      </span>
-                    </div>
-                    {validPreviews[selected3DIdx]?.subtitle && (
-                      <p className="text-[11px] sm:text-xs text-zinc-400 truncate mt-0.5">
-                        {validPreviews[selected3DIdx].subtitle}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => setLightboxIndex(selected3DIdx)}
-                    className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-purple-600/20 cursor-pointer active:scale-95"
-                    title="Inspect Fullscreen"
-                  >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    <span>Inspect Fullscreen</span>
-                  </button>
-                  <a
-                    href={validPreviews[selected3DIdx]?.imageUrl || validPreviews[selected3DIdx]?.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors border border-zinc-700/60 cursor-pointer"
-                    title="Open original vector in new tab"
-                  >
-                    <Download className="w-4 h-4" />
-                  </a>
-                </div>
               </div>
 
               {/* Three.js 3D Smartphone Viewport */}
