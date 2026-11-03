@@ -19,7 +19,6 @@ import { DownloadQrModal } from '@/components/DownloadQrModal';
 import { AppCompareModal } from '@/components/AppCompareModal';
 import { VersionChangelogModal } from '@/components/VersionChangelogModal';
 import { checkDeviceCompatibility } from '@/lib/deviceCompatibility';
-import { useVault } from '@/hooks/useVault';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -51,7 +50,6 @@ import {
   QrCode,
   ArrowRightLeft,
   History,
-  Bookmark,
   FileCheck,
 } from 'lucide-react';
 
@@ -120,13 +118,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [isChangelogModalOpen, setIsChangelogModalOpen] = useState(false);
-  const { isSaved, toggleSaved } = useVault();
-  const [savedLocally, setSavedLocally] = useState(false);
-
-  useEffect(() => {
-    setSavedLocally(isSaved(appData.slug));
-  }, [isSaved, appData.slug]);
-
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.toLowerCase();
@@ -624,24 +615,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   >
                     <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Compare</span>
-                  </button>
-
-                  {/* Save to Vault (Wishlist) button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      toggleSaved(appData.slug);
-                      showToast(savedLocally ? 'Removed from your Saved Vault' : 'Saved to your Vault!', 'info');
-                    }}
-                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0 ${
-                      savedLocally
-                        ? 'bg-purple-950 text-purple-300 border-purple-800/60 shadow-xs'
-                        : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border-zinc-800'
-                    }`}
-                    title={savedLocally ? 'Saved to Vault' : 'Save to Vault'}
-                  >
-                    <Bookmark className={`w-3.5 h-3.5 ${savedLocally ? 'text-purple-400 fill-purple-400' : 'text-zinc-400'}`} />
-                    <span>{savedLocally ? 'Saved' : 'Save'}</span>
                   </button>
 
                   {/* Version Changelog button */}

@@ -110,9 +110,7 @@ export function filterApps(apps: AndroidApp[], options: FilterOptions): AndroidA
 
   return apps.filter((app) => {
     // 1. Category Filter
-    if (category === 'Saved Vault') {
-      if (!savedSlugs.has(app.slug)) return false;
-    } else if (category && category !== 'All') {
+    if (category && category !== 'All') {
       if (app.category?.toLowerCase() !== category.toLowerCase()) return false;
     }
 
