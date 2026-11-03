@@ -20,7 +20,7 @@ console.log('\nRunning automated test suite for Search Dropdown, Navigation & Au
     'appsData.ts must define logoUrl for VideoHub'
   );
   assert.ok(
-    content.includes('logo_RKSbJJFtA.svg') || content.includes('videohub-logo.png'),
+    content.includes('AppLogo_aQ35OykOj.svg') || content.includes('videohub-logo.png'),
     'appsData.ts must reference authentic VideoHub logo'
   );
 

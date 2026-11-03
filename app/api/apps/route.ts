@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { ANDROID_APPS, AndroidApp } from '@/lib/appsData';
@@ -222,6 +223,7 @@ export async function POST(req: NextRequest) {
     // Always cache in memory as fallback so write operation never crashes
     const fallbackApp = normalizeAppRecord(newAppDoc);
     inMemoryAppsStore.set(generatedSlug.toLowerCase(), fallbackApp);
+    try { revalidatePath('/', 'layout'); revalidatePath(`/apps/${generatedSlug.toLowerCase()}`, 'page'); } catch (_) {}
     if (!savedApp) {
       savedApp = fallbackApp;
     }
@@ -402,6 +404,7 @@ export async function PUT(req: NextRequest) {
     // Always update in memory cache fallback so admin edits succeed seamlessly
     const fallbackApp = normalizeAppRecord(updatedAppDoc);
     inMemoryAppsStore.set(generatedSlug.toLowerCase(), fallbackApp);
+    try { revalidatePath('/', 'layout'); revalidatePath(`/apps/${generatedSlug.toLowerCase()}`, 'page'); if (originalSlug !== generatedSlug) { revalidatePath(`/apps/${originalSlug.toLowerCase()}`, 'page'); } } catch (_) {}
     if (originalSlug.toLowerCase() !== generatedSlug.toLowerCase()) {
       inMemoryAppsStore.delete(originalSlug.toLowerCase());
     }

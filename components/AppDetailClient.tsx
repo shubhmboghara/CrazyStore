@@ -59,20 +59,22 @@ function AppLogoImage({
   src,
   alt,
   fallback,
+  fallbackSrc,
   className = 'w-full h-full object-cover',
 }: {
   src?: string;
   alt: string;
   fallback: React.ReactNode;
+  fallbackSrc?: string;
   className?: string;
 }) {
-  const [currentSrc, setCurrentSrc] = useState<string | undefined>(src || '/videohub-logo.png');
+  const [currentSrc, setCurrentSrc] = useState<string | undefined>(src || fallbackSrc);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    setCurrentSrc(src || '/videohub-logo.png');
+    setCurrentSrc(src || fallbackSrc);
     setHasError(false);
-  }, [src]);
+  }, [src, fallbackSrc]);
 
   if (hasError || !currentSrc) {
     return <>{fallback}</>;
@@ -83,13 +85,15 @@ function AppLogoImage({
       src={currentSrc}
       alt={alt}
       onError={() => {
-        if (currentSrc !== '/videohub-logo.png') {
-          setCurrentSrc('/videohub-logo.png');
+        if (fallbackSrc && currentSrc !== fallbackSrc) {
+          setCurrentSrc(fallbackSrc);
         } else {
           setHasError(true);
         }
       }}
       className={className}
+      loading="eager"
+      decoding="async"
     />
   );
 }
@@ -484,8 +488,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   } flex items-center justify-center shadow-xl shadow-purple-500/20 shrink-0 overflow-hidden relative`}
                 >
                   <AppLogoImage
-                    key={appData.logoUrl || appData.slug}
-                    src={appData.logoUrl || (appData.slug === 'videohub' ? '/videohub-logo.png' : undefined)}
+                    key={appData.slug}
+                    src={appData.logoUrl}
+                    fallbackSrc={appData.slug === 'videohub' ? '/videohub-logo.png' : undefined}
                     alt={appData.name}
                     fallback={getIconComponent(appData.iconSymbol)}
                   />
@@ -1004,8 +1009,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     } flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0 overflow-hidden relative`}
                   >
                     <AppLogoImage
-                      key={appData.logoUrl || appData.slug}
+                      key={appData.slug}
                       src={appData.logoUrl}
+                      fallbackSrc={appData.slug === 'videohub' ? '/videohub-logo.png' : undefined}
                       alt={appData.name}
                       fallback={getIconComponent(appData.iconSymbol)}
                     />
@@ -1328,8 +1334,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
               } flex items-center justify-center shrink-0 overflow-hidden relative shadow-md`}
             >
               <AppLogoImage
-                key={appData.logoUrl || appData.slug}
+                key={appData.slug}
                 src={appData.logoUrl}
+                fallbackSrc={appData.slug === 'videohub' ? '/videohub-logo.png' : undefined}
                 alt={appData.name}
                 fallback={getIconComponent(appData.iconSymbol)}
               />

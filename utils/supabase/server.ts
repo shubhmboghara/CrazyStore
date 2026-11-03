@@ -9,8 +9,11 @@ const supabaseKey =
 
 // Circuit breaker state to prevent blocking on dead or paused Supabase instances
 let isCircuitOpen = false;
+let consecutiveFailures = 0;
 let lastFailureTimestamp = 0;
-const CIRCUIT_RESET_TIMEOUT_MS = 60_000; // Retry after 1 minute
+const CIRCUIT_RESET_TIMEOUT_MS = 10_000; // Retry after 10 seconds (not 60s)
+const MAX_CONSECUTIVE_FAILURES = 3;
+const REQUEST_TIMEOUT_MS = 7_000; // 7 seconds (resilient to cold starts)
 
 export const isSupabaseConfigured = () => {
   if (!supabaseUrl || !supabaseKey) return false;
@@ -24,6 +27,7 @@ export const isSupabaseConfigured = () => {
   if (isCircuitOpen) {
     if (Date.now() - lastFailureTimestamp > CIRCUIT_RESET_TIMEOUT_MS) {
       isCircuitOpen = false; // test probe again
+      consecutiveFailures = 0;
     } else {
       return false; // skip immediately, 0ms latency!
     }
@@ -37,7 +41,7 @@ const customFetch: typeof fetch = async (input, init) => {
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 1500);
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
     const res = await fetch(input, {
@@ -45,10 +49,14 @@ const customFetch: typeof fetch = async (input, init) => {
       signal: controller.signal,
     });
     isCircuitOpen = false;
+    consecutiveFailures = 0;
     return res;
   } catch (err) {
-    isCircuitOpen = true;
-    lastFailureTimestamp = Date.now();
+    consecutiveFailures += 1;
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      isCircuitOpen = true;
+      lastFailureTimestamp = Date.now();
+    }
     throw err;
   } finally {
     clearTimeout(timer);

@@ -55,20 +55,22 @@ function AppLogoImage({
   src,
   alt,
   fallback,
+  fallbackSrc,
   className = "w-full h-full object-cover",
 }: {
   src?: string;
   alt: string;
   fallback: React.ReactNode;
+  fallbackSrc?: string;
   className?: string;
 }) {
-  const [currentSrc, setCurrentSrc] = useState<string | undefined>(src || '/videohub-logo.png');
+  const [currentSrc, setCurrentSrc] = useState<string | undefined>(src || fallbackSrc);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    setCurrentSrc(src || '/videohub-logo.png');
+    setCurrentSrc(src || fallbackSrc);
     setHasError(false);
-  }, [src]);
+  }, [src, fallbackSrc]);
 
   if (hasError || !currentSrc) {
     return <>{fallback}</>;
@@ -78,13 +80,15 @@ function AppLogoImage({
       src={currentSrc}
       alt={alt}
       onError={() => {
-        if (currentSrc !== '/videohub-logo.png') {
-          setCurrentSrc('/videohub-logo.png');
+        if (fallbackSrc && currentSrc !== fallbackSrc) {
+          setCurrentSrc(fallbackSrc);
         } else {
           setHasError(true);
         }
       }}
       className={className}
+      loading="eager"
+      decoding="async"
     />
   );
 }
@@ -559,8 +563,9 @@ export function HomeClient({
                                 } flex items-center justify-center text-white shrink-0 shadow-md ring-1 ring-white/10 overflow-hidden relative`}
                               >
                                 <AppLogoImage
-                                  key={app.logoUrl || app.slug}
-                                  src={app.logoUrl || (app.slug === 'videohub' ? '/videohub-logo.png' : undefined)}
+                                  key={app.slug}
+                                  src={app.logoUrl}
+                                  fallbackSrc={app.slug === 'videohub' ? '/videohub-logo.png' : undefined}
                                   alt={app.name}
                                   fallback={getIconComponent(app.iconSymbol)}
                                   className="w-full h-full object-cover"
@@ -870,16 +875,13 @@ export function HomeClient({
 
                     <div className="flex items-start justify-between mb-6 relative z-10">
                       <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${app.iconBg || 'from-purple-600 to-indigo-600'} flex items-center justify-center shadow-lg shadow-purple-500/20 transform group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 shrink-0 overflow-hidden`}>
-                        {app.logoUrl || app.slug === 'videohub' ? (
-                          <AppLogoImage
-                            key={app.logoUrl || app.slug}
-                            src={app.logoUrl || '/videohub-logo.png'}
-                            alt={app.name}
-                            fallback={getIconComponent(app.iconSymbol)}
-                          />
-                        ) : (
-                          getIconComponent(app.iconSymbol)
-                        )}
+                        <AppLogoImage
+                          key={app.slug}
+                          src={app.logoUrl}
+                          fallbackSrc={app.slug === 'videohub' ? '/videohub-logo.png' : undefined}
+                          alt={app.name}
+                          fallback={getIconComponent(app.iconSymbol)}
+                        />
                       </div>
                       <div className="flex flex-col items-end gap-1.5">
                         <div className="flex items-center gap-1.5">
