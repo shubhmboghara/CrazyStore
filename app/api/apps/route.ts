@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { ANDROID_APPS, AndroidApp } from '@/lib/appsData';
-import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
+import { formatDownloadUrl, normalizeAppRecord, mergeAppWithDefaults } from '@/lib/appUtils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -47,29 +47,16 @@ export async function GET(req: NextRequest) {
       if (dbApp && dbApp.slug) {
         const key = dbApp.slug.toLowerCase();
         if (appsMap.has(key)) {
-          const baseApp = appsMap.get(key) || {};
-          appsMap.set(key, {
-            ...baseApp,
-            ...dbApp,
-            logoUrl: key === 'videohub' ? '' : (dbApp.logoUrl || ''),
-            iconSymbol: key === 'videohub' ? 'play' : (dbApp.iconSymbol || baseApp.iconSymbol),
-            iconBg: key === 'videohub' ? 'from-purple-600 to-indigo-600' : (dbApp.iconBg || baseApp.iconBg),
-            downloadUrl: dbApp.downloadUrl ? formatDownloadUrl(dbApp.downloadUrl) : baseApp.downloadUrl,
-            isCustom: true,
-          });
+          const baseApp = appsMap.get(key);
+          appsMap.set(key, mergeAppWithDefaults(baseApp, dbApp));
         }
       }
     }
 
     // 3. Merge in-memory updates (fallback if Supabase was paused during an edit)
     for (const [key, memApp] of inMemoryAppsStore.entries()) {
-      const baseApp = appsMap.get(key) || {};
-      appsMap.set(key, {
-        ...baseApp,
-        ...memApp,
-        downloadUrl: memApp.downloadUrl ? formatDownloadUrl(memApp.downloadUrl) : baseApp.downloadUrl,
-        isCustom: true,
-      });
+      const baseApp = appsMap.get(key);
+      appsMap.set(key, mergeAppWithDefaults(baseApp, memApp));
     }
 
     const allApps = Array.from(appsMap.values());

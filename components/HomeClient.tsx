@@ -228,6 +228,11 @@ export function HomeClient({
       }
     }
 
+    // If initialApps wasn't loaded from SSR, fetch it
+    if (!initialApps || initialApps.length === 0) {
+      loadApps(true);
+    }
+
     const handleAppsUpdated = () => {
       loadApps(false);
     };
@@ -238,32 +243,13 @@ export function HomeClient({
       }
     };
 
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        loadApps(false);
-      }
-    };
-
-    const handleFocus = () => {
-      loadApps(false);
-    };
-
     window.addEventListener('apps_updated', handleAppsUpdated);
     window.addEventListener('storage', handleStorageChange);
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('focus', handleFocus);
-
-    const syncInterval = setInterval(() => {
-      loadApps(false);
-    }, 10000);
 
     return () => {
       isSubscribed = false;
-      clearInterval(syncInterval);
       window.removeEventListener('apps_updated', handleAppsUpdated);
       window.removeEventListener('storage', handleStorageChange);
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 

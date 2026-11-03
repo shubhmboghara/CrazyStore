@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { isWebGLAvailable, disposeThreeScene } from '@/lib/threeUtils';
 import { AndroidApp } from '@/lib/appsData';
-import { Maximize2, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Maximize2, RotateCcw, ChevronLeft, ChevronRight, Smartphone } from 'lucide-react';
 
 interface Screenshots3DPhoneViewProps {
   app: AndroidApp;
@@ -67,6 +67,81 @@ function isChildOf(obj: THREE.Object3D | null, parent: THREE.Object3D | null): b
     curr = curr.parent;
   }
   return false;
+}
+
+function ScreenshotThumbnailItem({
+  screenshot,
+  idx,
+  isSelected,
+  onClick,
+}: {
+  screenshot: any;
+  idx: number;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const fallbackPngs = [
+    '/screenshots/videohub-feed.png',
+    '/screenshots/videohub-player.png',
+    '/screenshots/videohub-audio.png',
+    '/screenshots/videohub-settings.png',
+  ];
+  const fallbackSvgs = [
+    '/screenshots/videohub-feed.svg',
+    '/screenshots/videohub-player.svg',
+    '/screenshots/videohub-audio.svg',
+    '/screenshots/videohub-settings.svg',
+  ];
+  const defaultPng = fallbackPngs[idx % fallbackPngs.length];
+  const defaultSvg = fallbackSvgs[idx % fallbackSvgs.length];
+
+  const initialSrc = screenshot.imageUrl || screenshot.url || defaultPng;
+  const [imgSrc, setImgSrc] = useState<string>(initialSrc);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setImgSrc(screenshot.imageUrl || screenshot.url || defaultPng);
+    setHasError(false);
+  }, [screenshot.imageUrl, screenshot.url, defaultPng]);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative shrink-0 w-11 sm:w-13 h-22 sm:h-26 md:h-28 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
+        isSelected
+          ? 'border-purple-500 scale-105 shadow-lg shadow-purple-600/40 ring-2 ring-purple-500/30'
+          : 'border-zinc-800 opacity-60 hover:opacity-100 hover:border-zinc-700'
+      }`}
+      title={screenshot.title || `Screenshot ${idx + 1}`}
+    >
+      {!hasError ? (
+        <img
+          src={imgSrc}
+          alt={screenshot.title || `Thumbnail ${idx + 1}`}
+          loading="lazy"
+          className="w-full h-full object-cover bg-zinc-900"
+          onError={() => {
+            if (imgSrc !== defaultPng) {
+              setImgSrc(defaultPng);
+            } else if (imgSrc !== defaultSvg) {
+              setImgSrc(defaultSvg);
+            } else {
+              setHasError(true);
+            }
+          }}
+        />
+      ) : (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-500 p-1">
+          <Smartphone className="w-4 h-4 text-purple-400 mb-1" />
+          <span className="text-[9px] font-bold text-zinc-400">#{idx + 1}</span>
+        </div>
+      )}
+      {isSelected && (
+        <div className="absolute inset-0 bg-purple-600/10 pointer-events-none" />
+      )}
+    </button>
+  );
 }
 
 export function Screenshots3DPhoneView({
@@ -223,22 +298,42 @@ export function Screenshots3DPhoneView({
         undefined,
         (err) => {
           console.warn(`[3D Viewer] Texture load error for ${url}:`, err);
-          // Fallback to local SVG if ImageKit URL encounters CORS or network issues
-          if (url.startsWith('http') && textureLoaderRef.current) {
+          // Fallback to local PNG or SVG if remote URL encounters issues
+          if (textureLoaderRef.current) {
+            const fallbackPngs = [
+              '/screenshots/videohub-feed.png',
+              '/screenshots/videohub-player.png',
+              '/screenshots/videohub-audio.png',
+              '/screenshots/videohub-settings.png'
+            ];
             const fallbackSvgs = [
               '/screenshots/videohub-feed.svg',
               '/screenshots/videohub-player.svg',
               '/screenshots/videohub-audio.svg',
               '/screenshots/videohub-settings.svg'
             ];
-            const fallbackUrl = fallbackSvgs[activeIdx % fallbackSvgs.length];
-            textureLoaderRef.current.load(fallbackUrl, (tex) => {
-              tex.colorSpace = THREE.SRGBColorSpace;
-              tex.minFilter = THREE.LinearFilter;
-              tex.magFilter = THREE.LinearFilter;
-              tex.needsUpdate = true;
-              callback(tex);
-            });
+            const fallbackUrl = fallbackPngs[activeIdx % fallbackPngs.length];
+            textureLoaderRef.current.load(
+              fallbackUrl,
+              (tex) => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                tex.minFilter = THREE.LinearFilter;
+                tex.magFilter = THREE.LinearFilter;
+                tex.needsUpdate = true;
+                callback(tex);
+              },
+              undefined,
+              () => {
+                const svgUrl = fallbackSvgs[activeIdx % fallbackSvgs.length];
+                textureLoaderRef.current?.load(svgUrl, (tex) => {
+                  tex.colorSpace = THREE.SRGBColorSpace;
+                  tex.minFilter = THREE.LinearFilter;
+                  tex.magFilter = THREE.LinearFilter;
+                  tex.needsUpdate = true;
+                  callback(tex);
+                });
+              }
+            );
           }
         }
       );
@@ -1015,49 +1110,18 @@ export function Screenshots3DPhoneView({
 
         {/* Thumbnails row */}
         <div className="w-full flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {screenshots.map((s, idx) => {
-            const isSelected = idx === activeIdx;
-            return (
-              <button
-                key={s.id || idx}
-                type="button"
-                onClick={() => {
-                  hasUserManuallySelected.current = true;
-                  onSelectScreenshot(idx);
-                }}
-                className={`relative shrink-0 w-11 sm:w-13 h-22 sm:h-26 md:h-28 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? 'border-purple-500 scale-105 shadow-lg shadow-purple-600/40 ring-2 ring-purple-500/30'
-                    : 'border-zinc-800 opacity-60 hover:opacity-100 hover:border-zinc-700'
-                }`}
-                title={s.title || `Screenshot ${idx + 1}`}
-              >
-                <img
-                  src={s.imageUrl || s.url}
-                  alt={s.title || `Thumbnail ${idx + 1}`}
-                  crossOrigin="anonymous"
-                  loading="lazy"
-                  className="w-full h-full object-cover bg-zinc-900"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    const fallbackSvgs = [
-                      '/screenshots/videohub-feed.svg',
-                      '/screenshots/videohub-player.svg',
-                      '/screenshots/videohub-audio.svg',
-                      '/screenshots/videohub-settings.svg'
-                    ];
-                    const fallback = fallbackSvgs[idx % fallbackSvgs.length];
-                    if (target.src !== fallback && !target.src.endsWith(fallback)) {
-                      target.src = fallback;
-                    }
-                  }}
-                />
-                {isSelected && (
-                  <div className="absolute inset-0 bg-purple-600/10 pointer-events-none" />
-                )}
-              </button>
-            );
-          })}
+          {screenshots.map((s, idx) => (
+            <ScreenshotThumbnailItem
+              key={s.id || idx}
+              screenshot={s}
+              idx={idx}
+              isSelected={idx === activeIdx}
+              onClick={() => {
+                hasUserManuallySelected.current = true;
+                onSelectScreenshot(idx);
+              }}
+            />
+          ))}
         </div>
       </div>
     </div>

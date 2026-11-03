@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { ANDROID_APPS, AndroidApp, getAppBySlug } from '@/lib/appsData';
 import { AppDetailClient } from '@/components/AppDetailClient';
 import { createPublicClient } from '@/utils/supabase/server';
-import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
+import { formatDownloadUrl, normalizeAppRecord, mergeAppWithDefaults } from '@/lib/appUtils';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -32,16 +32,7 @@ const getApp = cache(async (slug: string): Promise<AndroidApp | null> => {
       .maybeSingle();
 
     if (!error && dbApp) {
-      const normalizedDbApp = normalizeAppRecord(dbApp);
-      return {
-        ...(baseApp || {}),
-        ...normalizedDbApp,
-        logoUrl: normalizedSlug === 'videohub' ? '' : (normalizedDbApp.logoUrl || ''),
-        iconSymbol: normalizedSlug === 'videohub' ? 'play' : (normalizedDbApp.iconSymbol || baseApp?.iconSymbol),
-        iconBg: normalizedSlug === 'videohub' ? 'from-purple-600 to-indigo-600' : (normalizedDbApp.iconBg || baseApp?.iconBg),
-        downloadUrl: normalizedDbApp.downloadUrl ? formatDownloadUrl(normalizedDbApp.downloadUrl) : (baseApp?.downloadUrl || ''),
-        isCustom: true,
-      } as AndroidApp;
+      return mergeAppWithDefaults(baseApp, dbApp);
     }
   } catch (err) {
     console.warn('Error fetching app from Supabase:', err);

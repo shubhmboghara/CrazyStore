@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { HomeClient } from '@/components/HomeClient';
 import { ANDROID_APPS, AndroidApp } from '@/lib/appsData';
-import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
+import { formatDownloadUrl, normalizeAppRecord, mergeAppWithDefaults } from '@/lib/appUtils';
 import { createPublicClient } from '@/utils/supabase/server';
 
 export const revalidate = 60;
@@ -60,17 +60,8 @@ export default async function HomePage() {
     if (dbApp && dbApp.slug) {
       const key = dbApp.slug.toLowerCase();
       if (appsMap.has(key)) {
-        const baseApp = appsMap.get(key) || {};
-        appsMap.set(key, {
-          ...baseApp,
-          ...dbApp,
-          // VideoHub maintains its authentic native Play icon
-          logoUrl: key === 'videohub' ? '' : (dbApp.logoUrl || ''),
-          iconSymbol: key === 'videohub' ? 'play' : (dbApp.iconSymbol || baseApp.iconSymbol),
-          iconBg: key === 'videohub' ? 'from-purple-600 to-indigo-600' : (dbApp.iconBg || baseApp.iconBg),
-          downloadUrl: dbApp.downloadUrl ? formatDownloadUrl(dbApp.downloadUrl) : baseApp.downloadUrl,
-          isCustom: true,
-        });
+        const baseApp = appsMap.get(key);
+        appsMap.set(key, mergeAppWithDefaults(baseApp, dbApp));
       }
     }
   }

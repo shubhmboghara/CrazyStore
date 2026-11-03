@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ToastProvider } from '@/components/Toast';
 import { AnalyticsTracker } from '@/components/AnalyticsTracker';
+import { Analytics } from '@vercel/analytics/next';
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://crazy-store-rho.vercel.app').replace(/\/$/, '');
 
@@ -169,6 +170,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ToastProvider>
             <AnalyticsTracker />
             {children}
+            <Analytics />
           </ToastProvider>
         </ThemeProvider>
       </body>

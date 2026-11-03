@@ -217,6 +217,13 @@ export function normalizeAppRecord(dbApp: any): any {
     }
   }
 
+  const rawLogo = (dbApp.logoUrl || dbApp.logo_url || dbApp.logourl || '').trim();
+  const resolvedLogo = rawLogo !== ''
+    ? rawLogo
+    : (dbApp.slug?.toLowerCase() === 'videohub'
+      ? 'https://ik.imagekit.io/shubhambogharadev/android-apps/AppLogo_aQ35OykOj.svg'
+      : '');
+
   return {
     ...dbApp,
     slug: dbApp.slug ? String(dbApp.slug).trim() : '',
@@ -230,7 +237,7 @@ export function normalizeAppRecord(dbApp: any): any {
     iconBg: dbApp.iconBg || dbApp.icon_bg || dbApp.iconbg || 'from-purple-600 to-indigo-600',
     iconSymbol: dbApp.iconSymbol || dbApp.icon_symbol || dbApp.iconsymbol || 'smartphone',
     badge: dbApp.badge || 'Kotlin + Compose',
-    logoUrl: (dbApp.slug?.toLowerCase() === 'videohub' && (String(dbApp.logoUrl || dbApp.logo_url || '').includes('AppLogo_aQ35OykOj') || String(dbApp.logoUrl || dbApp.logo_url || '').includes('logo_RKSbJJFtA'))) ? '' : (dbApp.logoUrl || dbApp.logo_url || dbApp.logourl || ''),
+    logoUrl: resolvedLogo,
     bannerUrl: dbApp.bannerUrl || dbApp.banner_url || dbApp.bannerurl || '',
     githubUrl: dbApp.githubUrl || dbApp.github_url || dbApp.githuburl || '',
     downloadUrl: formatDownloadUrl(downloadUrl),
@@ -250,5 +257,43 @@ export function normalizeAppRecord(dbApp: any): any {
     changelog,
     mirrors,
     architectures,
+  };
+}
+
+/**
+ * Intelligently merges a database app record with curated default static data.
+ * Guarantees that empty arrays, blank descriptions, or missing assets from the database
+ * do NOT erase rich static changelogs, permissions, mirrors, or authentic logos.
+ */
+export function mergeAppWithDefaults(baseApp?: AndroidApp | null, rawDbApp?: any): AndroidApp {
+  const normDb = rawDbApp ? normalizeAppRecord(rawDbApp) : null;
+  if (!baseApp && !normDb) {
+    throw new Error('mergeAppWithDefaults: At least one app record must be provided');
+  }
+  if (!normDb) return { ...baseApp! };
+  if (!baseApp) return normDb;
+
+  return {
+    ...baseApp,
+    ...normDb,
+    // Preserve rich static arrays if DB has empty arrays
+    features: (normDb.features && normDb.features.length > 0) ? normDb.features : (baseApp.features || []),
+    techStack: (normDb.techStack && normDb.techStack.length > 0) ? normDb.techStack : (baseApp.techStack || []),
+    permissions: (normDb.permissions && normDb.permissions.length > 0) ? normDb.permissions : (baseApp.permissions || []),
+    changelog: (normDb.changelog && normDb.changelog.length > 0) ? normDb.changelog : (baseApp.changelog || []),
+    mirrors: (normDb.mirrors && normDb.mirrors.length > 0) ? normDb.mirrors : (baseApp.mirrors || []),
+    fullDescription: (normDb.fullDescription && normDb.fullDescription.length > 0) ? normDb.fullDescription : (baseApp.fullDescription || []),
+    screenshots: (normDb.screenshots && normDb.screenshots.length > 0) ? normDb.screenshots : (baseApp.screenshots || []),
+    // Non-empty string fallbacks
+    logoUrl: (normDb.logoUrl && normDb.logoUrl.trim() !== '') ? normDb.logoUrl : (baseApp.logoUrl || '/videohub-logo.png'),
+    bannerUrl: (normDb.bannerUrl && normDb.bannerUrl.trim() !== '') ? normDb.bannerUrl : (baseApp.bannerUrl || ''),
+    tagline: (normDb.tagline && normDb.tagline.trim() !== '') ? normDb.tagline : (baseApp.tagline || ''),
+    shortDescription: (normDb.shortDescription && normDb.shortDescription.trim() !== '') ? normDb.shortDescription : (baseApp.shortDescription || ''),
+    downloadUrl: normDb.downloadUrl ? formatDownloadUrl(normDb.downloadUrl) : (baseApp.downloadUrl || ''),
+    githubUrl: (normDb.githubUrl && normDb.githubUrl.trim() !== '') ? normDb.githubUrl : (baseApp.githubUrl || ''),
+    version: (normDb.version && normDb.version.trim() !== '') ? normDb.version : (baseApp.version || 'v2.4.0'),
+    size: (normDb.size && normDb.size.trim() !== '') ? normDb.size : (baseApp.size || '46MB'),
+    updatedAt: (normDb.updatedAt && normDb.updatedAt.trim() !== '') ? normDb.updatedAt : (baseApp.updatedAt || 'September 2026'),
+    isCustom: true,
   };
 }

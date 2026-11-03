@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { AndroidApp } from '@/lib/appsData';
-import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
+import { formatDownloadUrl, normalizeAppRecord, mergeAppWithDefaults } from '@/lib/appUtils';
 import { StarRating } from '@/components/StarRating';
 import { ReviewForm } from '@/components/ReviewForm';
 import { ReviewsList, ReviewItem } from '@/components/ReviewsList';
@@ -267,7 +267,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
         if (res.ok && isSubscribed) {
           const data = await res.json();
           if (data.app) {
-            setAppData(normalizeAppRecord(data.app));
+            setAppData(mergeAppWithDefaults(initialApp, data.app));
           }
         }
       } catch (err) {
@@ -275,7 +275,10 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
       }
     }
 
-    loadFreshAppDetails();
+    // Only fetch if initialApp was missing, otherwise retain server-rendered state
+    if (!initialApp || !initialApp.name) {
+      loadFreshAppDetails();
+    }
 
     const handleAppsUpdated = (e: any) => {
       if (!e.detail?.slug || e.detail.slug.toLowerCase() === initialApp.slug.toLowerCase()) {
@@ -289,27 +292,13 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
       }
     };
 
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        loadFreshAppDetails();
-      }
-    };
-
-    const handleFocus = () => {
-      loadFreshAppDetails();
-    };
-
     window.addEventListener('apps_updated', handleAppsUpdated);
     window.addEventListener('storage', handleStorageChange);
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('focus', handleFocus);
 
     return () => {
       isSubscribed = false;
       window.removeEventListener('apps_updated', handleAppsUpdated);
       window.removeEventListener('storage', handleStorageChange);
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('focus', handleFocus);
     };
   }, [initialApp]);
 
