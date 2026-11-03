@@ -2,11 +2,9 @@ import { Metadata } from 'next';
 import { HomeClient } from '@/components/HomeClient';
 import { ANDROID_APPS, AndroidApp } from '@/lib/appsData';
 import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { createPublicClient } from '@/utils/supabase/server';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'CrazyStore - Verified Open-Source Android Apps',
@@ -15,16 +13,35 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   let dbApps: any[] = [];
-  try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    const { data, error } = await supabase
-      .from('apps')
-      .select('*')
-      .order('createdAt', { ascending: false });
+  const initialRatingsMap: Record<string, { avg: number; count: number }> = {};
 
-    if (!error && data) {
-      dbApps = data.map((d: any) => normalizeAppRecord(d));
+  try {
+    const supabase = createPublicClient();
+    const [appsRes, reviewsRes] = await Promise.all([
+      supabase.from('apps').select('*').order('createdAt', { ascending: false }),
+      supabase.from('reviews').select('appSlug, rating'),
+    ]);
+
+    if (!appsRes.error && appsRes.data) {
+      dbApps = appsRes.data.map((d: any) => normalizeAppRecord(d));
+    }
+
+    if (!reviewsRes.error && reviewsRes.data) {
+      const grouped = reviewsRes.data.reduce((acc: any, review: any) => {
+        if (!review.appSlug) return acc;
+        const slug = review.appSlug.toLowerCase();
+        if (!acc[slug]) acc[slug] = { sum: 0, count: 0 };
+        acc[slug].sum += review.rating;
+        acc[slug].count += 1;
+        return acc;
+      }, {});
+
+      for (const slug of Object.keys(grouped)) {
+        initialRatingsMap[slug] = {
+          avg: grouped[slug].sum / grouped[slug].count,
+          count: grouped[slug].count,
+        };
+      }
     }
   } catch (e) {
     console.warn('Supabase client error in Server Component /:', e);
@@ -54,44 +71,15 @@ export default async function HomePage() {
 
   const initialApps = Array.from(appsMap.values()) as AndroidApp[];
 
-  // Fetch review summaries for initial apps (optimistic quick load)
-  const initialRatingsMap: Record<string, { avg: number; count: number }> = {};
-  
-  try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('appSlug, rating');
-      
-    if (!error && data) {
-      // Calculate averages grouped by appSlug
-      const grouped = data.reduce((acc: any, review: any) => {
-        if (!review.appSlug) return acc;
-        const slug = review.appSlug.toLowerCase();
-        if (!acc[slug]) acc[slug] = { sum: 0, count: 0 };
-        acc[slug].sum += review.rating;
-        acc[slug].count += 1;
-        return acc;
-      }, {});
-      
-      for (const app of initialApps) {
-        const slug = app.slug.toLowerCase();
-        if (grouped[slug]) {
-          initialRatingsMap[slug] = {
-            avg: grouped[slug].sum / grouped[slug].count,
-            count: grouped[slug].count,
-          };
-        } else {
-          initialRatingsMap[slug] = {
-            avg: app.initialRating || 0,
-            count: app.initialReviewCount || 0,
-          };
-        }
-      }
+  // Fill in default ratings for apps without DB reviews
+  for (const app of initialApps) {
+    const slug = app.slug.toLowerCase();
+    if (!initialRatingsMap[slug]) {
+      initialRatingsMap[slug] = {
+        avg: app.initialRating || 0,
+        count: app.initialReviewCount || 0,
+      };
     }
-  } catch (err) {
-    console.warn('Could not fetch reviews for Server Component:', err);
   }
 
   return (

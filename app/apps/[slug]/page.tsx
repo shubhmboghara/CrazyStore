@@ -1,26 +1,30 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import { ANDROID_APPS, AndroidApp, getAppBySlug } from '@/lib/appsData';
 import { AppDetailClient } from '@/components/AppDetailClient';
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { createPublicClient } from '@/utils/supabase/server';
 import { formatDownloadUrl, normalizeAppRecord } from '@/lib/appUtils';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60;
 
-async function getApp(slug: string): Promise<AndroidApp | null> {
+export async function generateStaticParams() {
+  return ANDROID_APPS.map((app) => ({
+    slug: app.slug,
+  }));
+}
+
+const getApp = cache(async (slug: string): Promise<AndroidApp | null> => {
   const normalizedSlug = slug.toLowerCase().trim();
   const defaultApp = getAppBySlug(normalizedSlug);
   const baseApp = defaultApp ? normalizeAppRecord(defaultApp) : null;
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createPublicClient();
     const { data: dbApp, error } = await supabase
       .from('apps')
       .select('*')
@@ -41,7 +45,7 @@ async function getApp(slug: string): Promise<AndroidApp | null> {
   }
 
   return baseApp || null;
-}
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
