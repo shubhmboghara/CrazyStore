@@ -55,6 +55,17 @@ p, li, dd {
   outline-offset: 2px;
 }
 
+/* Prevent intrusive rectangular outline on search inputs */
+input#command-palette-title,
+input#command-palette-title:focus,
+input#command-palette-title:focus-visible,
+input#catalog-search,
+input#catalog-search:focus,
+input#catalog-search:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 button, a, input, textarea, select {
   touch-action: manipulation;
 }

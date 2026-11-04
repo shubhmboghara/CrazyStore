@@ -427,9 +427,9 @@ export function HomeClient({
                 <label htmlFor="catalog-search" className="sr-only">
                   Search applications
                 </label>
-                <div className="relative flex items-center rounded-2xl bg-zinc-900/90 border border-zinc-800 hover:border-zinc-700 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/25 transition-all shadow-inner">
-                  <div className="pl-3.5 pr-2 pointer-events-none text-zinc-400 group-focus-within:text-purple-400 transition-colors">
-                    <Search className="w-4 h-4 text-purple-400" />
+                <div className="relative flex items-center rounded-2xl bg-zinc-900/90 border border-zinc-800 hover:border-zinc-700 focus-within:border-zinc-700 focus-within:ring-1 focus-within:ring-zinc-600/50 transition-all shadow-inner">
+                  <div className="pl-3.5 pr-2 pointer-events-none text-zinc-400 group-focus-within:text-zinc-200 transition-colors">
+                    <Search className="w-4 h-4 text-zinc-400 group-focus-within:text-zinc-200" />
                   </div>
                   <input
                     ref={searchInputRef}
@@ -438,6 +438,7 @@ export function HomeClient({
                     value={searchQuery}
                     autoComplete="off"
                     spellCheck="false"
+                    style={{ outline: 'none', boxShadow: 'none' }}
                     onFocus={() => setIsSearchFocused(true)}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -469,7 +470,7 @@ export function HomeClient({
                         <X className="w-3.5 h-3.5" />
                       </button>
                     ) : (
-                      <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-950 text-zinc-500 border border-zinc-800 group-focus-within:border-purple-800/60 group-focus-within:text-purple-300 transition-colors" title="Press / to focus">
+                      <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-950 text-zinc-500 border border-zinc-800 group-focus-within:border-zinc-700 group-focus-within:text-zinc-300 transition-colors" title="Press / to focus">
                         /
                       </kbd>
                     )}
@@ -480,25 +481,22 @@ export function HomeClient({
                 {isSearchFocused && searchQuery.trim().length > 0 && (
                   <div
                     ref={searchDropdownRef}
-                    className="absolute left-0 right-0 top-full mt-2 z-40 p-2 rounded-2xl bg-zinc-950/95 border border-zinc-800 shadow-2xl shadow-purple-950/50 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150"
+                    className="absolute left-0 right-0 top-full mt-2 z-40 p-2 rounded-2xl bg-zinc-950/95 border border-zinc-800 shadow-2xl shadow-black/80 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150"
                   >
                     <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-900 text-[11px] text-zinc-400 font-semibold">
-                      <span className="flex items-center gap-1.5 text-purple-300">
+                      <span className="flex items-center gap-1.5 text-zinc-300">
                         <Sparkles className="w-3 h-3 text-purple-400" />
                         <span>Matching Applications ({filteredApps.length})</span>
                       </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">ESC</span>
-                        <button
-                          type="button"
-                          onClick={() => setIsSearchFocused(false)}
-                          className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
-                          aria-label="Dismiss search preview"
-                          title="Dismiss search preview (Esc)"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsSearchFocused(false)}
+                        className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                        aria-label="Dismiss search preview"
+                        title="Close preview"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
                     <div className="max-h-72 overflow-y-auto space-y-1 p-1">

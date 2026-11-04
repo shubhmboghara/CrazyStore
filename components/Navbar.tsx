@@ -126,12 +126,12 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="hidden sm:inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800/90 text-zinc-300 hover:text-zinc-100 border border-zinc-800 hover:border-purple-700/60 text-xs font-medium transition-all shadow-xs hover:shadow-purple-950/20 cursor-pointer min-h-[38px] group"
+              className="hidden sm:inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-zinc-900/60 hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 border border-zinc-800/80 hover:border-zinc-700/80 text-xs font-normal transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md group backdrop-blur-md min-h-[36px]"
               title="Search apps (Ctrl+K or Cmd+K or /)"
             >
-              <Search className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
+              <Search className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-colors" />
               <span>Search apps...</span>
-              <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-950 text-zinc-400 border border-zinc-700/80 group-hover:text-purple-300 group-hover:border-purple-800/60 transition-colors">
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-800/60 text-zinc-400 border border-zinc-700/60 group-hover:border-zinc-600 transition-colors">
                 ⌘K
               </kbd>
             </button>
@@ -140,11 +140,11 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="sm:hidden p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+              className="sm:hidden p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
               aria-label="Search applications"
               title="Search applications"
             >
-              <Search className="w-5 h-5 text-purple-400" />
+              <Search className="w-4.5 h-4.5 text-zinc-400 hover:text-white transition-colors" />
             </button>
 
             {/* Mobile menu hamburger button with WCAG 44x44 touch target */}
