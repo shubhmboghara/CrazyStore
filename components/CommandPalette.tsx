@@ -219,9 +219,9 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
       aria-labelledby="command-palette-title"
     >
       <div className="flex flex-col max-h-[76vh]">
-        {/* Borderless, Streamlined Search Input Bar */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-zinc-800/80 bg-zinc-900/30">
-          <Search className="w-4 h-4 text-zinc-400 shrink-0 ml-0.5" />
+        {/* Sleek, Professional Search Bar with High-Visibility Close (X) Button */}
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-zinc-800/80 bg-zinc-900/40">
+          <Search className="w-4 h-4 text-purple-400 shrink-0 ml-0.5" />
           <input
             ref={inputRef}
             type="text"
@@ -234,6 +234,7 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
             spellCheck="false"
           />
 
+          {/* Quick Clear Query Button (when typing) */}
           {query && (
             <button
               type="button"
@@ -241,29 +242,43 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
                 setQuery('');
                 inputRef.current?.focus();
               }}
-              className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="text-xs text-zinc-400 hover:text-white px-2 py-1 rounded-md hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
+              title="Clear text"
               aria-label="Clear search input"
             >
-              <X className="w-3.5 h-3.5" />
+              Clear
             </button>
           )}
 
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-zinc-400 bg-zinc-900 border border-zinc-800 shadow-xs">
-            ESC
-          </kbd>
+          {/* Vertical Divider */}
+          <div className="h-4 w-px bg-zinc-800 shrink-0" />
+
+          {/* Dedicated Close (X) Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 group/close"
+            title="Close search modal (Esc)"
+            aria-label="Close search modal"
+          >
+            <X className="w-4 h-4 group-hover/close:scale-110 transition-transform" />
+            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-zinc-500 group-hover/close:text-zinc-300 bg-zinc-900 border border-zinc-800 shadow-xs">
+              ESC
+            </kbd>
+          </button>
         </div>
 
         {/* Minimal Category Filter Tabs (only shown when multiple categories exist) */}
         {categoriesWithCounts.length > 2 && (
-          <div className="flex items-center gap-1 px-4 py-2 border-b border-zinc-800/40 bg-zinc-950/60 text-xs overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 px-4 py-2 border-b border-zinc-800/40 bg-zinc-950/60 text-xs overflow-x-auto no-scrollbar">
             {categoriesWithCounts.map(({ name, count }) => (
               <button
                 key={name}
                 type="button"
                 onClick={() => setSelectedCategory(name)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                   selectedCategory === name
-                    ? 'bg-purple-950/70 text-purple-200 border border-purple-800/50'
+                    ? 'bg-purple-950/80 text-purple-200 border border-purple-800/60 shadow-xs'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border border-transparent'
                 }`}
               >
@@ -284,12 +299,12 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
                   key={term}
                   type="button"
                   onClick={() => handleApplyRecentSearch(term)}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all cursor-pointer"
                 >
                   <span>{term}</span>
                   <span
                     onClick={(e) => handleRemoveRecentSearch(e, term)}
-                    className="text-zinc-500 hover:text-zinc-200 ml-0.5"
+                    className="text-zinc-500 hover:text-zinc-200 ml-0.5 p-0.5 rounded-full"
                     title="Remove search"
                   >
                     ×

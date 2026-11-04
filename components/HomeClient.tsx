@@ -487,7 +487,18 @@ export function HomeClient({
                         <Sparkles className="w-3 h-3 text-purple-400" />
                         <span>Matching Applications ({filteredApps.length})</span>
                       </span>
-                      <span className="text-[10px] text-zinc-500 font-mono">ESC to dismiss</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">ESC</span>
+                        <button
+                          type="button"
+                          onClick={() => setIsSearchFocused(false)}
+                          className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                          aria-label="Dismiss search preview"
+                          title="Dismiss search preview (Esc)"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="max-h-72 overflow-y-auto space-y-1 p-1">

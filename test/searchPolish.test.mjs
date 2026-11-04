@@ -133,7 +133,11 @@ console.log('\nRunning automated test suite for CrazyStore Search UI & Polish...
   // Auto scroll into view for keyboard navigation
   assert.ok(palette.includes('scrollIntoView'), 'CommandPalette must smoothly scroll active keyboard item into view');
 
-  console.log('✓ Test 4 Passed: CommandPalette search history, trending tags, match highlight, and keyboard auto-scroll verified');
+  // Dedicated Close (X) button
+  assert.ok(palette.includes('aria-label="Close search modal"'), 'CommandPalette must include dedicated Close (X) button');
+  assert.ok(palette.includes('onClick={onClose}'), 'CommandPalette Close (X) button must trigger onClose handler');
+
+  console.log('✓ Test 4 Passed: CommandPalette search history, trending tags, match highlight, keyboard auto-scroll, and dedicated Close (X) button verified');
 }
 
 // 5. Verify Navbar Search Triggers (Desktop + Mobile)
@@ -179,7 +183,10 @@ console.log('\nRunning automated test suite for CrazyStore Search UI & Polish...
   // Highlighting in catalog cards
   assert.ok(home.includes('HighlightedText'), 'HomeClient catalog cards must highlight search terms');
 
-  console.log('✓ Test 6 Passed: HomeClient search & filter hub, sort dropdown, quick tags, and card highlights verified');
+  // Dismiss button in live preview dropdown
+  assert.ok(home.includes('aria-label="Dismiss search preview"'), 'HomeClient live preview dropdown must include dismiss (X) button');
+
+  console.log('✓ Test 6 Passed: HomeClient search & filter hub, sort dropdown, quick tags, card highlights, and preview dismiss button verified');
 }
 
 console.log('\n🎉 ALL 6 SEARCH POLISH & UI TESTS PASSED WITH 100% SUCCESS!\n');
