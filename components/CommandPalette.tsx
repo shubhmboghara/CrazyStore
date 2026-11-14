@@ -423,10 +423,6 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
             <span className="text-[10px]">Verified Open-Source</span>
           </div>
         </div>
-            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-            <span className="text-[10px]">Verified Open-Source</span>
-          </div>
-        </div>
       </div>
     </dialog>
   );

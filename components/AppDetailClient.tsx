@@ -14,6 +14,7 @@ import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { useToast } from '@/components/Toast';
 import { trackEvent } from '@/lib/analytics';
 import { Screenshots3DBackdrop, Screenshots3DPhoneView } from '@/components/three';
+import { ScreenshotsSimpleGallery } from '@/components/ScreenshotsSimpleGallery';
 import { DataSafetyCard } from '@/components/DataSafetyCard';
 import { DownloadQrModal } from '@/components/DownloadQrModal';
 import { checkDeviceCompatibility } from '@/lib/deviceCompatibility';
@@ -41,6 +42,7 @@ import {
   ZoomOut,
   RotateCcw,
   Boxes,
+  Layers,
   QrCode,
   FileCheck,
 } from 'lucide-react';
@@ -101,6 +103,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
   const [activeTab, setActiveTab] = useState<'reviews' | 'overview' | 'safety' | 'tech'>('reviews');
   const [selected3DIdx, setSelected3DIdx] = useState<number>(0);
+  const [screenshotViewMode, setScreenshotViewMode] = useState<'gallery' | '3d'>('gallery');
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxZoom, setLightboxZoom] = useState<number>(1);
@@ -450,10 +453,10 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
               </ol>
             </nav>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-              <div className="flex items-start gap-5">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+              <div className="flex items-start gap-3.5 sm:gap-5 w-full min-w-0">
                 <div
-                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br ${
+                  className={`w-18 h-18 xs:w-20 xs:h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-gradient-to-br ${
                     appData.iconBg || 'from-purple-600 to-indigo-600'
                   } flex items-center justify-center shadow-xl shadow-purple-500/20 shrink-0 overflow-hidden relative`}
                 >
@@ -466,8 +469,8 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 flex-wrap">
+                <div className="space-y-1.5 min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <span className="px-2.5 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-800/50 text-[10px] font-bold">
                       {appData.badge || 'Kotlin + Compose'}
                     </span>
@@ -483,7 +486,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     </span>
                   </div>
 
-                  <h1 className="text-2xl sm:text-4xl font-black text-zinc-100">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-zinc-100 break-words">
                     {appData.name}
                   </h1>
 
@@ -491,7 +494,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     {appData.tagline || appData.shortDescription}
                   </p>
 
-                  <div className="pt-1 flex items-center gap-4 flex-wrap">
+                  <div className="pt-1 flex items-center gap-3 sm:gap-4 flex-wrap">
                     <button
                       type="button"
                       onClick={() => {
@@ -525,14 +528,14 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
               </div>
 
               {/* Download & Feature Action Buttons */}
-              <div className="w-full sm:w-auto flex flex-col gap-2.5">
-                <div className="flex flex-col sm:flex-row gap-2.5">
+              <div className="w-full lg:w-auto flex flex-col gap-2.5 mt-2 lg:mt-0">
+                <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
                   <a
                     href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => handleDownloadClick('header_cta')}
-                    className={`w-full sm:w-auto px-7 py-3.5 rounded-2xl text-white font-bold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`w-full sm:w-auto px-7 py-3.5 rounded-2xl text-white font-bold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px] ${
                       isDownloading
                         ? 'bg-emerald-600 shadow-emerald-600/30 ring-2 ring-emerald-400/50'
                         : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'
@@ -565,7 +568,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                           details: `Viewed GitHub Source: ${appData.name}`,
                         });
                       }}
-                      className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-zinc-800 text-white font-bold text-sm text-center hover:bg-zinc-700 transition-all flex items-center justify-center gap-2 shadow-md border border-zinc-700/50"
+                      className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-zinc-800 text-white font-bold text-sm text-center hover:bg-zinc-700 transition-all flex items-center justify-center gap-2 shadow-md border border-zinc-700/50 min-h-[48px]"
                     >
                       <FaGithub className="w-5 h-5" /> GitHub Source
                     </a>
@@ -573,12 +576,12 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </div>
 
                 {/* Secondary Quick-Action Tools */}
-                <div className="flex items-center gap-1.5 justify-start sm:justify-end overflow-x-auto hide-scrollbar max-w-full pb-1 pt-1 [scrollbar-width:none]">
+                <div className="flex items-center gap-2 justify-start lg:justify-end overflow-x-auto hide-scrollbar max-w-full pb-1 pt-1 [scrollbar-width:none]">
                   {/* Scan QR Code button */}
                   <button
                     type="button"
                     onClick={() => setIsQrModalOpen(true)}
-                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0"
+                    className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[40px] shrink-0"
                     title="Scan QR Code to install directly on phone"
                   >
                     <QrCode className="w-3.5 h-3.5 text-purple-400" />
@@ -589,7 +592,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   <button
                     type="button"
                     onClick={handleShare}
-                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shrink-0"
+                    className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[40px] shrink-0"
                     title="Share app profile"
                   >
                     <Share2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -601,12 +604,14 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
           </div>
         </section>
 
-        {/* Screenshots & Visuals Showcase (3D WebGL Studio) */}
+        {/* Screenshots & Visuals Showcase */}
         {validPreviews.length > 0 && (
           <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-8">
             <div className="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-6 shadow-xl relative overflow-hidden backdrop-blur-sm">
-              {/* Subtle Ambient Three.js Particle & Grid Canvas */}
-              <Screenshots3DBackdrop />
+              {/* Subtle Ambient Canvas (Desktop only) */}
+              <div className="hidden md:block">
+                <Screenshots3DBackdrop />
+              </div>
 
               {/* Section Header */}
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-zinc-800/80">
@@ -623,23 +628,63 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                         {validPreviews.length} High-Res Screens
                       </span>
                     </div>
-                    <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate hidden xs:block">
-                      Interactive 3D WebGL studio &bull; Drag to rotate 360° &bull; Scroll to zoom out &bull; Tap to open fullscreen
+                    <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate">
+                      Swipe or click to browse &bull; Tap any screen to enlarge
                     </p>
                   </div>
                 </div>
 
+                {/* Desktop View Mode Toggle (Simple Gallery vs 3D Phone) - Hidden on Mobile */}
+                <div className="hidden md:flex items-center gap-1.5 p-1 bg-zinc-900/90 border border-zinc-800 rounded-xl self-start sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => setScreenshotViewMode('gallery')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      screenshotViewMode === 'gallery'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Simple Gallery</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScreenshotViewMode('3d')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      screenshotViewMode === '3d'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                    }`}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>3D Phone</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Three.js 3D Smartphone Viewport */}
+              {/* Viewport: Mobile always gets Simple Gallery (zero 3D / zero gesture trapping) */}
               <div className="relative z-10 pt-1">
-                <Screenshots3DPhoneView
-                  app={appData}
-                  screenshots={validPreviews}
-                  activeIdx={selected3DIdx}
-                  onSelectScreenshot={(idx) => setSelected3DIdx(idx)}
-                  onOpenLightbox={(idx) => setLightboxIndex(idx)}
-                />
+                {/* 1. Mobile Simple Gallery (Always active on mobile screens) */}
+                <div className={screenshotViewMode === '3d' ? 'block md:hidden' : 'block'}>
+                  <ScreenshotsSimpleGallery
+                    screenshots={validPreviews}
+                    onOpenLightbox={(idx) => setLightboxIndex(idx)}
+                  />
+                </div>
+
+                {/* 2. Desktop 3D View (Only rendered if toggled on desktop) */}
+                {screenshotViewMode === '3d' && (
+                  <div className="hidden md:block">
+                    <Screenshots3DPhoneView
+                      app={appData}
+                      screenshots={validPreviews}
+                      activeIdx={selected3DIdx}
+                      onSelectScreenshot={(idx) => setSelected3DIdx(idx)}
+                      onOpenLightbox={(idx) => setLightboxIndex(idx)}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Ambient bottom glow decoration */}
