@@ -654,9 +654,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-100 truncate">
                       Screenshots &amp; Visuals
                     </h3>
-                    <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate">
-                      Swipe or click to browse &bull; Tap any screen to enlarge
-                    </p>
                   </div>
                 </div>
 
