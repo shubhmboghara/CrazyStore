@@ -998,83 +998,100 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
               e.preventDefault();
               setLightboxIndex(null);
             }}
-            className="fixed inset-0 m-0 p-0 w-full h-[100dvh] max-w-none max-h-none bg-black/95 backdrop:backdrop-blur-md flex flex-col items-center justify-between p-3 sm:p-5 text-zinc-100 border-0 select-none overscroll-contain z-50 animate-in fade-in"
+            className="fixed inset-0 m-0 p-0 w-full h-[100dvh] max-w-none max-h-none bg-zinc-950/95 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-6 text-zinc-100 border-0 select-none overscroll-contain z-50 animate-in fade-in"
             onClick={() => setLightboxIndex(null)}
           >
-            {/* Top Lightbox Bar */}
+            {/* Floating Top Header Bar */}
             <div
-              className="w-full max-w-6xl flex items-center justify-between z-20 shrink-0 pb-2"
+              className="w-full max-w-3xl flex items-center justify-between z-20 shrink-0 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 shadow-2xl transition-all"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-3 min-w-0 pr-2">
+              {/* App Identity & Current Screenshot Title */}
+              <div className="flex items-center gap-3 min-w-0 pr-3">
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${appData.iconBg || 'from-purple-600 to-indigo-600'} flex items-center justify-center shrink-0 overflow-hidden shadow-sm`}>
+                  <AppLogoImage
+                    key={appData.slug}
+                    src={appData.logoUrl}
+                    fallbackSrc={appData.slug === 'videohub' ? '/videohub-logo.png' : undefined}
+                    alt={appData.name}
+                    fallback={getIconComponent(appData.iconSymbol)}
+                  />
+                </div>
                 <div className="min-w-0">
-                  <span className="text-sm font-bold text-white block truncate">
+                  <span className="text-xs sm:text-sm font-semibold text-zinc-100 block truncate">
                     {appData.name}
                   </span>
                   {validPreviews[lightboxIndex].title && (
-                    <span className="text-xs text-purple-300 font-medium block truncate">
-                      {validPreviews[lightboxIndex].title} ({lightboxIndex + 1} of {validPreviews.length})
+                    <span className="text-[11px] text-zinc-400 font-medium block truncate">
+                      {validPreviews[lightboxIndex].title}
                     </span>
                   )}
                 </div>
               </div>
 
+              {/* Controls: Sleek Zoom & Close */}
               <div className="flex items-center gap-2 shrink-0">
-                {/* Zoom Controls */}
-                <div className="flex items-center gap-1 bg-white/10 backdrop-blur-md rounded-2xl p-1 border border-white/10">
+                <div className="flex items-center gap-1 bg-zinc-800/80 rounded-xl p-1 border border-zinc-700/60">
                   <button
                     type="button"
                     onClick={() => setLightboxZoom((prev) => Math.max(1, +(prev - 0.35).toFixed(2)))}
                     disabled={lightboxZoom <= 1}
-                    className="p-1.5 sm:p-2 rounded-xl hover:bg-white/20 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
-                    title="Zoom Out (-)"
+                    className="p-1 sm:p-1.5 rounded-lg hover:bg-zinc-700 text-zinc-300 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent transition-colors cursor-pointer"
+                    aria-label="Zoom Out"
                   >
-                    <ZoomOut className="w-4 h-4" />
+                    <ZoomOut className="w-3.5 h-3.5" />
                   </button>
-                  <span className="text-[11px] font-bold text-zinc-300 px-1 min-w-[3.5ch] text-center">
+                  <span className="text-[11px] font-semibold text-zinc-300 px-1.5 min-w-[3.5ch] text-center tabular-nums">
                     {Math.round(lightboxZoom * 100)}%
                   </span>
                   <button
                     type="button"
                     onClick={() => setLightboxZoom((prev) => Math.min(2.5, +(prev + 0.35).toFixed(2)))}
                     disabled={lightboxZoom >= 2.5}
-                    className="p-1.5 sm:p-2 rounded-xl hover:bg-white/20 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
-                    title="Zoom In (+)"
+                    className="p-1 sm:p-1.5 rounded-lg hover:bg-zinc-700 text-zinc-300 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent transition-colors cursor-pointer"
+                    aria-label="Zoom In"
                   >
-                    <ZoomIn className="w-4 h-4" />
+                    <ZoomIn className="w-3.5 h-3.5" />
                   </button>
                   {lightboxZoom > 1 && (
                     <button
                       type="button"
                       onClick={() => setLightboxZoom(1)}
-                      className="p-1.5 sm:p-2 rounded-xl hover:bg-white/20 text-purple-300 transition-colors cursor-pointer"
-                      title="Reset Zoom"
+                      className="p-1 sm:p-1.5 rounded-lg hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                      aria-label="Reset Zoom"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" />
+                      <RotateCcw className="w-3 h-3" />
                     </button>
                   )}
                 </div>
 
-                {/* Close Button */}
+                <div className="w-px h-5 bg-zinc-800 mx-0.5 hidden sm:block" />
+
+                {/* Clean Modern Close Button */}
                 <button
                   type="button"
                   onClick={() => setLightboxIndex(null)}
-                  className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-md border border-white/10 cursor-pointer"
-                  title="Close (Esc)"
+                  className="p-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all border border-zinc-700/60 shadow-sm cursor-pointer hover:scale-105 active:scale-95"
+                  aria-label="Close"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             {/* Central Stage */}
             <div
-              className="relative flex-1 w-full min-h-0 flex items-center justify-center p-1 sm:p-2 overflow-hidden"
+              className="relative flex-1 w-full min-h-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
+              {/* Subtle ambient lighting behind preview */}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div className="w-[300px] sm:w-[460px] h-[550px] bg-gradient-to-b from-purple-900/10 via-zinc-800/10 to-transparent rounded-full blur-3xl opacity-40" />
+              </div>
+
               {/* Navigation Left */}
               {validPreviews.length > 1 && (
                 <button
@@ -1083,14 +1100,14 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     e.stopPropagation();
                     setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : validPreviews.length - 1));
                   }}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-2.5 sm:p-3.5 rounded-full bg-black/60 hover:bg-purple-600 text-white transition-all backdrop-blur-md border border-white/15 z-30 shadow-2xl hover:scale-105 cursor-pointer"
-                  title="Previous (Left Arrow)"
+                  className="absolute left-2 sm:left-6 md:left-12 top-1/2 -translate-y-1/2 p-3 sm:p-3.5 rounded-2xl bg-zinc-900/85 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all backdrop-blur-xl border border-zinc-700/70 z-30 shadow-2xl hover:scale-110 active:scale-95 cursor-pointer"
+                  aria-label="Previous screenshot"
                 >
                   <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               )}
 
-              {/* Central Zoomed Image - 100% visible, zero bottom cropping, interactive zoom scale */}
+              {/* Central Screenshot */}
               <div className="relative z-10 w-full h-full max-h-full max-w-full flex items-center justify-center pointer-events-none">
                 <img
                   src={validPreviews[lightboxIndex].imageUrl || validPreviews[lightboxIndex].url}
@@ -1099,7 +1116,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     transform: `scale(${lightboxZoom})`,
                     transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                   }}
-                  className="max-h-full max-w-full w-auto h-auto object-contain rounded-xl sm:rounded-2xl shadow-2xl border border-white/15 bg-zinc-950 pointer-events-auto select-none"
+                  className="max-h-full max-w-full w-auto h-auto object-contain rounded-2xl sm:rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] ring-1 ring-white/10 bg-zinc-950 pointer-events-auto select-none"
                 />
               </div>
 
@@ -1111,45 +1128,41 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     e.stopPropagation();
                     setLightboxIndex((prev) => (prev !== null && prev < validPreviews.length - 1 ? prev + 1 : 0));
                   }}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-2.5 sm:p-3.5 rounded-full bg-black/60 hover:bg-purple-600 text-white transition-all backdrop-blur-md border border-white/15 z-30 shadow-2xl hover:scale-105 cursor-pointer"
-                  title="Next (Right Arrow)"
+                  className="absolute right-2 sm:right-6 md:right-12 top-1/2 -translate-y-1/2 p-3 sm:p-3.5 rounded-2xl bg-zinc-900/85 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all backdrop-blur-xl border border-zinc-700/70 z-30 shadow-2xl hover:scale-110 active:scale-95 cursor-pointer"
+                  aria-label="Next screenshot"
                 >
                   <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               )}
             </div>
 
-            {/* Bottom thumbnail strip & Keyboard tip */}
+            {/* Bottom floating thumbnail dock */}
             <div
-              className="w-full max-w-4xl flex flex-col items-center gap-1.5 sm:gap-2.5 z-20 shrink-0 pt-1 sm:pt-2 pb-1 sm:pb-2"
+              className="w-full max-w-xl flex flex-col items-center z-20 shrink-0 pb-1 sm:pb-2"
               onClick={(e) => e.stopPropagation()}
             >
               {validPreviews.length > 1 && (
-                <div className="flex items-center justify-center gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 overflow-x-auto hide-scrollbar max-w-full">
+                <div className="flex items-center justify-center gap-2.5 px-3 py-2 rounded-2xl bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 shadow-2xl overflow-x-auto hide-scrollbar max-w-full">
                   {validPreviews.map((preview, idx) => (
                     <button
                       key={preview.id || idx}
                       type="button"
                       onClick={() => setLightboxIndex(idx)}
-                      className={`h-14 sm:h-16 aspect-[9/19.5] rounded-lg sm:rounded-xl overflow-hidden transition-all shrink-0 relative cursor-pointer bg-zinc-950 flex items-center justify-center p-0.5 ${
+                      className={`h-14 sm:h-16 aspect-[9/19.5] rounded-xl overflow-hidden transition-all shrink-0 relative cursor-pointer bg-zinc-950 flex items-center justify-center p-0.5 ${
                         idx === lightboxIndex
-                          ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-black border border-purple-400/80 shadow-md shadow-purple-500/30 scale-105'
-                          : 'border border-white/20 opacity-60 hover:opacity-100 hover:border-white/60 hover:scale-102'
+                          ? 'ring-2 ring-white ring-offset-2 ring-offset-black border border-white/50 shadow-xl scale-105'
+                          : 'border border-zinc-700/60 opacity-50 hover:opacity-100 hover:border-zinc-500 hover:scale-102'
                       }`}
                     >
                       <img
                         src={preview.imageUrl || preview.url}
                         alt={preview.title || `Screenshot thumbnail ${idx + 1}`}
-                        className="w-full h-full object-contain rounded-md"
+                        className="w-full h-full object-contain rounded-lg"
                       />
                     </button>
                   ))}
                 </div>
               )}
-
-              <span className="text-[11px] text-zinc-400 font-medium hidden sm:inline-block">
-                Use Left &amp; Right Arrow keys or swipe to navigate &bull; Press Esc to close
-              </span>
             </div>
           </dialog>
         )}
