@@ -620,14 +620,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-100 truncate">
-                        Screenshots &amp; Visuals
-                      </h3>
-                      <span className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-800/60 text-[10px] sm:text-xs font-bold text-purple-300 shrink-0">
-                        {validPreviews.length} High-Res Screens
-                      </span>
-                    </div>
+                    <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-100 truncate">
+                      Screenshots &amp; Visuals
+                    </h3>
                     <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate">
                       Swipe or click to browse &bull; Tap any screen to enlarge
                     </p>
