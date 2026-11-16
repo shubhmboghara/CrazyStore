@@ -221,7 +221,7 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
       <div className="flex flex-col max-h-[78vh]">
         {/* Sleek, Minimalist Spotlight Search Bar */}
         <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-zinc-800/80 bg-zinc-900/40">
-          <Search className="w-5 h-5 text-purple-400 shrink-0 ml-0.5" />
+          <Search className="w-5 h-5 text-zinc-400 shrink-0 ml-0.5" />
           <input
             ref={inputRef}
             type="text"
@@ -423,7 +423,7 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-purple-400 font-medium">
+          <div className="flex items-center gap-1.5 text-zinc-400 font-medium">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span className="text-[11px]">100% Verified Open-Source</span>
           </div>

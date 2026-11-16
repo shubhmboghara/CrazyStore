@@ -446,9 +446,9 @@ export function HomeClient({
                 <label htmlFor="catalog-search" className="sr-only">
                   Search applications
                 </label>
-                <div className="relative flex items-center rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 focus-within:border-purple-500/70 focus-within:ring-2 focus-within:ring-purple-500/20 transition-all duration-200 shadow-sm backdrop-blur-md">
-                  <div className="pl-3.5 pr-2 pointer-events-none text-zinc-400 group-focus-within:text-purple-400 transition-colors">
-                    <Search className="w-4 h-4 text-zinc-400 group-focus-within:text-purple-400" />
+                <div className="relative flex items-center rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 focus-within:border-zinc-600 focus-within:ring-2 focus-within:ring-white/10 transition-all duration-200 shadow-sm backdrop-blur-md">
+                  <div className="pl-3.5 pr-2 pointer-events-none text-zinc-400 group-focus-within:text-zinc-200 transition-colors">
+                    <Search className="w-4 h-4 text-zinc-400 group-focus-within:text-zinc-200" />
                   </div>
                   <input
                     ref={searchInputRef}
@@ -489,7 +489,7 @@ export function HomeClient({
                         <X className="w-3.5 h-3.5" />
                       </button>
                     ) : (
-                      <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded-lg bg-zinc-950/80 text-zinc-400 border border-zinc-800 group-focus-within:border-purple-800/60 group-focus-within:text-purple-300 font-semibold shadow-xs transition-colors" title="Press / to focus">
+                      <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded-lg bg-zinc-950/80 text-zinc-400 border border-zinc-800 group-focus-within:border-zinc-700 group-focus-within:text-zinc-300 font-semibold shadow-xs transition-colors" title="Press / to focus">
                         /
                       </kbd>
                     )}
@@ -500,11 +500,11 @@ export function HomeClient({
                 {isSearchFocused && searchQuery.trim().length > 0 && (
                   <div
                     ref={searchDropdownRef}
-                    className="absolute left-0 right-0 top-full mt-2.5 z-40 p-2 sm:p-2.5 rounded-2xl bg-zinc-950/95 border border-zinc-800/90 shadow-2xl shadow-purple-950/20 backdrop-blur-2xl ring-1 ring-white/10 animate-in fade-in slide-in-from-top-2 duration-150"
+                    className="absolute left-0 right-0 top-full mt-2.5 z-40 p-2 sm:p-2.5 rounded-2xl bg-zinc-950/95 border border-zinc-800/90 shadow-2xl shadow-black/80 backdrop-blur-2xl ring-1 ring-white/10 animate-in fade-in slide-in-from-top-2 duration-150"
                   >
                     <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-900 text-[11px] text-zinc-400 font-semibold">
                       <span className="flex items-center gap-1.5 text-zinc-300">
-                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                        <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
                         <span>Matching Applications ({filteredApps.length})</span>
                       </span>
                       <button
@@ -534,7 +534,7 @@ export function HomeClient({
                                 details: `Live Search dropdown opened: ${app.name}`,
                               });
                             }}
-                            className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl hover:bg-purple-950/40 border border-transparent hover:border-purple-800/50 text-zinc-300 hover:text-white transition-all cursor-pointer group/item"
+                            className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl hover:bg-zinc-900 border border-transparent hover:border-zinc-800 text-zinc-300 hover:text-white transition-all cursor-pointer group/item"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div
