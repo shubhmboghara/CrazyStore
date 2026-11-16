@@ -574,7 +574,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     className={`w-full sm:w-auto px-7 py-3.5 rounded-2xl text-white font-bold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px] ${
                       isDownloading
                         ? 'bg-emerald-600 shadow-emerald-600/30 ring-2 ring-emerald-400/50'
-                        : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'
+                        : 'bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-600/30 hover:shadow-purple-600/40 hover:-translate-y-0.5 active:translate-y-0'
                     }`}
                     aria-live="polite"
                   >
@@ -586,7 +586,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     ) : (
                       <>
                         <Download className="w-5 h-5" />
-                        <span>Download APK</span>
+                        <span>Download APK {appData.size ? `(${appData.size})` : ''}</span>
                       </>
                     )}
                   </a>

@@ -394,7 +394,7 @@ export function HomeClient({
         <section id="features" className="py-8 sm:py-12 bg-zinc-900/50 border-y border-zinc-800 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-              <div className="flex items-start gap-4 p-4 rounded-2xl bg-purple-950/20 border border-purple-900/30">
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900/90 border border-zinc-800/80 hover:border-purple-800/40 shadow-xs hover:shadow-xl transition-all duration-300">
                 <Feature3DCanvas type="shield" />
                 <div>
                   <h3 className="font-bold text-sm mb-1 text-zinc-100 flex items-center gap-1.5">
@@ -405,7 +405,7 @@ export function HomeClient({
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-4 rounded-2xl bg-indigo-950/20 border border-indigo-900/30">
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900/90 border border-zinc-800/80 hover:border-indigo-800/40 shadow-xs hover:shadow-xl transition-all duration-300">
                 <Feature3DCanvas type="zap" />
                 <div>
                   <h3 className="font-bold text-sm mb-1 text-zinc-100 flex items-center gap-1.5">
@@ -416,7 +416,7 @@ export function HomeClient({
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-4 rounded-2xl bg-fuchsia-950/20 border border-fuchsia-900/30">
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900/90 border border-zinc-800/80 hover:border-fuchsia-800/40 shadow-xs hover:shadow-xl transition-all duration-300">
                 <Feature3DCanvas type="code" />
                 <div>
                   <h3 className="font-bold text-sm mb-1 text-zinc-100 flex items-center gap-1.5">
