@@ -215,13 +215,13 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
       }}
       onClose={onClose}
       onKeyDown={handleKeyDown}
-      className="fixed top-[10vh] sm:top-[14vh] inset-x-0 mx-auto z-50 p-0 rounded-2xl bg-zinc-950/95 border border-zinc-800 text-white max-w-xl w-[92vw] shadow-2xl shadow-black/80 backdrop:bg-black/60 backdrop:backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-150 ring-1 ring-white/5"
+      className="fixed top-[10vh] sm:top-[12vh] inset-x-0 mx-auto z-50 p-0 rounded-2xl sm:rounded-3xl bg-zinc-950/95 border border-zinc-800/90 text-white max-w-2xl w-[94vw] shadow-2xl shadow-black/90 backdrop:bg-black/75 backdrop:backdrop-blur-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 ring-1 ring-white/10"
       aria-labelledby="command-palette-title"
     >
-      <div className="flex flex-col max-h-[76vh]">
-        {/* Sleek, Minimalist Search Bar with Clean Close (X) Icon */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-zinc-800/60 bg-zinc-900/30">
-          <Search className="w-4 h-4 text-zinc-400 shrink-0 ml-0.5" />
+      <div className="flex flex-col max-h-[78vh]">
+        {/* Sleek, Minimalist Spotlight Search Bar */}
+        <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-zinc-800/80 bg-zinc-900/40">
+          <Search className="w-5 h-5 text-purple-400 shrink-0 ml-0.5" />
           <input
             ref={inputRef}
             type="text"
@@ -229,7 +229,7 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search verified apps, tech stacks, permissions..."
-            className="w-full bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 outline-none border-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 p-0"
+            className="w-full bg-transparent text-base text-zinc-100 placeholder:text-zinc-500 font-medium outline-none border-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 p-0"
             style={{ outline: 'none', boxShadow: 'none' }}
             autoComplete="off"
             spellCheck="false"
@@ -243,15 +243,15 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
                 setQuery('');
                 inputRef.current?.focus();
               }}
-              className="text-xs text-zinc-400 hover:text-white px-2 py-1 rounded-md hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
-              title="Clear text"
-              aria-label="Clear search input"
+              className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
+              title="Clear search text"
+              aria-label="Clear search query"
             >
-              Clear
+              <X className="w-4 h-4" />
             </button>
           )}
 
-          {/* Dedicated Close (X) Icon Button - Pure Icon, No ESC text */}
+          {/* Dedicated Close (X) Icon Button */}
           <button
             type="button"
             onClick={onClose}
@@ -265,20 +265,20 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
 
         {/* Minimal Category Filter Tabs (only shown when multiple categories exist) */}
         {categoriesWithCounts.length > 2 && (
-          <div className="flex items-center gap-1.5 px-4 py-2 border-b border-zinc-800/30 bg-zinc-950/40 text-xs overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 px-4 sm:px-5 py-2 border-b border-zinc-800/40 bg-zinc-950/60 text-xs overflow-x-auto no-scrollbar" role="tablist">
             {categoriesWithCounts.map(({ name, count }) => (
               <button
                 key={name}
                 type="button"
                 onClick={() => setSelectedCategory(name)}
-                className={`px-3 py-1 rounded-full text-xs font-normal whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                   selectedCategory === name
-                    ? 'bg-zinc-800 text-white shadow-xs'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60'
+                    ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/30'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border border-zinc-800/60'
                 }`}
               >
                 <span>{name}</span>
-                <span className="text-[10px] text-zinc-500">({count})</span>
+                <span className={`text-[10px] ${selectedCategory === name ? 'text-purple-200' : 'text-zinc-500'}`}>({count})</span>
               </button>
             ))}
           </div>
@@ -286,7 +286,7 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
 
         {/* Compact Recent Searches Strip (only when query is empty and recent searches exist) */}
         {!query && recentSearches.length > 0 && (
-          <div className="px-4 py-2 border-b border-zinc-800/30 bg-zinc-950/30 flex items-center justify-between text-xs">
+          <div className="px-4 sm:px-5 py-2 border-b border-zinc-800/40 bg-zinc-950/40 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
               <span className="text-[11px] text-zinc-500 font-medium shrink-0">Recent:</span>
               {recentSearches.slice(0, 4).map((term) => (
@@ -294,7 +294,7 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
                   key={term}
                   type="button"
                   onClick={() => handleApplyRecentSearch(term)}
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-[11px] text-zinc-300 hover:text-white transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all cursor-pointer"
                 >
                   <span>{term}</span>
                   <span
@@ -310,7 +310,7 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
             <button
               type="button"
               onClick={handleClearAllRecent}
-              className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors shrink-0 ml-2 cursor-pointer"
+              className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors shrink-0 ml-2 cursor-pointer font-medium"
             >
               Clear
             </button>
@@ -318,7 +318,7 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
         )}
 
         {/* Clean, Aesthetic Results List */}
-        <div ref={listRef} className="p-2 overflow-y-auto max-h-[50vh] space-y-1 focus:outline-hidden" role="listbox">
+        <div ref={listRef} className="p-2 sm:p-2.5 overflow-y-auto max-h-[50vh] space-y-1.5 focus:outline-hidden" role="listbox">
           {filteredApps.length > 0 ? (
             filteredApps.map((app, idx) => {
               const isSelected = idx === selectedIndex;
@@ -330,38 +330,38 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
                   aria-selected={isSelected}
                   onClick={() => handleSelectApp(app.slug)}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-150 ${
+                  className={`group flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all duration-150 border ${
                     isSelected
-                      ? 'bg-zinc-800/70 text-white'
-                      : 'hover:bg-zinc-900/50 text-zinc-300'
+                      ? 'bg-purple-950/40 border-purple-800/60 text-white shadow-md shadow-purple-950/20 ring-1 ring-purple-500/20'
+                      : 'hover:bg-zinc-900/60 border-transparent text-zinc-300'
                   }`}
                 >
                   {/* Left: App Identity */}
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3.5 min-w-0">
                     <div
-                      className={`w-9 h-9 rounded-xl bg-gradient-to-br ${
+                      className={`w-10 h-10 rounded-xl bg-gradient-to-br ${
                         app.iconBg || 'from-purple-600 to-indigo-600'
-                      } flex items-center justify-center text-white shrink-0 shadow-xs border border-white/10 overflow-hidden`}
+                      } flex items-center justify-center text-white shrink-0 shadow-sm border border-white/10 overflow-hidden`}
                     >
                       <CommandPaletteAppLogo app={app} />
                     </div>
 
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-zinc-100 truncate">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-sm text-zinc-100 truncate">
                           <HighlightedText text={app.name} query={query} />
                         </span>
 
-                        <span className="text-[11px] text-zinc-500 truncate hidden xs:inline">
+                        <span className="text-[10px] text-purple-300 font-semibold px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-800/40 shrink-0">
                           {app.category}
                         </span>
 
-                        <span className="text-[10px] font-mono text-zinc-500 px-1.5 py-0.2 rounded bg-zinc-900/80 border border-zinc-800/60 shrink-0">
+                        <span className="text-[10px] font-mono text-zinc-400 px-1.5 py-0.2 rounded bg-zinc-900 border border-zinc-800 shrink-0">
                           {app.version}
                         </span>
 
                         {app.initialRating && (
-                          <span className="text-[10px] font-medium text-amber-300/90 flex items-center gap-0.5 shrink-0">
+                          <span className="text-[10px] font-semibold text-amber-300 flex items-center gap-0.5 shrink-0">
                             <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                             <span>{app.initialRating.toFixed(1)}</span>
                           </span>
@@ -375,26 +375,31 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
                   </div>
 
                   {/* Right: Metadata & Select Indicator */}
-                  <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <div className="flex items-center gap-2.5 shrink-0 ml-3">
                     <span className="text-[11px] text-zinc-500 font-mono hidden sm:inline-block">
                       {app.size}
                     </span>
 
-                    <ChevronRight
-                      className={`w-4 h-4 transition-colors ${
-                        isSelected ? 'text-zinc-200' : 'text-zinc-600 group-hover:text-zinc-400'
-                      }`}
-                    />
+                    {isSelected ? (
+                      <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded-md bg-purple-900/60 text-purple-200 border border-purple-700/60 font-semibold">
+                        ↵ select
+                      </kbd>
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-300 transition-colors" />
+                    )}
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="py-10 px-4 text-center space-y-2">
-              <p className="text-sm font-medium text-zinc-200">
+            <div className="py-12 px-4 text-center space-y-2">
+              <div className="w-10 h-10 rounded-full bg-purple-950/50 border border-purple-800/40 flex items-center justify-center mx-auto text-purple-400">
+                <Search className="w-5 h-5" />
+              </div>
+              <p className="text-sm font-bold text-zinc-200">
                 No apps found for &ldquo;{query}&rdquo;
               </p>
-              <p className="text-xs text-zinc-500 max-w-xs mx-auto">
+              <p className="text-xs text-zinc-400 max-w-xs mx-auto">
                 Try searching by app name, description, or technology stack.
               </p>
             </div>
@@ -402,7 +407,7 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
         </div>
 
         {/* Minimalist Professional Footer */}
-        <div className="px-4 py-2.5 border-t border-zinc-800/50 bg-zinc-950/60 flex items-center justify-between text-[11px] text-zinc-500">
+        <div className="px-4 sm:px-5 py-2.5 border-t border-zinc-800/60 bg-zinc-950/80 flex items-center justify-between text-[11px] text-zinc-500">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5">
               <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px] font-mono">
@@ -418,9 +423,9 @@ export function CommandPalette({ isOpen, onClose, apps = ANDROID_APPS }: Command
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-zinc-500">
+          <div className="flex items-center gap-1.5 text-purple-400 font-medium">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-[10px]">Verified Open-Source</span>
+            <span className="text-[11px]">100% Verified Open-Source</span>
           </div>
         </div>
       </div>

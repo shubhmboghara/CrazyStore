@@ -346,6 +346,25 @@ export function HomeClient({
                   Curated directory of high-performance, ad-free Android applications built natively with Kotlin and Jetpack Compose. Zero telemetry, reproducible builds, and verified open-source code.
                 </p>
 
+                {/* Hero Primary Action CTAs */}
+                <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3.5">
+                  <a
+                    href="#catalog"
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-purple-600/30 hover:shadow-purple-600/40 transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                  >
+                    <span>Explore Applications</span>
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </a>
+                  <a
+                    href="https://github.com/shubhmboghara/CrazyStore"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <FaGithub className="w-4 h-4 text-zinc-300" />
+                    <span>View on GitHub</span>
+                  </a>
+                </div>
               </div>
 
               {/* Right Column: Interactive 3D WebGL Phone Experience */}
@@ -427,9 +446,9 @@ export function HomeClient({
                 <label htmlFor="catalog-search" className="sr-only">
                   Search applications
                 </label>
-                <div className="relative flex items-center rounded-2xl bg-zinc-900/90 border border-zinc-800 hover:border-zinc-700 focus-within:border-zinc-700 focus-within:ring-1 focus-within:ring-zinc-600/50 transition-all shadow-inner">
-                  <div className="pl-3.5 pr-2 pointer-events-none text-zinc-400 group-focus-within:text-zinc-200 transition-colors">
-                    <Search className="w-4 h-4 text-zinc-400 group-focus-within:text-zinc-200" />
+                <div className="relative flex items-center rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 focus-within:border-purple-500/70 focus-within:ring-2 focus-within:ring-purple-500/20 transition-all duration-200 shadow-sm backdrop-blur-md">
+                  <div className="pl-3.5 pr-2 pointer-events-none text-zinc-400 group-focus-within:text-purple-400 transition-colors">
+                    <Search className="w-4 h-4 text-zinc-400 group-focus-within:text-purple-400" />
                   </div>
                   <input
                     ref={searchInputRef}
@@ -470,7 +489,7 @@ export function HomeClient({
                         <X className="w-3.5 h-3.5" />
                       </button>
                     ) : (
-                      <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-950 text-zinc-500 border border-zinc-800 group-focus-within:border-zinc-700 group-focus-within:text-zinc-300 transition-colors" title="Press / to focus">
+                      <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded-lg bg-zinc-950/80 text-zinc-400 border border-zinc-800 group-focus-within:border-purple-800/60 group-focus-within:text-purple-300 font-semibold shadow-xs transition-colors" title="Press / to focus">
                         /
                       </kbd>
                     )}
@@ -481,11 +500,11 @@ export function HomeClient({
                 {isSearchFocused && searchQuery.trim().length > 0 && (
                   <div
                     ref={searchDropdownRef}
-                    className="absolute left-0 right-0 top-full mt-2 z-40 p-2 rounded-2xl bg-zinc-950/95 border border-zinc-800 shadow-2xl shadow-black/80 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150"
+                    className="absolute left-0 right-0 top-full mt-2.5 z-40 p-2 sm:p-2.5 rounded-2xl bg-zinc-950/95 border border-zinc-800/90 shadow-2xl shadow-purple-950/20 backdrop-blur-2xl ring-1 ring-white/10 animate-in fade-in slide-in-from-top-2 duration-150"
                   >
-                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-900 text-[11px] text-zinc-400 font-semibold">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-900 text-[11px] text-zinc-400 font-semibold">
                       <span className="flex items-center gap-1.5 text-zinc-300">
-                        <Sparkles className="w-3 h-3 text-purple-400" />
+                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                         <span>Matching Applications ({filteredApps.length})</span>
                       </span>
                       <button
@@ -515,7 +534,7 @@ export function HomeClient({
                                 details: `Live Search dropdown opened: ${app.name}`,
                               });
                             }}
-                            className="flex items-center justify-between p-2.5 rounded-xl hover:bg-zinc-900/90 border border-transparent hover:border-purple-800/40 text-zinc-300 hover:text-white transition-all cursor-pointer group/item"
+                            className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl hover:bg-purple-950/40 border border-transparent hover:border-purple-800/50 text-zinc-300 hover:text-white transition-all cursor-pointer group/item"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div
@@ -534,7 +553,7 @@ export function HomeClient({
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold text-xs text-zinc-100 truncate">
+                                  <span className="font-bold text-xs sm:text-sm text-zinc-100 truncate">
                                     <HighlightedText text={app.name} query={searchQuery} />
                                   </span>
                                   <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-zinc-900 text-zinc-400 border border-zinc-800 shrink-0">
@@ -587,7 +606,7 @@ export function HomeClient({
                 <label htmlFor="catalog-sort" className="sr-only">
                   Sort applications
                 </label>
-                <div className="relative flex items-center rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs font-semibold text-zinc-300 hover:border-zinc-700 transition-all">
+                <div className="relative flex items-center rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 focus-within:border-purple-500/70 focus-within:ring-2 focus-within:ring-purple-500/20 text-xs font-semibold text-zinc-300 transition-all shadow-sm">
                   <div className="pl-3 pointer-events-none text-purple-400">
                     <ArrowUpDown className="w-3.5 h-3.5" />
                   </div>
@@ -595,7 +614,7 @@ export function HomeClient({
                     id="catalog-sort"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="w-full sm:w-auto py-2.5 pl-2.5 pr-8 bg-transparent text-zinc-200 text-xs font-medium cursor-pointer focus:outline-hidden appearance-none"
+                    className="w-full sm:w-auto py-2.5 sm:py-3 pl-2.5 pr-8 bg-transparent text-zinc-200 text-xs font-medium cursor-pointer focus:outline-hidden appearance-none"
                   >
                     <option value="featured" className="bg-zinc-900 text-zinc-200">Sort: Featured</option>
                     <option value="rating-desc" className="bg-zinc-900 text-zinc-200">Sort: Highest Rated</option>
@@ -626,17 +645,15 @@ export function HomeClient({
                     details: `Filtered apps by "${cat}" category`,
                   });
                 }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer min-h-[40px] focus-visible:ring-2 focus-visible:ring-purple-500 ${
+                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer min-h-[40px] focus-visible:ring-2 focus-visible:ring-purple-500 ${
                   selectedCategory === cat
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600/30'
-                    : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border border-zinc-800'
+                    : 'bg-zinc-900/80 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border border-zinc-800'
                 }`}
               >
                 {cat}
               </button>
             ))}
-
-            
           </div>
 
           {/* Quick Filter Badges Bar */}
@@ -844,32 +861,28 @@ export function HomeClient({
                           fallback={getIconComponent(app.iconSymbol)}
                         />
                       </div>
-                      <div className="flex flex-col items-end gap-1.5">
-                        <div className="flex items-center gap-1.5">
-                          
-
-                          {app.githubUrl && (
-                            <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700/50 text-[10px] font-bold flex items-center gap-1">
-                              <FaGithub className="w-3 h-3" /> GitHub
-                            </span>
-                          )}
-                          <span className="px-2.5 py-1 rounded-lg bg-zinc-800/80 border border-zinc-700/40 text-[10px] font-bold text-zinc-400 font-mono">
-                            {app.version}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                          <span className="px-2 py-0.5 rounded-lg bg-emerald-950/80 text-emerald-400 border border-emerald-800/40 text-[10px] font-bold flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3" /> 0 Trackers
-                          </span>
-                          <span className="px-2.5 py-1 rounded-lg bg-purple-950/50 text-purple-300 border border-purple-800/40 text-[10px] font-bold">
-                            <HighlightedText text={app.badge || 'Kotlin + Compose'} query={searchQuery} />
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-lg bg-emerald-950/80 text-emerald-400 border border-emerald-800/40 text-[10px] font-bold flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3" /> 0 Trackers
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-zinc-800/80 border border-zinc-700/40 text-[10px] font-bold text-zinc-300 font-mono">
+                          {app.version}
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex-1">
+                      <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                        <span className="px-2 py-0.5 rounded-md bg-purple-950/60 text-purple-300 border border-purple-800/40 text-[10px] font-bold">
+                          <HighlightedText text={app.badge || 'Kotlin + Compose'} query={searchQuery} />
+                        </span>
+                        {app.githubUrl && (
+                          <span className="px-2 py-0.5 rounded-md bg-zinc-800/60 text-zinc-400 border border-zinc-700/40 text-[10px] font-medium flex items-center gap-1">
+                            <FaGithub className="w-2.5 h-2.5" /> FOSS
+                          </span>
+                        )}
+                      </div>
+
                       <h3 className="text-xl font-black mb-2 text-zinc-100 group-hover:text-purple-400 transition-colors">
                         <HighlightedText text={app.name} query={searchQuery} />
                       </h3>
@@ -892,15 +905,16 @@ export function HomeClient({
                       )}
                     </div>
 
-                    <div className="pt-5 border-t border-zinc-800 flex items-center justify-between">
+                    <div className="pt-5 border-t border-zinc-800/80 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <StarRating rating={ratingsMap[app.slug]?.avg || 5} />
                         <span className="text-[10px] font-bold text-zinc-400">
                           ({ratingsMap[app.slug]?.count || 0})
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 text-[11px] font-bold text-purple-400 group-hover:translate-x-1 transition-transform">
-                        View Details <ChevronRight className="w-3.5 h-3.5" />
+                      <div className="px-3 py-1.5 rounded-xl bg-purple-600/15 group-hover:bg-purple-600 text-purple-300 group-hover:text-white border border-purple-500/30 group-hover:border-purple-600 text-xs font-bold transition-all flex items-center gap-1 shadow-xs">
+                        <span>View App</span>
+                        <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                       </div>
                     </div>
                   </Link>
