@@ -156,26 +156,62 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
   const { showToast } = useToast();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  // Normalize valid screenshots uploaded by admin
-  const validPreviews = (appData.screenshots || [])
-    .map((s: any, idx: number) => {
-      if (typeof s === 'string') {
-        const trimmed = s.trim();
-        return trimmed
-          ? { id: `screenshot-${idx}`, url: trimmed, imageUrl: trimmed, title: `Screenshot ${idx + 1}`, subtitle: '' }
-          : null;
-      }
-      const rawUrl = s?.imageUrl || s?.url || '';
-      if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) return null;
-      return {
-        id: s.id || `screenshot-${idx}`,
-        url: rawUrl.trim(),
-        imageUrl: rawUrl.trim(),
-        title: s.title || `Screenshot ${idx + 1}`,
-        subtitle: s.subtitle || '',
-      };
-    })
-    .filter(Boolean) as { id: string; url: string; imageUrl: string; title: string; subtitle?: string }[];
+  // Normalize valid screenshots uploaded by admin, with fallback to default app previews
+  const validPreviews = React.useMemo(() => {
+    const list = (appData.screenshots || [])
+      .map((s: any, idx: number) => {
+        if (typeof s === 'string') {
+          const trimmed = s.trim();
+          return trimmed
+            ? { id: `screenshot-${idx}`, url: trimmed, imageUrl: trimmed, title: `Screenshot ${idx + 1}`, subtitle: '' }
+            : null;
+        }
+        const rawUrl = s?.imageUrl || s?.url || '';
+        if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) return null;
+        return {
+          id: s.id || `screenshot-${idx}`,
+          url: rawUrl.trim(),
+          imageUrl: rawUrl.trim(),
+          title: s.title || `Screenshot ${idx + 1}`,
+          subtitle: s.subtitle || '',
+        };
+      })
+      .filter(Boolean) as { id: string; url: string; imageUrl: string; title: string; subtitle?: string }[];
+
+    if (list.length === 0 && appData.slug?.toLowerCase() === 'videohub') {
+      return [
+        {
+          id: '1',
+          title: 'Trending Feed & Discovery',
+          subtitle: 'Fluid 120Hz Jetpack Compose LazyColumn with real-time video previews & ad-free streaming',
+          url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
+          imageUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
+        },
+        {
+          id: '2',
+          title: 'Immersive 4K ExoPlayer',
+          subtitle: 'Hardware-accelerated 4K 60fps playback with live SponsorBlock skip markers and gesture HUD',
+          url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
+          imageUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
+        },
+        {
+          id: '3',
+          title: 'Background Audio & Lockscreen',
+          subtitle: 'AMOLED lockscreen controller, 320kbps Opus Hi-Fi audio, waveform visualizer & time-saved telemetry',
+          url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
+          imageUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
+        },
+        {
+          id: '4',
+          title: 'Material You & Settings',
+          subtitle: 'Android 15 Dynamic Color palettes, granular SponsorBlock filters & 100% De-Googled privacy controls',
+          url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
+          imageUrl: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
+        },
+      ];
+    }
+    return list;
+  }, [appData.screenshots, appData.slug]);
 
   // Synchronize native HTML5 <dialog> modal with state
   useEffect(() => {
@@ -615,14 +651,9 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-100 truncate">
-                        Screenshots &amp; Visuals
-                      </h3>
-                      <span className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-800/60 text-[10px] sm:text-xs font-bold text-purple-300 shrink-0">
-                        {validPreviews.length} Screens
-                      </span>
-                    </div>
+                    <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-100 truncate">
+                      Screenshots &amp; Visuals
+                    </h3>
                     <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate">
                       Swipe or click to browse &bull; Tap any screen to enlarge
                     </p>
