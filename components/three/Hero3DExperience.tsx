@@ -613,32 +613,7 @@ export function Hero3DExperience({
     speakerMesh.position.set(0, phoneHeight / 2 - 0.08, phoneDepth / 2 + 0.012);
     phoneGroup.add(speakerMesh);
 
-    // 7. Triple Camera Island on Back
-    const camIslandGeom = new THREE.BoxGeometry(0.85, 1.35, 0.08);
-    const camIslandMat = new THREE.MeshStandardMaterial({
-      color: 0x09090b,
-      metalness: 0.8,
-      roughness: 0.3,
-    });
-    const camIsland = new THREE.Mesh(camIslandGeom, camIslandMat);
-    camIsland.position.set(-phoneWidth / 4, phoneHeight / 4, -(phoneDepth / 2 + 0.04));
-    phoneGroup.add(camIsland);
-
-    for (let i = 0; i < 3; i++) {
-      const lensGeom = new THREE.CylinderGeometry(0.12, 0.12, 0.04, 32);
-      lensGeom.rotateX(Math.PI / 2);
-      const lensMat = new THREE.MeshStandardMaterial({
-        color: 0x020617,
-        metalness: 0.95,
-        roughness: 0.1,
-        emissive: 0x3b82f6,
-        emissiveIntensity: 0.5,
-      });
-      const lens = new THREE.Mesh(lensGeom, lensMat);
-      lens.position.set(-phoneWidth / 4, phoneHeight / 4 + 0.42 - i * 0.42, -(phoneDepth / 2 + 0.085));
-      phoneGroup.add(lens);
-    }
-
+    // 7. Triple Camera Island on Back (Commented out / removed so back camera lenses don't clip through or show on front)
     // Side Volume & Power Buttons
     const powerBtnGeom = new THREE.BoxGeometry(0.04, 0.6, 0.06);
     const btnMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, metalness: 0.9, roughness: 0.3 });
@@ -813,9 +788,10 @@ export function Hero3DExperience({
         const bobOffset = Math.sin(elapsedTime * 1.5) * 0.08;
         phoneGroupRef.current.position.y = bobOffset;
 
-        // Auto rotation when not dragging
+        // Gentle parallax oscillation when not dragging, always keeping the front screen facing the user
         if (!isDraggingRef.current) {
-          phoneGroupRef.current.rotation.y += 0.004;
+          const targetRotY = Math.sin(elapsedTime * 0.8) * 0.25;
+          phoneGroupRef.current.rotation.y += (targetRotY - phoneGroupRef.current.rotation.y) * 0.05;
           // Inertia damping
           phoneGroupRef.current.rotation.y += rotationVelocityRef.current.y;
           phoneGroupRef.current.rotation.x += rotationVelocityRef.current.x;
