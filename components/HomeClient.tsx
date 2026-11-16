@@ -346,6 +346,19 @@ export function HomeClient({
                   Curated directory of high-performance, ad-free Android applications built natively with Kotlin and Jetpack Compose. Zero telemetry, reproducible builds, and verified open-source code.
                 </p>
 
+                {/* Trust Signals */}
+                <div className="pt-4 flex items-center justify-center md:justify-start gap-2.5 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800/40 text-[11px] font-semibold text-emerald-400">
+                    <ShieldCheck className="w-3.5 h-3.5" /> 0 Trackers
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-900/90 border border-zinc-800 text-[11px] font-semibold text-zinc-300">
+                    <Zap className="w-3.5 h-3.5 text-purple-400" /> 120Hz Native
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-900/90 border border-zinc-800 text-[11px] font-semibold text-zinc-300">
+                    <Code2 className="w-3.5 h-3.5 text-indigo-400" /> 100% Kotlin
+                  </span>
+                </div>
+
                 {/* Hero Primary Action CTAs */}
                 <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3.5">
                   <a

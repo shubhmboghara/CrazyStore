@@ -931,13 +931,13 @@ export function Hero3DExperience({
         </div>
       )}
 
-      {/* Left / Right Arrow Buttons to Browse Screenshots */}
+      {/* Left / Right Arrow Buttons to Browse Screenshots — Smoothly revealed on container hover */}
       {totalScreenshots > 1 && (
         <>
           <button
             type="button"
             onClick={handlePrevScreenshot}
-            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-950/80 hover:bg-purple-600 backdrop-blur-md border border-zinc-800 hover:border-purple-500 flex items-center justify-center text-zinc-300 hover:text-white shadow-xl transition-all duration-200 opacity-75 hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-950/80 hover:bg-purple-600 backdrop-blur-md border border-zinc-800 hover:border-purple-500 flex items-center justify-center text-zinc-300 hover:text-white shadow-xl transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
             title="Previous screenshot"
             aria-label="Previous screenshot"
           >
@@ -946,7 +946,7 @@ export function Hero3DExperience({
           <button
             type="button"
             onClick={handleNextScreenshot}
-            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-950/80 hover:bg-purple-600 backdrop-blur-md border border-zinc-800 hover:border-purple-500 flex items-center justify-center text-zinc-300 hover:text-white shadow-xl transition-all duration-200 opacity-75 hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-950/80 hover:bg-purple-600 backdrop-blur-md border border-zinc-800 hover:border-purple-500 flex items-center justify-center text-zinc-300 hover:text-white shadow-xl transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
             title="Next screenshot"
             aria-label="Next screenshot"
           >
@@ -955,46 +955,36 @@ export function Hero3DExperience({
         </>
       )}
 
-      {/* Bottom HUD: Screenshot Title & Interactive Step Dots */}
-      <div className="absolute bottom-3 inset-x-3 sm:inset-x-4 z-20 pointer-events-none flex flex-col items-center gap-2">
-        {/* Active Screenshot Title & Subtitle Badge */}
-        {currentScreenshot && (
-          <div className="pointer-events-auto max-w-[94%] sm:max-w-md w-full px-3.5 py-2 rounded-2xl bg-zinc-950/90 backdrop-blur-md border border-purple-900/40 shadow-2xl text-center">
-            <div className="flex items-center justify-center gap-2 text-xs font-bold text-zinc-100">
-              <span className="px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300 text-[10px] font-mono border border-purple-700/50">
-                {activeScreenshotIdx + 1}/{totalScreenshots}
-              </span>
-              <span className="truncate">{currentScreenshot.title || `Screenshot ${activeScreenshotIdx + 1}`}</span>
+      {/* Bottom Unified Showcase Glass Dock */}
+      <div className="absolute bottom-3 inset-x-3 sm:inset-x-4 z-20 pointer-events-none flex justify-center">
+        <div className="pointer-events-auto inline-flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-zinc-950/85 backdrop-blur-md border border-white/10 shadow-2xl max-w-full">
+          {currentScreenshot && (
+            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0 animate-pulse" />
+              <span className="truncate max-w-[180px] sm:max-w-xs">{currentScreenshot.title || `Screenshot ${activeScreenshotIdx + 1}`}</span>
             </div>
-            {currentScreenshot.subtitle && (
-              <p className="text-[11px] text-zinc-400 truncate mt-0.5 font-normal">
-                {currentScreenshot.subtitle}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Screenshot Step Navigation Dots */}
-        {totalScreenshots > 1 && (
-          <div className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-950/80 backdrop-blur-md border border-zinc-800 shadow-lg">
-            {currentApp.screenshots.map((s, idx) => (
-              <button
-                key={s.id || idx}
-                type="button"
-                onClick={() => {
-                  setActiveScreenshotIdx(idx);
-                }}
-                className={`transition-all duration-300 rounded-full cursor-pointer ${
-                  activeScreenshotIdx === idx
-                    ? 'w-7 h-2 bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400 shadow-md shadow-purple-500/50'
-                    : 'w-2 h-2 bg-zinc-700 hover:bg-zinc-500'
-                }`}
-                title={s.title || `Go to screenshot ${idx + 1}`}
-                aria-label={s.title || `Go to screenshot ${idx + 1}`}
-              />
-            ))}
-          </div>
-        )}
+          )}
+          {totalScreenshots > 1 && (
+            <div className="flex items-center gap-1.5 pl-2 border-l border-zinc-800 shrink-0">
+              {currentApp.screenshots.map((s, idx) => (
+                <button
+                  key={s.id || idx}
+                  type="button"
+                  onClick={() => {
+                    setActiveScreenshotIdx(idx);
+                  }}
+                  className={`transition-all duration-300 rounded-full cursor-pointer ${
+                    activeScreenshotIdx === idx
+                      ? 'w-6 h-1.5 bg-gradient-to-r from-purple-400 to-indigo-400 shadow-xs shadow-purple-500/50'
+                      : 'w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500'
+                  }`}
+                  title={s.title || `Go to screenshot ${idx + 1}`}
+                  aria-label={s.title || `Go to screenshot ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
