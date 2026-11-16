@@ -13,7 +13,7 @@ import { Footer } from '@/components/Footer';
 import { GeoKnowledgeBase } from '@/components/GeoKnowledgeBase';
 import { useToast } from '@/components/Toast';
 import { trackEvent } from '@/lib/analytics';
-import { Screenshots3DBackdrop, Screenshots3DPhoneView } from '@/components/three';
+import { Screenshots3DPhoneView } from '@/components/three';
 import { ScreenshotsSimpleGallery } from '@/components/ScreenshotsSimpleGallery';
 import { DataSafetyCard } from '@/components/DataSafetyCard';
 import { DownloadQrModal } from '@/components/DownloadQrModal';
@@ -606,31 +606,31 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
         {/* Screenshots & Visuals Showcase */}
         {validPreviews.length > 0 && (
-          <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-8">
-            <div className="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-6 shadow-xl relative overflow-hidden backdrop-blur-sm">
-              {/* Subtle Ambient Canvas (Desktop only) */}
-              <div className="hidden md:block">
-                <Screenshots3DBackdrop />
-              </div>
-
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8">
+            <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden backdrop-blur-xs">
               {/* Section Header */}
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-zinc-800/80">
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-zinc-800/60">
                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                  <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-purple-950/60 text-purple-400 border border-purple-800/50 shadow-inner shrink-0">
+                  <div className="p-2 sm:p-2.5 rounded-xl bg-purple-950/60 text-purple-400 border border-purple-800/50 shadow-inner shrink-0">
                     <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-100 truncate">
-                      Screenshots &amp; Visuals
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-100 truncate">
+                        Screenshots &amp; Visuals
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-800/60 text-[10px] sm:text-xs font-bold text-purple-300 shrink-0">
+                        {validPreviews.length} Screens
+                      </span>
+                    </div>
                     <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 truncate">
                       Swipe or click to browse &bull; Tap any screen to enlarge
                     </p>
                   </div>
                 </div>
 
-                {/* Desktop View Mode Toggle (Simple Gallery vs 3D Phone) - Hidden on Mobile */}
-                <div className="hidden md:flex items-center gap-1.5 p-1 bg-zinc-900/90 border border-zinc-800 rounded-xl self-start sm:self-center">
+                {/* Desktop View Mode Toggle (Simple Gallery vs 3D Studio) - Hidden on Mobile */}
+                <div className="hidden md:flex items-center gap-1 p-1 bg-zinc-950/80 border border-zinc-800/90 rounded-xl self-start sm:self-center">
                   <button
                     type="button"
                     onClick={() => setScreenshotViewMode('gallery')}
@@ -641,7 +641,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     }`}
                   >
                     <Layers className="w-3.5 h-3.5" />
-                    <span>Simple Gallery</span>
+                    <span>Gallery</span>
                   </button>
                   <button
                     type="button"
@@ -653,14 +653,14 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     }`}
                   >
                     <Smartphone className="w-3.5 h-3.5" />
-                    <span>3D Phone</span>
+                    <span>3D Studio</span>
                   </button>
                 </div>
               </div>
 
               {/* Viewport: Mobile always gets Simple Gallery (zero 3D / zero gesture trapping) */}
               <div className="relative z-10 pt-1">
-                {/* 1. Mobile Simple Gallery (Always active on mobile screens) */}
+                {/* 1. Mobile & Default Gallery */}
                 <div className={screenshotViewMode === '3d' ? 'block md:hidden' : 'block'}>
                   <ScreenshotsSimpleGallery
                     screenshots={validPreviews}
@@ -681,13 +681,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                   </div>
                 )}
               </div>
-
-              {/* Ambient bottom glow decoration */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -bottom-16 left-1/2 -translate-x-1/2 w-2/3 h-24 rounded-full opacity-15 blur-3xl"
-                style={{ background: 'radial-gradient(ellipse, #a855f7 0%, #06b6d4 100%)' }}
-              />
             </div>
           </section>
         )}

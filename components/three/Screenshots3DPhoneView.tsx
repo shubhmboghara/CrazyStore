@@ -997,7 +997,7 @@ export function Screenshots3DPhoneView({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={{ touchAction: 'pan-y' }}
-        className="relative w-full h-[320px] xs:h-[380px] sm:h-[460px] md:h-[540px] lg:h-[620px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-[#0c0c16] to-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center select-none cursor-grab focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+        className="relative w-full h-[300px] xs:h-[340px] sm:h-[400px] md:h-[450px] lg:h-[480px] rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-b from-zinc-950 via-[#0c0c16] to-zinc-950 border border-zinc-800/80 shadow-xl flex items-center justify-center select-none cursor-grab focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
