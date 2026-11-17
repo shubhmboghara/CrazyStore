@@ -464,32 +464,32 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Semantic Accessible Breadcrumb Navigation */}
-            <nav aria-label="Breadcrumb" className="mb-6">
+            <nav aria-label="Breadcrumb" className="mb-5">
               <ol className="flex items-center gap-2 text-xs font-medium text-zinc-400">
                 <li>
                   <Link href="/" className="hover:text-purple-300 transition-colors flex items-center gap-1">
-                    <ArrowLeft className="w-3.5 h-3.5" /> Storefront
+                    <ArrowLeft className="w-3.5 h-3.5" /> Home
                   </Link>
                 </li>
-                <li aria-hidden="true" className="text-zinc-400">/</li>
+                <li aria-hidden="true" className="text-zinc-600">/</li>
                 <li>
                   <Link href="/#catalog" className="hover:text-purple-300 transition-colors">
                     Catalog
                   </Link>
                 </li>
-                <li aria-hidden="true" className="text-zinc-400">/</li>
+                <li aria-hidden="true" className="text-zinc-600">/</li>
                 <li aria-current="page" className="text-zinc-100 font-bold truncate max-w-[200px]">
                   {appData.name}
                 </li>
               </ol>
             </nav>
 
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-              <div className="flex items-start gap-3.5 sm:gap-5 w-full min-w-0">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+              <div className="flex items-start gap-4 sm:gap-5 w-full min-w-0">
                 <div
-                  className={`w-18 h-18 xs:w-20 xs:h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-gradient-to-br ${
+                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br ${
                     appData.iconBg || 'from-purple-600 to-indigo-600'
-                  } flex items-center justify-center shadow-xl shadow-purple-500/20 shrink-0 overflow-hidden relative`}
+                  } flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0 overflow-hidden relative`}
                 >
                   <AppLogoImage
                     key={appData.slug}
@@ -501,7 +501,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </div>
 
                 <div className="space-y-1.5 min-w-0 flex-1">
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-zinc-100 break-words">
+                  <h1 className="text-2xl sm:text-3xl font-black text-zinc-100 break-words tracking-tight">
                     {appData.name}
                   </h1>
 
@@ -509,7 +509,7 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                     {appData.tagline || appData.shortDescription}
                   </p>
 
-                  <div className="pt-1 flex items-center gap-3 sm:gap-4 flex-wrap">
+                  <div className="pt-0.5 flex items-center gap-3 sm:gap-4 flex-wrap">
                     <button
                       type="button"
                       onClick={() => {
@@ -528,78 +528,76 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </div>
               </div>
 
-              {/* Download & Feature Action Buttons */}
-              <div className="w-full lg:w-auto flex flex-col gap-2.5 mt-2 lg:mt-0">
-                <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+              {/* Action Buttons Toolbar */}
+              <div className="w-full lg:w-auto flex flex-wrap items-center gap-2 pt-1 lg:pt-0">
+                <a
+                  href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => handleDownloadClick('header_cta')}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap shadow-xs ${
+                    isDownloading
+                      ? 'bg-emerald-600 ring-2 ring-emerald-400/50'
+                      : 'bg-purple-600 hover:bg-purple-500 shadow-purple-900/30 hover:-translate-y-0.5 active:translate-y-0'
+                  }`}
+                  aria-live="polite"
+                >
+                  {isDownloading ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                      <span>Downloading APK...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span>Download APK {appData.size ? `(${appData.size})` : ''}</span>
+                    </>
+                  )}
+                </a>
+
+                {appData.githubUrl && (
                   <a
-                    href={formatDownloadUrl(appData.downloadUrl) || `/api/download?slug=${encodeURIComponent(appData.slug)}`}
+                    href={appData.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => handleDownloadClick('header_cta')}
-                    className={`w-full sm:w-auto px-7 py-3.5 rounded-2xl text-white font-bold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px] ${
-                      isDownloading
-                        ? 'bg-emerald-600 shadow-emerald-600/30 ring-2 ring-emerald-400/50'
-                        : 'bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-600/30 hover:shadow-purple-600/40 hover:-translate-y-0.5 active:translate-y-0'
-                    }`}
-                    aria-live="polite"
+                    onClick={() => {
+                      trackEvent({
+                        eventType: 'github_click',
+                        appSlug: appData.slug,
+                        appName: appData.name,
+                        details: `Viewed GitHub Source: ${appData.name}`,
+                      });
+                    }}
+                    className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap"
                   >
-                    {isDownloading ? (
-                      <>
-                        <CheckCircle2 className="w-5 h-5 text-white animate-in zoom-in-75" />
-                        <span>Downloading APK...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-5 h-5" />
-                        <span>Download APK {appData.size ? `(${appData.size})` : ''}</span>
-                      </>
-                    )}
+                    <FaGithub className="w-4 h-4 text-zinc-400" />
+                    <span>Source</span>
                   </a>
+                )}
 
-                  {appData.githubUrl && (
-                    <a
-                      href={appData.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        trackEvent({
-                          eventType: 'github_click',
-                          appSlug: appData.slug,
-                          appName: appData.name,
-                          details: `Viewed GitHub Source: ${appData.name}`,
-                        });
-                      }}
-                      className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-zinc-800 text-white font-bold text-sm text-center hover:bg-zinc-700 transition-all flex items-center justify-center gap-2 shadow-md border border-zinc-700/50 min-h-[48px]"
-                    >
-                      <FaGithub className="w-5 h-5" /> GitHub Source
-                    </a>
-                  )}
-                </div>
+                {/* Scan QR Code button */}
+                <button
+                  type="button"
+                  onClick={() => setIsQrModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap"
+                  title="Scan QR Code to install directly on phone"
+                  aria-label="Scan QR Code to install directly on phone"
+                >
+                  <QrCode className="w-3.5 h-3.5 text-purple-400" />
+                  <span>QR Code</span>
+                </button>
 
-                {/* Secondary Quick-Action Tools */}
-                <div className="flex items-center gap-2 justify-start lg:justify-end overflow-x-auto hide-scrollbar max-w-full pb-1 pt-1 [scrollbar-width:none]">
-                  {/* Scan QR Code button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsQrModalOpen(true)}
-                    className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[40px] shrink-0"
-                    title="Scan QR Code to install directly on phone"
-                  >
-                    <QrCode className="w-3.5 h-3.5 text-purple-400" />
-                    <span>Scan QR</span>
-                  </button>
-
-                  {/* Share button */}
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[40px] shrink-0"
-                    title="Share app profile"
-                  >
-                    <Share2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Share</span>
-                  </button>
-                </div>
+                {/* Share button */}
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap"
+                  title="Share app profile"
+                  aria-label="Share app profile"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Share</span>
+                </button>
               </div>
             </div>
           </div>
