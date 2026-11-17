@@ -17,7 +17,6 @@ import { Screenshots3DPhoneView } from '@/components/three';
 import { ScreenshotsSimpleGallery } from '@/components/ScreenshotsSimpleGallery';
 import { DataSafetyCard } from '@/components/DataSafetyCard';
 import { DownloadQrModal } from '@/components/DownloadQrModal';
-import { checkDeviceCompatibility } from '@/lib/deviceCompatibility';
 import { FaGithub } from 'react-icons/fa6';
 import {
   Download,
@@ -125,8 +124,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
       }
     }
   }, []);
-
-  const compat = useMemo(() => checkDeviceCompatibility(appData.minAndroid), [appData.minAndroid]);
 
   const handleTabKeyDown = (e: React.KeyboardEvent, currentTab: 'reviews' | 'overview' | 'safety' | 'tech') => {
     const tabs: ('reviews' | 'overview' | 'safety' | 'tech')[] = ['reviews', 'overview', 'safety', 'tech'];
@@ -545,20 +542,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                         <StarRating rating={averageRating} showNumber={true} reviewCount={totalCount} />
                       </div>
                     </button>
-
-                    {/* Automatic Device Compatibility Indicator */}
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-300 px-2.5 py-1 rounded-xl bg-zinc-950 border border-zinc-800">
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          compat.status === 'compatible'
-                            ? 'bg-emerald-400 shadow-xs shadow-emerald-400/50 animate-pulse'
-                            : compat.status === 'warning'
-                            ? 'bg-amber-400'
-                            : 'bg-purple-400'
-                        }`}
-                      />
-                      <span>{compat.message}</span>
-                    </div>
                   </div>
                 </div>
               </div>
