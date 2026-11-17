@@ -320,34 +320,33 @@ export function HomeClient({
       <Navbar />
 
       <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
-        {/* 3D WebGL Hero Section */}
-        <section className="relative py-8 sm:py-14 md:py-16 lg:py-20 overflow-hidden">
-          {/* Background Ambient Glows - Bounded to avoid mobile horizontal scroll */}
-          <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[280px] sm:w-[480px] lg:w-[650px] h-[280px] sm:h-[480px] lg:h-[650px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
-          <div className="absolute top-1/2 right-4 sm:right-10 w-[220px] sm:w-[360px] lg:w-[450px] h-[220px] sm:h-[360px] lg:h-[450px] bg-indigo-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
+        {/* Hero Section */}
+        <section className="relative py-12 sm:py-16 md:py-20 lg:py-24 overflow-hidden border-b border-zinc-900/60">
+          {/* Background Ambient Glows */}
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[540px] lg:w-[750px] h-[320px] sm:h-[540px] lg:h-[750px] bg-purple-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="absolute top-1/2 right-1/4 w-[240px] sm:w-[400px] lg:w-[500px] h-[240px] sm:h-[400px] lg:h-[500px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-8 lg:gap-12 items-center">
-              {/* Left Column: Headline, Highlights & Actions */}
-              <div className="md:col-span-6 lg:col-span-6 text-center md:text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-purple-950/70 border border-purple-800/50 text-purple-300 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 animate-in fade-in slide-in-from-bottom-2">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+              <div className="md:col-span-12 max-w-4xl mx-auto text-center">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/70 border border-purple-800/50 text-purple-300 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 animate-in fade-in slide-in-from-bottom-2">
                   <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                   <span className="truncate">100% Free &amp; Open Source • Kotlin &amp; Compose</span>
                 </div>
 
                 <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-4 sm:mb-6 leading-[1.15] text-zinc-100">
-                  The Open Vault for <br className="hidden xs:inline" />
+                  The Open Vault for <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-300 to-cyan-300">
                     Native Android Apps
                   </span>
                 </h1>
 
-                <p className="max-w-xl mx-auto md:mx-0 text-xs sm:text-sm md:text-base text-zinc-400 leading-relaxed font-normal">
+                <p className="max-w-2xl mx-auto text-xs sm:text-sm md:text-base text-zinc-400 leading-relaxed font-normal mb-8">
                   Curated directory of high-performance, ad-free Android applications built natively with Kotlin and Jetpack Compose. Zero telemetry, reproducible builds, and verified open-source code.
                 </p>
 
                 {/* Trust Signals */}
-                <div className="pt-4 flex items-center justify-center md:justify-start gap-2.5 flex-wrap">
+                <div className="flex items-center justify-center gap-2.5 flex-wrap mb-8">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800/40 text-[11px] font-semibold text-emerald-400">
                     <ShieldCheck className="w-3.5 h-3.5" /> 0 Trackers
                   </span>
@@ -360,10 +359,10 @@ export function HomeClient({
                 </div>
 
                 {/* Hero Primary Action CTAs */}
-                <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3.5">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5">
                   <a
                     href="#catalog"
-                    className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-purple-600/30 hover:shadow-purple-600/40 transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-purple-600/30 hover:shadow-purple-600/40 transition-all flex items-center justify-center gap-2 cursor-pointer group"
                   >
                     <span>Explore Applications</span>
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -372,18 +371,11 @@ export function HomeClient({
                     href="https://github.com/shubhmboghara/CrazyStore"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <FaGithub className="w-4 h-4 text-zinc-300" />
                     <span>View on GitHub</span>
                   </a>
-                </div>
-              </div>
-
-              {/* Right Column: Interactive 3D WebGL Phone Experience */}
-              <div className="md:col-span-6 lg:col-span-6 relative flex items-center justify-center">
-                <div className="w-full max-w-[420px] md:max-w-full lg:max-w-[560px] relative">
-                  <Hero3DExperience apps={apps} />
                 </div>
               </div>
             </div>
