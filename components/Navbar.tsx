@@ -3,17 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Search, ShieldCheck, Sparkles, Layers } from 'lucide-react';
-import { NavLogo3D } from '@/components/three';
+import { Menu, X, Search, ShieldCheck, Zap } from 'lucide-react';
 import { CommandPalette } from '@/components/CommandPalette';
 
 export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-
-  const isHomeRoute = pathname === '/';
-  const isAppDetail = pathname.startsWith('/apps/');
 
   // Global Cmd+K / Ctrl+K and / shortcut listener
   useEffect(() => {
@@ -62,61 +58,40 @@ export function Navbar() {
     <>
       <header className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/85 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Brand Logo & Context */}
+          {/* Brand Logo */}
           <div className="flex items-center gap-3">
             <Link
               href="/"
               id="nav-logo"
-              className="flex items-center gap-3 group transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-purple-500 rounded-xl"
+              className="flex items-center gap-2.5 group focus-visible:ring-2 focus-visible:ring-purple-500 rounded-xl"
               aria-label="CrazyStore Home"
             >
-              <NavLogo3D size="md" />
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-lg text-zinc-100 tracking-tight">
-                    CrazyStore
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800/50">
-                    FOSS
-                  </span>
-                </div>
-                <p className="text-[11px] text-zinc-400 font-medium hidden sm:block">
-                  Open-Source Android App Vault
-                </p>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-sm shadow-purple-500/20 group-hover:scale-105 transition-transform">
+                <Zap className="w-4 h-4 fill-white text-white" />
               </div>
+              <span className="font-black text-lg text-zinc-100 tracking-tight">
+                CrazyStore
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800/50">
+                FOSS
+              </span>
             </Link>
           </div>
 
           {/* Desktop Navigation Links */}
-          <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1.5">
-            <Link
-              href="/"
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] inline-flex items-center ${
-                isHomeRoute
-                  ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40 shadow-xs'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
-              }`}
-            >
-              Storefront
-            </Link>
-
+          <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-2">
             <Link
               href="/#catalog"
-              className="px-3 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all min-h-[40px] inline-flex items-center"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors"
             >
               Catalog
             </Link>
 
             <Link
-              href="/apps/videohub"
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] inline-flex items-center gap-1.5 ${
-                isAppDetail
-                  ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40 shadow-xs'
-                  : 'text-zinc-400 hover:text-purple-300 hover:bg-purple-950/40'
-              }`}
+              href="/#standards"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors"
             >
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              3D Studio
+              FOSS Standards
             </Link>
           </nav>
 
@@ -174,7 +149,7 @@ export function Navbar() {
               role="dialog"
               aria-modal="true"
               aria-label="Mobile Navigation Menu"
-              className="relative z-40 md:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-5 space-y-2 animate-in slide-in-from-top-2 duration-200 shadow-2xl"
+              className="relative z-40 md:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-4 space-y-2 animate-in slide-in-from-top-2 duration-200 shadow-2xl"
             >
               <button
                 type="button"
@@ -182,50 +157,28 @@ export function Navbar() {
                   setIsMobileMenuOpen(false);
                   setIsCommandPaletteOpen(true);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-purple-200 bg-purple-950/60 hover:bg-purple-900/70 border border-purple-800/50 min-h-[48px] text-left cursor-pointer transition-all"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-purple-200 bg-purple-950/60 hover:bg-purple-900/70 border border-purple-800/50 min-h-[48px] text-left cursor-pointer transition-all"
               >
                 <Search className="w-4 h-4 text-purple-400" />
                 <span>Instant Spotlight Search</span>
               </button>
 
               <Link
-                href="/"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold min-h-[48px] ${
-                  isHomeRoute
-                    ? 'bg-purple-950/80 text-purple-300 border border-purple-800/50'
-                    : 'text-zinc-300 hover:bg-zinc-900'
-                }`}
-              >
-                <Layers className="w-4 h-4 text-purple-400" />
-                <span>Storefront &amp; Discover</span>
-              </Link>
-
-              <Link
                 href="/#catalog"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900 min-h-[48px]"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900 min-h-[48px] transition-colors"
               >
                 <Search className="w-4 h-4 text-purple-400" />
-                <span>Browse Catalog &amp; Search</span>
+                <span>Catalog</span>
               </Link>
 
               <Link
                 href="/#standards"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-900 min-h-[48px]"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900 min-h-[48px] transition-colors"
               >
                 <ShieldCheck className="w-4 h-4 text-purple-400" />
-                <span>FOSS Standards &amp; Safety</span>
-              </Link>
-
-              <Link
-                href="/apps/videohub"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-purple-300 bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800/40 min-h-[48px]"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                <span>3D Device Studio</span>
+                <span>FOSS Standards</span>
               </Link>
             </div>
           </>
