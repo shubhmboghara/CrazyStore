@@ -11,16 +11,7 @@ import {
 } from '@/lib/threeUtils';
 import { AndroidApp } from '@/lib/appsData';
 import { normalizeAppRecord } from '@/lib/appUtils';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Play,
-  Pause,
-  RotateCcw,
-  Smartphone,
-  ExternalLink,
-  Sparkles,
-} from 'lucide-react';
+import { Smartphone } from 'lucide-react';
 
 export interface ShowcaseScreenshot {
   id: string;
@@ -866,126 +857,6 @@ export function Hero3DExperience({
           <p className="text-xs text-zinc-400 max-w-xs mt-2">{currentApp.tagline}</p>
         </div>
       )}
-
-      {/* Floating Top Header Bar */}
-      <div className="absolute top-3 inset-x-3 sm:inset-x-4 flex items-center justify-between z-20 pointer-events-none">
-        <Link
-          href={`/apps/${currentApp.slug}`}
-          className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-950/80 hover:bg-zinc-900 backdrop-blur-md border border-purple-900/50 shadow-xl transition-all duration-200 group/link"
-          title={`View ${currentApp.name} Details`}
-        >
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-          <span className="font-bold text-xs text-zinc-100 group-hover/link:text-purple-300 transition-colors">
-            {currentApp.name}
-          </span>
-          <span className="text-zinc-600">•</span>
-          <span className="text-[11px] text-purple-300 font-medium hidden xs:inline">{currentApp.badge}</span>
-          <ExternalLink className="w-3 h-3 text-zinc-400 group-hover/link:text-purple-300 transition-colors shrink-0" />
-        </Link>
-
-        {/* Play/Pause & Reset 3D Controls */}
-        <div className="pointer-events-auto flex items-center gap-1 bg-zinc-950/80 backdrop-blur-md border border-zinc-800 rounded-full p-1 shadow-lg">
-          <button
-            type="button"
-            onClick={() => setIsAutoPlay((prev) => !prev)}
-            className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
-            title={isAutoPlay ? 'Pause screenshot rotation' : 'Play screenshot rotation'}
-            aria-label={isAutoPlay ? 'Pause screenshot rotation' : 'Play screenshot rotation'}
-          >
-            {isAutoPlay ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-          </button>
-          <button
-            type="button"
-            onClick={handleResetRotation}
-            className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
-            title="Reset 3D angle"
-            aria-label="Reset 3D angle"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Multi-App Switcher Tabs (if 2 or more apps exist in the directory) */}
-      {showcaseApps.length > 1 && (
-        <div className="absolute top-14 inset-x-3 sm:inset-x-4 flex items-center justify-center z-20 pointer-events-none">
-          <div className="pointer-events-auto inline-flex items-center gap-1 p-1 rounded-full bg-zinc-950/85 backdrop-blur-md border border-zinc-800 shadow-xl max-w-full overflow-x-auto">
-            {showcaseApps.map((a, aIdx) => (
-              <button
-                key={a.slug}
-                type="button"
-                onClick={() => {
-                  setActiveAppIdx(aIdx);
-                  setActiveScreenshotIdx(0);
-                }}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap ${
-                  activeAppIdx === aIdx
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/40 ring-1 ring-purple-400/50'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
-                }`}
-              >
-                {a.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Left / Right Arrow Buttons to Browse Screenshots — Smoothly revealed on container hover */}
-      {totalScreenshots > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={handlePrevScreenshot}
-            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-950/80 hover:bg-purple-600 backdrop-blur-md border border-zinc-800 hover:border-purple-500 flex items-center justify-center text-zinc-300 hover:text-white shadow-xl transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
-            title="Previous screenshot"
-            aria-label="Previous screenshot"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={handleNextScreenshot}
-            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-950/80 hover:bg-purple-600 backdrop-blur-md border border-zinc-800 hover:border-purple-500 flex items-center justify-center text-zinc-300 hover:text-white shadow-xl transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
-            title="Next screenshot"
-            aria-label="Next screenshot"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </>
-      )}
-
-      {/* Bottom Unified Showcase Glass Dock */}
-      <div className="absolute bottom-3 inset-x-3 sm:inset-x-4 z-20 pointer-events-none flex justify-center">
-        <div className="pointer-events-auto inline-flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-zinc-950/85 backdrop-blur-md border border-white/10 shadow-2xl max-w-full">
-          {currentScreenshot && (
-            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200 truncate">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0 animate-pulse" />
-              <span className="truncate max-w-[180px] sm:max-w-xs">{currentScreenshot.title || `Screenshot ${activeScreenshotIdx + 1}`}</span>
-            </div>
-          )}
-          {totalScreenshots > 1 && (
-            <div className="flex items-center gap-1.5 pl-2 border-l border-zinc-800 shrink-0">
-              {currentApp.screenshots.map((s, idx) => (
-                <button
-                  key={s.id || idx}
-                  type="button"
-                  onClick={() => {
-                    setActiveScreenshotIdx(idx);
-                  }}
-                  className={`transition-all duration-300 rounded-full cursor-pointer ${
-                    activeScreenshotIdx === idx
-                      ? 'w-6 h-1.5 bg-gradient-to-r from-purple-400 to-indigo-400 shadow-xs shadow-purple-500/50'
-                      : 'w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500'
-                  }`}
-                  title={s.title || `Go to screenshot ${idx + 1}`}
-                  aria-label={s.title || `Go to screenshot ${idx + 1}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

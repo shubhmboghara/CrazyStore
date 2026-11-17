@@ -80,7 +80,7 @@ function SimpleScreenshotCard({
         role="button"
         tabIndex={0}
         aria-label={`View screenshot ${idx + 1} of ${total}: ${screenshot.title || 'App Preview'}`}
-        className="relative shrink-0 h-[320px] xs:h-[350px] sm:h-[380px] md:h-[410px] aspect-[9/19.5] rounded-2xl sm:rounded-3xl overflow-hidden border border-zinc-800/90 hover:border-purple-500/70 bg-zinc-950 shadow-lg hover:shadow-2xl hover:shadow-purple-950/40 transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-[0.98] flex items-center justify-center p-1 sm:p-1.5"
+        className="relative shrink-0 h-[340px] xs:h-[370px] sm:h-[400px] md:h-[430px] aspect-[9/19.5] rounded-2xl sm:rounded-3xl overflow-hidden border border-zinc-800/90 hover:border-purple-500/80 bg-zinc-950 shadow-xl hover:shadow-2xl hover:shadow-purple-950/50 transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-[0.98] flex items-center justify-center p-1 sm:p-1.5 group-hover:-translate-y-1"
       >
         {/* Subtle Outer Bezel Rim */}
         <div className="absolute inset-0 pointer-events-none rounded-2xl sm:rounded-3xl ring-1 ring-inset ring-white/10 z-10" />
@@ -116,13 +116,6 @@ function SimpleScreenshotCard({
           </div>
         )}
       </div>
-
-      {/* Clean Caption Below Screenshot — Never Obscures Screen UI */}
-      <div className="mt-2 text-center w-full max-w-[190px] px-1 pointer-events-none">
-        <p className="text-xs font-semibold text-zinc-300 group-hover:text-purple-300 transition-colors truncate">
-          {screenshot.title || `Screen ${idx + 1}`}
-        </p>
-      </div>
     </div>
   );
 }
@@ -133,6 +126,21 @@ export function ScreenshotsSimpleGallery({
 }: ScreenshotsSimpleGalleryProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+    setCanScrollLeft(scrollLeft > 8);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 8);
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [screenshots]);
 
   const scrollToIndex = (idx: number) => {
     if (!scrollContainerRef.current) return;
@@ -147,6 +155,7 @@ export function ScreenshotsSimpleGallery({
 
   const handleScroll = () => {
     if (!scrollContainerRef.current) return;
+    checkScroll();
     const container = scrollContainerRef.current;
     const scrollLeft = container.scrollLeft;
     const cardWidth = container.children[0]?.clientWidth || 240;
@@ -157,42 +166,40 @@ export function ScreenshotsSimpleGallery({
   };
 
   return (
-    <div className="w-full relative flex flex-col gap-3">
+    <div className="w-full relative flex flex-col gap-2">
       {/* Scrollable Screenshots Strip */}
       <div className="relative group/carousel">
-        {/* Left Arrow Button (visible on desktop when multiple screenshots exist) */}
-        {screenshots.length > 1 && (
+        {/* Left Arrow Button (visible only when left scroll is possible) */}
+        {canScrollLeft && (
           <button
             type="button"
             onClick={() => scrollToIndex(Math.max(0, activeIdx - 1))}
-            className="hidden sm:flex absolute left-0 top-[45%] -translate-y-1/2 z-30 p-2 sm:p-2.5 rounded-full bg-zinc-950/90 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/80 transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-0 disabled:pointer-events-none"
-            disabled={activeIdx === 0}
+            className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-zinc-950/90 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/80 transition-all shadow-2xl hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Previous screenshot"
             title="Previous screenshot"
           >
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
         )}
 
-        {/* Right Arrow Button (visible on desktop when multiple screenshots exist) */}
-        {screenshots.length > 1 && (
+        {/* Right Arrow Button (visible only when right scroll is possible) */}
+        {canScrollRight && (
           <button
             type="button"
             onClick={() => scrollToIndex(Math.min(screenshots.length - 1, activeIdx + 1))}
-            className="hidden sm:flex absolute right-0 top-[45%] -translate-y-1/2 z-30 p-2 sm:p-2.5 rounded-full bg-zinc-950/90 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/80 transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-0 disabled:pointer-events-none"
-            disabled={activeIdx === screenshots.length - 1}
+            className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-zinc-950/90 hover:bg-purple-600 text-white backdrop-blur-md border border-zinc-700/80 transition-all shadow-2xl hover:scale-110 active:scale-95 cursor-pointer"
             aria-label="Next screenshot"
             title="Next screenshot"
           >
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         )}
 
-        {/* Horizontal Scroll Track */}
+        {/* Horizontal Scroll Track - Centered when content fits, scrollable when overflowing */}
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex gap-3 sm:gap-5 overflow-x-auto snap-x snap-mandatory py-2 px-1 sm:px-3 hide-scrollbar [scrollbar-width:none] touch-pan-x"
+          className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory py-2 px-1 sm:px-3 hide-scrollbar [scrollbar-width:none] touch-pan-x justify-start md:justify-center"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {screenshots.map((s, idx) => (
@@ -207,37 +214,22 @@ export function ScreenshotsSimpleGallery({
         </div>
       </div>
 
-      {/* Navigation Indicators & Thumbnails Bar */}
-      {screenshots.length > 1 && (
-        <div className="flex items-center justify-between px-1 pt-1 border-t border-zinc-800/40">
-          {/* Active Title & Counter */}
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xs font-semibold text-zinc-300 truncate">
-              <span className="text-zinc-500 mr-1.5">Viewing:</span>
-              <span className="text-purple-400 font-bold">{screenshots[activeIdx]?.title || `Screen ${activeIdx + 1}`}</span>
-            </span>
-          </div>
-
-          {/* Pagination Dots */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {screenshots.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => scrollToIndex(idx)}
-                className={`transition-all duration-200 cursor-pointer rounded-full ${
-                  idx === activeIdx
-                    ? 'w-6 h-1.5 bg-gradient-to-r from-purple-500 to-indigo-500 shadow-sm shadow-purple-500/50'
-                    : 'w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500'
-                }`}
-                aria-label={`Jump to screenshot ${idx + 1}`}
-                title={`Jump to screenshot ${idx + 1}`}
-              />
-            ))}
-            <span className="text-[11px] tabular-nums text-zinc-500 ml-1.5">
-              {activeIdx + 1}&thinsp;/&thinsp;{screenshots.length}
-            </span>
-          </div>
+      {/* Clean Minimal Pagination Dots (only when overflowing) */}
+      {screenshots.length > 1 && (canScrollLeft || canScrollRight) && (
+        <div className="flex sm:hidden items-center justify-center gap-1.5 pt-1">
+          {screenshots.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => scrollToIndex(idx)}
+              className={`transition-all duration-200 cursor-pointer rounded-full ${
+                idx === activeIdx
+                  ? 'w-5 h-1.5 bg-gradient-to-r from-purple-500 to-indigo-500 shadow-sm shadow-purple-500/50'
+                  : 'w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500'
+              }`}
+              aria-label={`Jump to screenshot ${idx + 1}`}
+            />
+          ))}
         </div>
       )}
     </div>

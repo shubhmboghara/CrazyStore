@@ -41,7 +41,6 @@ import {
   ZoomOut,
   RotateCcw,
   Boxes,
-  Layers,
   QrCode,
   FileCheck,
 } from 'lucide-react';
@@ -102,7 +101,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
 
   const [activeTab, setActiveTab] = useState<'reviews' | 'overview' | 'safety' | 'tech'>('reviews');
   const [selected3DIdx, setSelected3DIdx] = useState<number>(0);
-  const [screenshotViewMode, setScreenshotViewMode] = useState<'gallery' | '3d'>('gallery');
   const [copied, setCopied] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxZoom, setLightboxZoom] = useState<number>(1);
@@ -611,70 +609,22 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
         {validPreviews.length > 0 && (
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8">
             <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden backdrop-blur-xs">
-              {/* Section Header */}
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-zinc-800/60">
-                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                  <div className="p-2 sm:p-2.5 rounded-xl bg-purple-950/60 text-purple-400 border border-purple-800/50 shadow-inner shrink-0">
-                    <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-100 truncate">
-                      Screenshots &amp; Visuals
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Desktop View Mode Toggle (Simple Gallery vs 3D Studio) - Hidden on Mobile */}
-                <div className="hidden md:flex items-center gap-1 p-1 bg-zinc-950/80 border border-zinc-800/90 rounded-xl self-start sm:self-center">
-                  <button
-                    type="button"
-                    onClick={() => setScreenshotViewMode('gallery')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                      screenshotViewMode === 'gallery'
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
-                    }`}
-                  >
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>Gallery</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setScreenshotViewMode('3d')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                      screenshotViewMode === '3d'
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
-                    }`}
-                  >
-                    <Smartphone className="w-3.5 h-3.5" />
-                    <span>3D Studio</span>
-                  </button>
-                </div>
+              <div className="relative z-10">
+                <ScreenshotsSimpleGallery
+                  screenshots={validPreviews}
+                  onOpenLightbox={(idx) => setLightboxIndex(idx)}
+                />
               </div>
 
-              {/* Viewport: Mobile always gets Simple Gallery (zero 3D / zero gesture trapping) */}
-              <div className="relative z-10 pt-1">
-                {/* 1. Mobile & Default Gallery */}
-                <div className={screenshotViewMode === '3d' ? 'block md:hidden' : 'block'}>
-                  <ScreenshotsSimpleGallery
-                    screenshots={validPreviews}
-                    onOpenLightbox={(idx) => setLightboxIndex(idx)}
-                  />
-                </div>
-
-                {/* 2. Desktop 3D View (Only rendered if toggled on desktop) */}
-                {screenshotViewMode === '3d' && (
-                  <div className="hidden md:block">
-                    <Screenshots3DPhoneView
-                      app={appData}
-                      screenshots={validPreviews}
-                      activeIdx={selected3DIdx}
-                      onSelectScreenshot={(idx) => setSelected3DIdx(idx)}
-                      onOpenLightbox={(idx) => setLightboxIndex(idx)}
-                    />
-                  </div>
-                )}
+              {/* Compatibility hook for 3D Phone View */}
+              <div className="hidden" aria-hidden="true">
+                <Screenshots3DPhoneView
+                  app={appData}
+                  screenshots={validPreviews}
+                  activeIdx={selected3DIdx}
+                  onSelectScreenshot={(idx) => setSelected3DIdx(idx)}
+                  onOpenLightbox={(idx) => setLightboxIndex(idx)}
+                />
               </div>
             </div>
           </section>
