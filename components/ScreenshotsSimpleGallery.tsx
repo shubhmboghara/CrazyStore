@@ -122,11 +122,6 @@ function SimpleScreenshotCard({
         <p className="text-xs font-semibold text-zinc-300 group-hover:text-purple-300 transition-colors truncate">
           {screenshot.title || `Screen ${idx + 1}`}
         </p>
-        {screenshot.subtitle && (
-          <p className="text-[10px] text-zinc-500 truncate mt-0.5">
-            {screenshot.subtitle}
-          </p>
-        )}
       </div>
     </div>
   );

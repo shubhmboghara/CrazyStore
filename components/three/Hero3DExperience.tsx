@@ -58,7 +58,7 @@ const VIDEOHUB_FALLBACK_SCREENSHOTS: ShowcaseScreenshot[] = [
   {
     id: '1',
     title: 'Trending Feed & Discovery',
-    subtitle: 'Fluid 120Hz Jetpack Compose LazyColumn with real-time video previews',
+    subtitle: '',
     url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
     imageUrl: '/screenshots/videohub-feed.png',
     type: 'feed',
@@ -66,7 +66,7 @@ const VIDEOHUB_FALLBACK_SCREENSHOTS: ShowcaseScreenshot[] = [
   {
     id: '2',
     title: 'Immersive 4K ExoPlayer',
-    subtitle: 'Hardware-accelerated 4K 60fps playback with live SponsorBlock skip markers',
+    subtitle: '',
     url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
     imageUrl: '/screenshots/videohub-player.png',
     type: 'player',
@@ -74,7 +74,7 @@ const VIDEOHUB_FALLBACK_SCREENSHOTS: ShowcaseScreenshot[] = [
   {
     id: '3',
     title: 'Background Audio & Lockscreen',
-    subtitle: 'AMOLED lockscreen controller, 320kbps Opus Hi-Fi audio & visualizer',
+    subtitle: '',
     url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
     imageUrl: '/screenshots/videohub-audio.png',
     type: 'stats',
@@ -82,7 +82,7 @@ const VIDEOHUB_FALLBACK_SCREENSHOTS: ShowcaseScreenshot[] = [
   {
     id: '4',
     title: 'Material You & Settings',
-    subtitle: 'Android 15 Dynamic Color palettes & granular SponsorBlock filters',
+    subtitle: '',
     url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
     imageUrl: '/screenshots/videohub-settings.png',
     type: 'settings',

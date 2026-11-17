@@ -130,7 +130,7 @@ export const ANDROID_APPS: AndroidApp[] = [
       {
         id: '1',
         title: 'Trending Feed & Discovery',
-        subtitle: 'Fluid 120Hz Jetpack Compose LazyColumn with real-time video previews & ad-free streaming',
+        subtitle: '',
         accentColor: 'from-purple-900/40 to-purple-600/20',
         type: 'feed',
         url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133227.VideoHub_qzdtxn6-x.png',
@@ -139,7 +139,7 @@ export const ANDROID_APPS: AndroidApp[] = [
       {
         id: '2',
         title: 'Immersive 4K ExoPlayer',
-        subtitle: 'Hardware-accelerated 4K 60fps playback with live SponsorBlock skip markers and gesture HUD',
+        subtitle: '',
         accentColor: 'from-indigo-900/40 to-purple-900/20',
         type: 'player',
         url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133306.VideoHub_dgH1K76Qy.png',
@@ -148,7 +148,7 @@ export const ANDROID_APPS: AndroidApp[] = [
       {
         id: '3',
         title: 'Background Audio & Lockscreen',
-        subtitle: 'AMOLED lockscreen controller, 320kbps Opus Hi-Fi audio, waveform visualizer & time-saved telemetry',
+        subtitle: '',
         accentColor: 'from-violet-900/40 to-fuchsia-900/20',
         type: 'stats',
         url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-133323.VideoHub_LEK80RUfT.png',
@@ -157,7 +157,7 @@ export const ANDROID_APPS: AndroidApp[] = [
       {
         id: '4',
         title: 'Material You & Settings',
-        subtitle: 'Android 15 Dynamic Color palettes, granular SponsorBlock filters & 100% De-Googled privacy controls',
+        subtitle: '',
         accentColor: 'from-fuchsia-900/40 to-pink-900/20',
         type: 'settings',
         url: 'https://ik.imagekit.io/shubhambogharadev/android-apps/Screenshot_20260925-134542.VideoHub_i3VA3Z_90.png',
