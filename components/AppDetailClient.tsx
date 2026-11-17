@@ -503,22 +503,6 @@ export function AppDetailClient({ initialApp }: AppDetailClientProps) {
                 </div>
 
                 <div className="space-y-1.5 min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                    <span className="px-2.5 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-800/50 text-[10px] font-bold">
-                      {appData.badge || 'Kotlin + Compose'}
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-bold">
-                      {appData.version}
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-emerald-950/80 text-emerald-400 border border-emerald-800/40 text-[10px] font-bold flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      0 Trackers
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-zinc-900 text-zinc-300 border border-zinc-800 text-[10px] font-mono font-bold">
-                      {appData.license || 'GPL-3.0'}
-                    </span>
-                  </div>
-
                   <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-zinc-100 break-words">
                     {appData.name}
                   </h1>
